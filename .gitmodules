@@ -1,0 +1,3 @@
+[submodule "factual"]
+	path = factual
+	url = https://github.com/cmacmackin/factual

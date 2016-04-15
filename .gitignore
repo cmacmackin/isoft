@@ -1,0 +1,13 @@
+doc/
+*~
+#*
+*.o
+*.a
+*.so
+*.gcda
+*.gcno
+*.gcov
+*.mod
+*.smod
+a.out
+*.x
