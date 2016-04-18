@@ -25,9 +25,69 @@ module basal_surface_mod
   !  Date: April 2016
   !  License: GPLv3
   !
-  ! 
+  ! Provides an abstract data type to model the ground or ocean below
+  ! the glacier.
   !
+  use iso_fortran_env, only: r8 => real64
+  use cheb1d_fields_mod
+  use ambient_mod
   implicit none
   private
+
+  type, abstract, public :: basal_surface
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! An abstract data type which represents whatever lies below a [[glacier]].
+    ! This could be the ground, a plume, or a fully dynamic ocean model.
+    ! Methods are available to provide the coupling information between the
+    ! [[glacier]] and the basal surface.
+    !
+  contains
+    procedure(get_property), deferred :: basal_melt
+      !! Returns the basal melt rate.
+    procedure(get_property), deferred :: basal_drag_parameter
+      !! Returns a value which may be needed to calculate basal drag,
+      !! such as the coefficient of friction.
+    procedure(get_property), deferred :: water_density
+      !! Density of the water at the basal surface.
+    procedure(get_residual), deferred :: residual
+      !! Computes the residual of the system of equations describing the
+      !! basal surface.
+    procedure(setter), deferred       :: update
+      !! Sets the state of the basal surface
+  end type basal_surface
+
+  abstract interface
+    function get_property(this) result(property)
+      class(basal_surface), intent(in) :: this
+      class(scalar_field), allocatable :: property
+        !! The value of whatever property of the basal surface is being
+        !! returned.
+    end function get_property
+    
+    function residual(this, ice_thickness, ice_density, ice_temperature)
+      class(basal_surface), intent(in) :: this
+      class(scalar_field), intent(in)  :: ice_thickness
+        !! Thickness of the ice above the basal surface
+      real(r8), intent(in)             :: ice_density
+        !! The density of the ice above the basal surface, assumed uniform
+      real(r8), intent(in)             :: ice_temperature
+        !! The temperature of the ice above the basal surface, assumed uniform
+      real(r8), dimension(:), allocatable :: residual
+        !! The residual of the system of equations describing the basal
+        !! surface.
+    end function residual
+
+    subroutine setter(this, state_vector, time)
+      class(basal_surface), intent(inout) :: this
+      real(r8), dimension(:), intent(in)  :: state_vector
+        !! A real array containing the data describing the state of the
+        !! basal surface.
+      real(r8), intent(in), optional :: time
+        !! The time at which the basal surface is in this state. If not
+        !! present then assumed to be same as previous value passed.
+    end subroutine setter
+  end interface
 
 end module basal_surface_mod

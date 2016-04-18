@@ -56,7 +56,7 @@ module cryosphere_mod
     procedure :: integrand_multiply_real => cryosphere_m_real
     procedure :: real_multiply_integrand => real_m_cryosphere
     procedure :: add => cryosphere_add
-    procedure :: sub => crysphere_sub
+    procedure :: sub => cryosphere_sub
     procedure :: assign_integrand => cryosphere_assign
   end type cryosphere
 
@@ -87,7 +87,7 @@ contains
     !  Date: April 2016
     !
     ! Calculates a real scalar to represent the absolute difference between
-    ! two cryosphere objects. `rhs` must be a a [[cryosphere]] object, or a
+    ! two cryosphere objects. `rhs` must be a [[cryosphere]] object, or a
     ! runtime error will occur.
     !
     class(cryosphere), intent(in) :: lhs
@@ -105,7 +105,7 @@ contains
     !
     ! Multiplies one cryosphere object by another. That is to say, it 
     ! performs element-wise multiplication of the state vectors 
-    ! representing the two arguments. `rhs` must be a a [[cryosphere]]
+    ! representing the two arguments. `rhs` must be a [[cryosphere]]
     ! object, or a runtime error will occur.
     !
     class(cryosphere), intent(in) :: lhs
@@ -154,7 +154,7 @@ contains
     !
     ! Adds one cryosphere object to another. That is to say, it performs
     ! element-wise addition of the state vectors representing the two
-    ! arguments. `rhs` must be a a [[cryosphere]] object, or a runtime
+    ! arguments. `rhs` must be a [[cryosphere]] object, or a runtime
     ! error will occur.
     !
     class(cryosphere), intent(in) :: lhs
@@ -171,7 +171,7 @@ contains
     !
     ! Subtracts one cryosphere object from another. That is to say, it 
     ! performs element-wise addition of the state vectors representing 
-    ! the two arguments. `rhs` must be a a [[cryosphere]] object, or a
+    ! the two arguments. `rhs` must be a [[cryosphere]] object, or a
     ! runtime error will occur.
     !
     class(cryosphere), intent(in) :: lhs

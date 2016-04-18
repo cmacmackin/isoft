@@ -25,9 +25,34 @@ module coupling_mod
   !  Date: April 2016
   !  License: GPLv3
   !
-  ! 
+  ! Provides an abstract data type for representing the coupling between
+  ! the glacier and its base. This is used for providing the melt rate,
+  ! drag, etc.
   !
+  use cheb1d_fields_mod
   implicit none
   private
+
+  type, abstract, public :: coupling
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! An abstract data type which represents the coupling between the bottom
+    ! of the glacier and the ground or water below it. This is used to 
+    ! calculate the melt rate, basal drag, melt temperature, etc.
+    !
+  contains
+    procedure(get_property) :: thermal_coupling
+    procedure(get_property) :: salinity_coupling
+    procedure(get_property) :: melt_rate
+    procedure(get_property) :: basal_drag
+    procedure(get_residual) :: residual
+  end type coupling
+
+  abstract interface
+    function get_property(this) result(property)
+      class(coupling), intent(in) :: 
+    end function get_property
+  end interface
 
 end module coupling_mod
