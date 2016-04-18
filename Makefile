@@ -1,44 +1,6 @@
-LOCAL_ROOT ?= $(HOME)/Code/local
-
-VENDOR ?= GNU
-VENDOR_ = $(shell echo $(VENDOR) | tr A-Z a-z)
-
-ifeq ($(VENDOR_),gnu)
-F90 = gfortran
-PFUNIT = $(HOME)/Code/pfunit-gfortran
-FCFLAGS = -O0 -g -J$(INC) -I$(SYSINC) -fcheck=all -DDEBUG
-LDFLAGS = -O0 -g 
-COVFLAGS = -fprofile-arcs -ftest-coverage
-else ifeq ($(VENDOR_),intel)
-F90 = ifort
-PFUNIT = $(HOME)/Code/pfunit-ifort
-FCFLAGS = -O0 -g -I$(INC) -module $(INC) -I$(SYSINC) -traceback \
-          -assume realloc_lhs
-LDFLAGS = -O0 -g -traceback
-COVFLAGS = 
-endif
-
-#PFUNIT = /opt/pfunit-gfortran-5
-export PFUNIT
-export F90
-export FCFLAGS
-export LDFLAGS
-export COVFLAGS
-
 PWD = $(shell pwd)
-INC = $(PWD)/mod
-SYSINC = $(LOCAL_ROOT)/include
-LIBS = -L$(PFUNIT)/lib -lpfunit $(COVFLAGS) -L. -lfactual -L$(LOCAL_ROOT)/lib -lfftw3 -lm
-
-
-ARCHIVE = libfactual.a
-SRC = ./src
-TEST = ./tests
-EXE = tests.x
-#INC = ./mod
-TESTINC = $(TEST)/mod
-
-export ARCHIVE
+PROJECT_ROOT = .
+include $(PROJECT_ROOT)/make_include
 
 # "make" builds all
 all: lib
