@@ -1,7 +1,6 @@
 PROJECT_ROOT = .
 include $(PROJECT_ROOT)/make_include
 
-
 all: $(EXE)
 
 $(EXE): objs
@@ -29,6 +28,7 @@ gcov:   $(TESTEXE)
 
 clean:
 	make -C $(FACTUAL) clean
+	make -C $(ODIR) clean
 	make -C $(SRC) clean
 	make -C $(TEST) clean
 	rm -f $(TESTEXE) $(EXE)

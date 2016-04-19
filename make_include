@@ -33,7 +33,6 @@ TESTEXE  = $(PROJECT_ROOT)/tests.x
 LIBS     = -L$(FACTUAL) -lfactual -L$(LOCAL_ROOT)/lib -lfftw3 -lm
 
 init:
-	mkdir -p $(ODIR)
 	mkdir -p $(INC)
 	mkdir -p $(TESTINC)
 	mkdir -p $(TESTODIR)
