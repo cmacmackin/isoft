@@ -1,6 +1,7 @@
 PROJECT_ROOT = .
 include $(PROJECT_ROOT)/make_include
 
+
 all: $(EXE)
 
 $(EXE): objs
@@ -10,7 +11,7 @@ libfactual:
 	make -C $(FACTUAL) lib
 
 objs: libfactual
-	make -C $(SRC) all
+	make -C $(ODIR) all
 
 tests:  $(TESTEXE)
 	$(TESTEXE) 
@@ -24,7 +25,7 @@ SUT:    $(EXE)
 	make -C $(TEST) tests
 
 gcov:   $(TESTEXE)
-	make -C $(SRC) gcov
+	make -C $(ODIR) gcov
 
 clean:
 	make -C $(FACTUAL) clean
