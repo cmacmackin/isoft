@@ -1,65 +1,38 @@
-PWD = $(shell pwd)
 PROJECT_ROOT = .
 include $(PROJECT_ROOT)/make_include
 
-# "make" builds all
-all: lib
+all: $(EXE)
 
-$(ARCHIVE): lib
+$(EXE): objs
+	$(F90) -o $@ $(ODIR)/*.o $(LDFLAGS) $(LIBS) $(COVFLAGS)
 
-lib:
-	make -C $(SRC) lib
-	cp $(SRC)/$(ARCHIVE) .
+libfactual:
+	make -C $(FACTUAL) lib
 
-tests: $(EXE)
-	./$(EXE) 
+objs: libfactual
+	make -C $(SRC) all
 
-SUT: lib
+tests:  $(TESTEXE)
+	$(TESTEXE) 
+
+$(TESTEXE): SUT
+	$(F90) -o $@ -I$(TEST) $(PFUNIT)/include/driver.F90 $(TESTODIR)/*.o \
+		$(ODIR)/*.o $(LDFLAGS) $(LIBS) -L$(PFUNIT)/lib -lpfunit \
+		$(COVFLAGS)
+
+SUT:    $(EXE)
 	make -C $(TEST) tests
 
-gcov: $(EXE)
+gcov:   $(TESTEXE)
 	make -C $(SRC) gcov
 
-%: $(ODIR)/%.o
-	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS)
-
-%.o: %.f
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
-%.o: %.F
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
-%.o: %.f90
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
-%.o: %.F90
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
-%.o: %.f95
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
-%.o: %.F95
-	$(FC) $(FCFLAGS) -o $@ -c $<
-
 clean:
+	make -C $(FACTUAL) clean
 	make -C $(SRC) clean
 	make -C $(TEST) clean
-	rm -f $(ARCHIVE) $(EXE)
+	rm -f $(TESTEXE) $(EXE)
 	rm -f *.gcov *.gcda *.gcno
-
-init:
-	mkdir -p $(ODIR)
-	mkdir -p $(INC)
-
-echo:
-	echo $(LOCAL_ROOT)
-	echo $(PFUNIT)
-	make -C $(SRC) echo
-
-
-$(EXE): SUT
-	$(F90) -o $@ -I$(PFUNIT)/mod -I$(PFUNIT)/include \
-		-I$(TEST) -I$(TESTINC) \
-		$(PFUNIT)/include/driver.F90 $(TEST)/*.o $(FCFLAGS) \
-		$(LIBS)
-
+	rm -f *~
+	rm -f \#*
+	rm -f $(INC)/*.mod
+	rm -f $(ODIR)/*.o
