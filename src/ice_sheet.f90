@@ -28,8 +28,10 @@ module ice_sheet_mod
   ! Provides a concrete implementation of the [[glacier]] type, using
   ! a vertically integrated model of an ice sheet.
   !
-  use glacier_mod
-  use cheb1d_fields_mod
+  use iso_fortran_env, only: r8 => real64
+  use foodie, only: integrand
+  use glacier_mod, only: glacier
+  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
   implicit none
   private
 
@@ -46,19 +48,19 @@ module ice_sheet_mod
     type(cheb1d_vector_field) :: velocity  
       !! Flow velocity of ice sheet, $\vec{u}$
   contains
-    procedure :: t => sheet_dt
-    procedure :: local_error => sheet_local_error
-    procedure :: integrand_multiply_integrand => sheet_m_sheet
-    procedure :: integrand_multiply_real => sheet_m_real
-    procedure :: real_multiply_integrand => real_m_sheet
-    procedure :: add => sheet_add
-    procedure :: sub => sheet_sub
-    procedure :: assign_integrand => sheet_assign
-    procedure :: ice_thickness => sheet_thickness
-    procedure :: ice_density => sheet_density
-    procedure :: ice_temperature => sheet_temperature
-    procedure :: residual => sheet_residual
-    procedure :: update => sheet_update
+    procedure            :: t => sheet_dt
+    procedure            :: local_error => sheet_local_error
+    procedure            :: integrand_multiply_integrand => sheet_m_sheet
+    procedure            :: integrand_multiply_real => sheet_m_real
+    procedure, pass(rhs) :: real_multiply_integrand => real_m_sheet
+    procedure            :: add => sheet_add
+    procedure            :: sub => sheet_sub
+    procedure            :: assign_integrand => sheet_assign
+    procedure            :: ice_thickness => sheet_thickness
+    procedure            :: ice_density => sheet_density
+    procedure            :: ice_temperature => sheet_temperature
+    procedure            :: residual => sheet_residual
+    procedure            :: update => sheet_update
   end type ice_sheet
 
 contains
@@ -72,10 +74,10 @@ contains
     ! the ice thickness, that will be the only portion of the returned type
     ! which actually corresponds to the derivative.
     !
-    class(ice_sheet), intent(in) :: self
-    real(r8), intent(in)         :: t
+    class(ice_sheet), intent(in)   :: self
+    real(r8), intent(in), optional :: t
       !! Time at which to evaluate the derivative
-    class(integrand), allocatable :: sheet_dt
+    class(integrand), allocatable  :: sheet_dt
       !! The time rate of change of the ice sheet. Has dynamic type
       !! [[ice_sheet]].
   end function sheet_dt
@@ -140,7 +142,7 @@ contains
     !
     real(r8), intent(in)          :: lhs
       !! The scalar being multiplied by.
-    class(ice_sheet), intent(in) :: rhs
+    class(ice_sheet), intent(in)  :: rhs
       !! Self
     class(integrand), allocatable :: product
       !! The product of the two arguments. Has dynamic type [[ice_sheet]].
@@ -155,7 +157,7 @@ contains
     ! arguments. `rhs` must be an [[ice_sheet]] object, or a runtime
     ! error will occur.
     !
-    class(ice_sheet), intent(in) :: lhs
+    class(ice_sheet), intent(in)  :: lhs
       !! Self
     class(integrand), intent(in)  :: rhs
       !! The ice sheet object being added.
@@ -172,7 +174,7 @@ contains
     ! the two arguments. `rhs` must be a a [[ice_sheet]] object, or a
     ! runtime error will occur.
     !
-    class(ice_sheet), intent(in) :: lhs
+    class(ice_sheet), intent(in)  :: lhs
       !! Self
     class(integrand), intent(in)  :: rhs
       !! The ice sheet object being subtracted.
@@ -187,9 +189,9 @@ contains
     ! Assigns the `rhs` ice sheet to this, `lhs`, one. All components
     ! will be the same following the assignment.
     !
-    class(ice_sheet), inent(inout) :: lhs
+    class(ice_sheet), intent(inout) :: lhs
       !! Self
-    class(integrand), intent(in)   :: rhs
+    class(integrand), intent(in)    :: rhs
       !! The object to be assigned. Must have dynamic type [[ice_sheet]],
       !! or a runtime error will occur.
   end subroutine sheet_assign
@@ -200,7 +202,7 @@ contains
     !
     ! Returns the thickness of the ice shelf across its domain.
     !
-    class(basal_surface), intent(in) :: this
+    class(ice_sheet), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
   end function sheet_thickness
 
@@ -211,8 +213,8 @@ contains
     ! Returns the density of the ice in the sheet, which is assumed to be
     ! uniform across its domain.
     !
-    class(basal_surface), intent(in) :: this
-    real(r8)                         :: density !! The ice density.
+    class(ice_sheet), intent(in) :: this
+    real(r8)                     :: density !! The ice density.
   end function sheet_density
 
   function sheet_temperature(this) result(temperature)
@@ -222,11 +224,12 @@ contains
     ! Returns the density of the ice in the sheet, which is assumed to be
     ! uniform across its domain.
     !
-    class(basal_surface), intent(in) :: this
-    real(r8)                         :: temperature !! The ice density.
+    class(ice_sheet), intent(in) :: this
+    real(r8)                     :: temperature !! The ice density.
   end function sheet_temperature
 
-  function sheet_residual(this, melt_rate, basal_drag_parameter, water_density)
+  function sheet_residual(this, melt_rate, basal_drag_parameter, &
+                          water_density) result(residual)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -235,7 +238,7 @@ contains
     ! form of a 1D array, with each element respresenting the residual for
     ! one of the equations in the system.
     !
-    class(basal_surface), intent(in)    :: this
+    class(ice_sheet), intent(in)        :: this
     class(scalar_field), intent(in)     :: melt_rate
       !! Thickness of the ice above the glacier.
     class(scalar_field), intent(in)     :: basal_drag_parameter
@@ -255,11 +258,11 @@ contains
     ! vector is a real array containing the value of each of the ice sheet's
     ! properties at each of the locations on the grid used in descretization.
     !
-    class(basal_surface), intent(inout) :: this
-    real(r8), dimension(:), intent(in)  :: state_vector
+    class(ice_sheet), intent(inout)    :: this
+    real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! glacier.
-    real(r8), intent(in), optional      :: time
+    real(r8), intent(in), optional     :: time
       !! The time at which the glacier is in this state. If not present
       !! then assumed to be same as previous value passed.
   end subroutine sheet_update

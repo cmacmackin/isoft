@@ -28,12 +28,13 @@ module glacier_mod
   ! Provides an abstract type to represent large masses of ice, such
   ! as ice sheets and ice shelves.
   !
-  use foodie
-  use factual
+  use iso_fortran_env, only: r8 => real64
+  use foodie, only: integrand
+  use factual_mod, only: scalar_field
   implicit none
   private
 
-  type, extends(foodie_integrand), abstract, public :: glacier
+  type, extends(integrand), abstract, public :: glacier
     !* Author: Christopehr MacMackin
     !  Date: April 2016
     !
@@ -56,36 +57,46 @@ module glacier_mod
 
   abstract interface
     function get_property(this) result(property)
-      class(basal_surface), intent(in) :: this
+      import :: glacier
+      import :: scalar_field
+      class(glacier), intent(in)       :: this
       class(scalar_field), allocatable :: property
         !! The value of whatever property of the glacier is being returned.
     end function get_property
     
     function get_r8(this) result(property)
-      class(basal_surface), intent(in) :: this
-      real(r8)                         :: property
+      import :: glacier
+      import :: r8
+      class(glacier), intent(in) :: this
+      real(r8)                   :: property
         !! The value of whatever property of the glacier is being returned.
     end function get_r8
 
-    function get_residual(this, melt_rate, basal_drag_parameter, water_density)
-      class(basal_surface), intent(in) :: this
-      class(scalar_field), intent(in)  :: melt_rate
+    function get_residual(this, melt_rate, basal_drag_parameter, &
+                          water_density) result(residual)
+      import :: glacier
+      import :: scalar_field
+      import :: r8
+      class(glacier), intent(in)          :: this
+      class(scalar_field), intent(in)     :: melt_rate
         !! Thickness of the ice above the glacier
-      class(scalar_field), intent(in)  :: basal_drag_parameter
+      class(scalar_field), intent(in)     :: basal_drag_parameter
         !! A paramter, e.g. coefficient of friction, needed to calculate the
         !! drag on basal surface of the glacier.
-      class(scalar_field), intent(in)  :: water_density
+      class(scalar_field), intent(in)     :: water_density
         !! The density of the water below the glacier
       real(r8), dimension(:), allocatable :: residual
         !! The residual of the system of equations describing the glacier
     end function get_residual
 
     subroutine setter(this, state_vector, time)
-      class(basal_surface), intent(inout) :: this
-      real(r8), dimension(:), intent(in)  :: state_vector
+      import :: glacier
+      import :: r8
+      class(glacier), intent(inout)      :: this
+      real(r8), dimension(:), intent(in) :: state_vector
         !! A real array containing the data describing the state of the
         !! glacier.
-      real(r8), intent(in), optional :: time
+      real(r8), intent(in), optional     :: time
         !! The time at which the glacier is in this state. If not present
         !! then assumed to be same as previous value passed.
     end subroutine setter

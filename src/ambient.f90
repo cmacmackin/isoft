@@ -28,7 +28,7 @@ module ambient_mod
   ! Provides an abstract derived type which can be subtyped in order to
   ! specify the temperature and salinity of the ambient ocean.
   !
-  use abstract_fields, only: scalar_field
+  use factual_mod, only: scalar_field
   implicit none
   private
   
@@ -41,19 +41,21 @@ module ambient_mod
     ! whatever data is needed to compute the result.
     !
   contains
-    procedure(get_property) :: ambient_temperature
+    procedure(get_property), deferred :: ambient_temperature
       !! Returns the ambient ocean temperature
-    procedure(get_property) :: ambient_salinity
+    procedure(get_property), deferred :: ambient_salinity
       !! Returns the ambient ocean temperature
   end type ambient_conditions
 
   abstract interface
     function get_property(this, depth) result(property)
+      import :: ambient_conditions
+      import :: scalar_field
       class(ambient_conditions), intent(in) :: this
-      class(scalar_field), intent(in) :: this
+      class(scalar_field), intent(in)       :: depth
         !! A field containing the depths at which the ambient conditions
         !! are to be calculated.
-      class(scalar_field), allocatable :: property
+      class(scalar_field), allocatable      :: property
         !! A field containing the ambient conditions at the depth specified
         !! for each location.
     end function get_property

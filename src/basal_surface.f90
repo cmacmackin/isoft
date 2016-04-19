@@ -29,8 +29,7 @@ module basal_surface_mod
   ! the glacier.
   !
   use iso_fortran_env, only: r8 => real64
-  use cheb1d_fields_mod
-  use ambient_mod
+  use factual_mod, only: scalar_field
   implicit none
   private
 
@@ -60,31 +59,39 @@ module basal_surface_mod
 
   abstract interface
     function get_property(this) result(property)
+      import :: basal_surface
+      import :: scalar_field
       class(basal_surface), intent(in) :: this
       class(scalar_field), allocatable :: property
         !! The value of whatever property of the basal surface is being
         !! returned.
     end function get_property
     
-    function residual(this, ice_thickness, ice_density, ice_temperature)
-      class(basal_surface), intent(in) :: this
-      class(scalar_field), intent(in)  :: ice_thickness
+    function get_residual(this, ice_thickness, ice_density, ice_temperature) &
+                                                              result(residual)
+      import :: basal_surface
+      import :: scalar_field
+      import :: r8
+      class(basal_surface), intent(in)    :: this
+      class(scalar_field), intent(in)     :: ice_thickness
         !! Thickness of the ice above the basal surface
-      real(r8), intent(in)             :: ice_density
+      real(r8), intent(in)                :: ice_density
         !! The density of the ice above the basal surface, assumed uniform
-      real(r8), intent(in)             :: ice_temperature
+      real(r8), intent(in)                :: ice_temperature
         !! The temperature of the ice above the basal surface, assumed uniform
       real(r8), dimension(:), allocatable :: residual
         !! The residual of the system of equations describing the basal
         !! surface.
-    end function residual
+    end function get_residual
 
     subroutine setter(this, state_vector, time)
+      import :: basal_surface
+      import :: r8
       class(basal_surface), intent(inout) :: this
       real(r8), dimension(:), intent(in)  :: state_vector
         !! A real array containing the data describing the state of the
         !! basal surface.
-      real(r8), intent(in), optional :: time
+      real(r8), intent(in), optional      :: time
         !! The time at which the basal surface is in this state. If not
         !! present then assumed to be same as previous value passed.
     end subroutine setter

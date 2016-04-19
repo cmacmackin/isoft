@@ -31,6 +31,8 @@ module cryosphere_mod
   !
   use iso_fortran_env, only: r8 => real64
   use foodie, only: integrand
+  use basal_surface_mod, only: basal_surface
+  use glacier_mod, only: glacier
   implicit none
   private
 
@@ -54,7 +56,7 @@ module cryosphere_mod
     procedure :: local_error => cryosphere_local_error
     procedure :: integrand_multiply_integrand => cryosphere_m_cryosphere
     procedure :: integrand_multiply_real => cryosphere_m_real
-    procedure :: real_multiply_integrand => real_m_cryosphere
+    procedure, pass(rhs) :: real_multiply_integrand => real_m_cryosphere
     procedure :: add => cryosphere_add
     procedure :: sub => cryosphere_sub
     procedure :: assign_integrand => cryosphere_assign
@@ -74,10 +76,10 @@ contains
     ! the ground being unchanging and the ocean being quasistatic), only
     ! the glacier components will actually have their derivative computed.
     !
-    class(cryosphere), intent(in) :: self
-    real(r8), intent(in)          :: t
+    class(cryosphere), intent(in)  :: self
+    real(r8), intent(in), optional :: t
       !! Time at which to evaluate the derivative
-    class(integrand), allocatable :: cryosphere_dt
+    class(integrand), allocatable  :: cryosphere_dt
       !! The time rate of change of the cryosphere. Has dynamic type
       !! [[cryosphere]].
   end function cryosphere_dt
@@ -189,9 +191,9 @@ contains
     ! Assigns the `rhs` cryosphere to this, `lhs`, one. All components
     ! will be the same following the assignment.
     !
-    class(cryosphere), inent(inout) :: lhs
+    class(cryosphere), intent(inout) :: lhs
       !! Self
-    class(integrand), intent(in)    :: rhs
+    class(integrand), intent(in)     :: rhs
       !! The object to be assigned. Must have dynamic type [[cryosphere]],
       !! or a runtime error will occur.
   end subroutine cryosphere_assign
