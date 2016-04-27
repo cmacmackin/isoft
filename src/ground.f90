@@ -50,7 +50,20 @@ module ground_mod
     procedure :: update => ground_update
   end type ground
 
+  interface ground
+    module procedure constructor
+  end interface ground
+
 contains
+
+  function constructor() result(this)
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    ! 
+    ! Instantiates a [[ground]] object.
+    !
+    type(ground) :: this
+  end function constructor
 
   function ground_melt(this) result(melt)
     !* Author: Christopher MacMackin

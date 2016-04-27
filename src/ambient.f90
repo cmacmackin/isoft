@@ -28,6 +28,7 @@ module ambient_mod
   ! Provides an abstract derived type which can be subtyped in order to
   ! specify the temperature and salinity of the ambient ocean.
   !
+  use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field
   implicit none
   private
@@ -48,13 +49,16 @@ module ambient_mod
   end type ambient_conditions
 
   abstract interface
-    function get_property(this, depth) result(property)
+    function get_property(this, depth, t) result(property)
+      import :: r8
       import :: ambient_conditions
       import :: scalar_field
       class(ambient_conditions), intent(in) :: this
       class(scalar_field), intent(in)       :: depth
         !! A field containing the depths at which the ambient conditions
         !! are to be calculated.
+      real(r8), intent(in)                  :: t
+        !! The time at which the ambient conditions are to be calculated.
       class(scalar_field), allocatable      :: property
         !! A field containing the ambient conditions at the depth specified
         !! for each location.

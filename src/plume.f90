@@ -41,6 +41,15 @@ module plume_mod
     ! A concrete implementation of the [[basal_surface]] abstract data type,
     ! representing the buoyant plume beneath an ice shelf.
     !
+    private
+    type(cheb1d_scalar_field) :: thickness
+      !! The thickness of the plume
+    type(cheb1d_vector_field) :: velocity
+      !! The velocity of the plume
+    type(cheb1d_scalar_field) :: temperature
+      !! The temperature of the plume
+    type(cheb1d_scalar_field) :: salinity
+      !! The salinity of the plume
   contains
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
@@ -49,7 +58,69 @@ module plume_mod
     procedure :: update => plume_update
   end type plume
 
+  abstract interface
+    function scalar_func(location) result(thickness)
+      !* Author: Chris MacMackin
+      !  Date: April 2016
+      !
+      ! Abstract interface for function providing the initial values for the
+      ! scalar properties of a [[plume]] object when it is being instantiated.
+      !
+      import :: r8
+      real(r8), dimension(:), intent(in) :: location
+        !! The position $\vec{x}$ at which to compute the property
+      real(r8)                           :: thickness
+        !! The value of the scalar quantity at `location`
+    end function scalar_func
+      
+    function velocity_func(location) result(velocity)
+      !* Author: Chris MacMackin
+      !  Date: April 2016
+      !
+      ! Abstract interface for function providing the [[plume]] velocity
+      ! when an object is being instantiated.
+      !
+      import :: r8
+      real(r8), dimension(:), intent(in)  :: location
+        !! The position $\vec{x}$ at which to compute the thickness
+      real(r8), dimension(2), allocatable :: thickness
+        !! The velocity vector of the water in the plume at `location`
+    end function velocity_func
+  end interface
+
 contains
+
+  function constructor(domain, thickness, velocity, temperature, salinity) &
+                                                                result(this)
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    ! 
+    ! Instantiates a [[plume]] object with initial coniditions provided by the
+    ! arguments.At present only a 1D model is supported. If information is
+    ! provided for higher dimensions then it will be ignored.
+    !
+    real(r8), dimension(:,:), intent(in) :: domain
+      !! An array containing the upper and lower limits of the domain for
+      !! the plume. The first index represents the dimension for which the
+      !! boundaries apply. If the second index is 1 then it corresponds to
+      !! the lower bound. If the second index is 2 then it corresponds to
+      !! the upper bound.
+    procedure(scalar_func)               :: thickness
+      !! A function which calculates the initial value of the thickness of 
+      !! the plume at a given location.
+    procedure(velocity_func)             :: velocity
+      !! A function which calculates the initial value of the velocity 
+      !! (vector) of the water at a given location in a plume.
+    procedure(scalar_func)               :: temperature
+      !! A function which calculates the initial value of the temperature of 
+      !! the plume at a given location.
+    procedure(scalar_func)               :: salinity
+      !! A function which calculates the initial value of the salinity of 
+      !! the plume at a given location.
+    type(plume) :: this
+      !! A plume object with its domain and initial conditions set according
+      !! to the arguments of the constructor function.
+  end function constructor
 
   function plume_melt(this) result(melt)
     !* Author: Christopher MacMackin

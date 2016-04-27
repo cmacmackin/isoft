@@ -102,4 +102,36 @@ module glacier_mod
     end subroutine setter
   end interface
 
+  abstract interface
+    function thickness_func(location) result(thickness)
+      !* Author: Chris MacMackin
+      !  Date: April 2016
+      !
+      ! Abstract interface for function providing the [[glacier]] thickness
+      ! when a concrete object is being instantiated.
+      !
+      import :: r8
+      real(r8), dimension(:), intent(in) :: location
+        !! The position $\vec{x}$ at which to compute the thickness
+      real(r8) :: thickness
+        !! The thickness of the glacier at `location`
+    end function thickness_func
+      
+    function velocity_func(location) result(velocity)
+      !* Author: Chris MacMackin
+      !  Date: April 2016
+      !
+      ! Abstract interface for function providing the [[glacier]] velocity
+      ! when a concrete object is being instantiated.
+      !
+      import :: r8
+      real(r8), dimension(:), intent(in) :: location
+        !! The position $\vec{x}$ at which to compute the thickness
+      real(r8), dimension(:), allocatable :: thickness
+        !! The velocity vector of the ice in the glacier at `location`
+    end function velocity_func
+  end interface
+
+  public :: thickness_func, velocity_func
+
 end module glacier_mod

@@ -30,7 +30,7 @@ module ice_sheet_mod
   !
   use iso_fortran_env, only: r8 => real64
   use foodie, only: integrand
-  use glacier_mod, only: glacier
+  use glacier_mod, only: glacier, thickness_func, velocity_func
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
   implicit none
   private
@@ -63,7 +63,36 @@ module ice_sheet_mod
     procedure            :: update => sheet_update
   end type ice_sheet
 
+  interface ice_sheet
+    module procedure constructor
+  end interface ice_sheet
+
 contains
+  
+  function constructor(domain, thickness, velocity) result(this)
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Creates a new [[ice_sheet]] object with initial conditions provided
+    ! by the arguments. At present only a 1D model is supported. If
+    ! information is provided for higher dimensions then it will be ignored.
+    !
+    real(r8), dimension(:,:), intent(in) :: domain
+      !! An array containing the upper and lower limits of the domain for
+      !! the ice sheet. The first index represents the dimension for which
+      !! the boundaries apply. If the second index is 1 then it corresponds
+      !! to the lower bound. If the second index is 2 then it corresponds to
+      !! the upper bound.
+    procedure(thickness_func)            :: thickness
+      !! A function which calculates the initial value of the thickness of 
+      !! the ice sheet at a given location.
+    procedure(velocity_func)             :: velocity
+      !! A function which calculates the initial value of the velocity 
+      !! (vector) of the ice at a given location in an ice sheet.
+    type(ice_shelf)                      :: this
+      !! An ice sheet object with its domain and initial conditions set
+      !! according to the arguments of the constructor function.
+  end function constructor
   
   function sheet_dt(self,t)
     !* Author: Christopher MacMackin
