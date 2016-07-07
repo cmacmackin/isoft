@@ -43,12 +43,12 @@ module basal_surface_mod
     ! [[glacier]] and the basal surface.
     !
   contains
-    procedure(get_property), deferred :: basal_melt
+    procedure(get_scalar), deferred :: basal_melt
       !! Returns the basal melt rate.
-    procedure(get_property), deferred :: basal_drag_parameter
+    procedure(get_scalar), deferred :: basal_drag_parameter
       !! Returns a value which may be needed to calculate basal drag,
       !! such as the coefficient of friction.
-    procedure(get_property), deferred :: water_density
+    procedure(get_scalar), deferred :: water_density
       !! Density of the water at the basal surface.
     procedure(get_residual), deferred :: residual
       !! Computes the residual of the system of equations describing the
@@ -58,14 +58,14 @@ module basal_surface_mod
   end type basal_surface
 
   abstract interface
-    function get_property(this) result(property)
+    function get_scalar(this) result(property)
       import :: basal_surface
       import :: scalar_field
       class(basal_surface), intent(in) :: this
       class(scalar_field), allocatable :: property
         !! The value of whatever property of the basal surface is being
         !! returned.
-    end function get_property
+    end function get_scalar
     
     function get_residual(this, ice_thickness, ice_density, ice_temperature) &
                                                               result(residual)

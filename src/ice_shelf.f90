@@ -31,7 +31,8 @@ module ice_shelf_mod
   use iso_fortran_env, only: r8 => real64
   use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func
-  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field
   implicit none
   private
 
@@ -48,19 +49,20 @@ module ice_shelf_mod
     type(cheb1d_vector_field) :: velocity  
       !! Flow velocity of ice shelf, $\vec{u}$
   contains
-    procedure            :: t => shelf_dt
-    procedure            :: local_error => shelf_local_error
-    procedure            :: integrand_multiply_integrand => shelf_m_shelf
-    procedure            :: integrand_multiply_real => shelf_m_real
-    procedure, pass(rhs) :: real_multiply_integrand => real_m_shelf
-    procedure            :: add => shelf_add
-    procedure            :: sub => shelf_sub
-    procedure            :: assign_integrand => shelf_assign
-    procedure            :: ice_thickness => shelf_thickness
-    procedure            :: ice_density => shelf_density
-    procedure            :: ice_temperature => shelf_temperature
-    procedure            :: residual => shelf_residual
-    procedure            :: update => shelf_update
+!$    procedure            :: t => shelf_dt
+!$    procedure            :: local_error => shelf_local_error
+!$    procedure            :: integrand_multiply_integrand => shelf_m_shelf
+!$    procedure            :: integrand_multiply_real => shelf_m_real
+!$    procedure, pass(rhs) :: real_multiply_integrand => real_m_shelf
+!$    procedure            :: add => shelf_add
+!$    procedure            :: sub => shelf_sub
+!$    procedure            :: assign_integrand => shelf_assign
+    procedure :: ice_thickness => shelf_thickness
+    procedure :: ice_velocity => shelf_velocity
+    procedure :: ice_density => shelf_density
+    procedure :: ice_temperature => shelf_temperature
+    procedure :: residual => shelf_residual
+    procedure :: update => shelf_update
   end type ice_shelf
 
   interface ice_shelf
@@ -94,136 +96,136 @@ contains
       !! according to the arguments of the constructor function.
   end function constructor
 
-  function shelf_dt(self,t)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Computes the derivative of the ice shelf with respect to time. As
-    ! the only property of the ice which explicitely changes with time is
-    ! the ice thickness, that will be the only portion of the returned type
-    ! which actually corresponds to the derivative.
-    !
-    class(ice_shelf), intent(in)   :: self
-    real(r8), intent(in), optional :: t
-      !! Time at which to evaluate the derivative
-    class(integrand), allocatable  :: shelf_dt
-      !! The time rate of change of the ice shelf. Has dynamic type
-      !! [[ice_shelf]].
-  end function shelf_dt
-
-  function shelf_local_error(lhs, rhs) result(error)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Calculates a real scalar to represent the absolute difference between
-    ! two ice_shelf objects. `rhs` must be a a [[ice_shelf]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_shelf), intent(in) :: lhs
-      !! Self
-    class(integrand), intent(in) :: rhs
-      !! The ice shelf object which is being compared against.
-    real(r8) :: error
-      !! The scalar representation of the absolute difference between these
-      !! two ice shelves.
-  end function shelf_local_error
-
-  function shelf_m_shelf(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by another. That is to say, it 
-    ! performs element-wise multiplication of the state vectors 
-    ! representing the two arguments. `rhs` must be an [[ice_shelf]]
-    ! object, or a runtime error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_m_shelf
-
-  function shelf_m_real(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice shelf.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    real(r8), intent(in)          :: rhs
-      !! The scalar being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_m_real
-
-  function real_m_shelf(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice shelf.
-    !
-    real(r8), intent(in)          :: lhs
-      !! The scalar being multiplied by.
-    class(ice_shelf), intent(in)  :: rhs
-      !! Self
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function real_m_shelf
-
-  function shelf_add(lhs, rhs) result(sum)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Adds one ice shelf object to another. That is to say, it performs
-    ! element-wise addition of the state vectors representing the two
-    ! arguments. `rhs` must be an [[ice_shelf]] object, or a runtime
-    ! error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being added.
-    class(integrand), allocatable :: sum
-      !! The sum of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_add
-
-  function shelf_sub(lhs, rhs) result(difference)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Subtracts one ice shelf object from another. That is to say, it 
-    ! performs element-wise addition of the state vectors representing 
-    ! the two arguments. `rhs` must be a a [[ice_shelf]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being subtracted.
-    class(integrand), allocatable :: difference
-      !! The difference of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_sub
-
-  subroutine shelf_assign(lhs, rhs)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Assigns the `rhs` ice shelf to this, `lhs`, one. All components
-    ! will be the same following the assignment.
-    !
-    class(ice_shelf), intent(inout) :: lhs
-      !! Self
-    class(integrand), intent(in)    :: rhs
-      !! The object to be assigned. Must have dynamic type [[ice_shelf]],
-      !! or a runtime error will occur.
-  end subroutine shelf_assign
+!$  function shelf_dt(self,t)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Computes the derivative of the ice shelf with respect to time. As
+!$    ! the only property of the ice which explicitely changes with time is
+!$    ! the ice thickness, that will be the only portion of the returned type
+!$    ! which actually corresponds to the derivative.
+!$    !
+!$    class(ice_shelf), intent(in)   :: self
+!$    real(r8), intent(in), optional :: t
+!$      !! Time at which to evaluate the derivative
+!$    class(integrand), allocatable  :: shelf_dt
+!$      !! The time rate of change of the ice shelf. Has dynamic type
+!$      !! [[ice_shelf]].
+!$  end function shelf_dt
+!$
+!$  function shelf_local_error(lhs, rhs) result(error)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Calculates a real scalar to represent the absolute difference between
+!$    ! two ice_shelf objects. `rhs` must be a a [[ice_shelf]] object, or a
+!$    ! runtime error will occur.
+!$    !
+!$    class(ice_shelf), intent(in) :: lhs
+!$      !! Self
+!$    class(integrand), intent(in) :: rhs
+!$      !! The ice shelf object which is being compared against.
+!$    real(r8) :: error
+!$      !! The scalar representation of the absolute difference between these
+!$      !! two ice shelves.
+!$  end function shelf_local_error
+!$
+!$  function shelf_m_shelf(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice shelf object by another. That is to say, it 
+!$    ! performs element-wise multiplication of the state vectors 
+!$    ! representing the two arguments. `rhs` must be an [[ice_shelf]]
+!$    ! object, or a runtime error will occur.
+!$    !
+!$    class(ice_shelf), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice shelf object being multiplied by.
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
+!$  end function shelf_m_shelf
+!$
+!$  function shelf_m_real(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice shelf object by a scalar. That is to say, it 
+!$    ! performs element-wise multiplication of the state vector 
+!$    ! representing the ice shelf.
+!$    !
+!$    class(ice_shelf), intent(in)  :: lhs
+!$      !! Self
+!$    real(r8), intent(in)          :: rhs
+!$      !! The scalar being multiplied by.
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
+!$  end function shelf_m_real
+!$
+!$  function real_m_shelf(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice shelf object by a scalar. That is to say, it 
+!$    ! performs element-wise multiplication of the state vector 
+!$    ! representing the ice shelf.
+!$    !
+!$    real(r8), intent(in)          :: lhs
+!$      !! The scalar being multiplied by.
+!$    class(ice_shelf), intent(in)  :: rhs
+!$      !! Self
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
+!$  end function real_m_shelf
+!$
+!$  function shelf_add(lhs, rhs) result(sum)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Adds one ice shelf object to another. That is to say, it performs
+!$    ! element-wise addition of the state vectors representing the two
+!$    ! arguments. `rhs` must be an [[ice_shelf]] object, or a runtime
+!$    ! error will occur.
+!$    !
+!$    class(ice_shelf), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice shelf object being added.
+!$    class(integrand), allocatable :: sum
+!$      !! The sum of the two arguments. Has dynamic type [[ice_shelf]].
+!$  end function shelf_add
+!$
+!$  function shelf_sub(lhs, rhs) result(difference)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Subtracts one ice shelf object from another. That is to say, it 
+!$    ! performs element-wise addition of the state vectors representing 
+!$    ! the two arguments. `rhs` must be a a [[ice_shelf]] object, or a
+!$    ! runtime error will occur.
+!$    !
+!$    class(ice_shelf), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice shelf object being subtracted.
+!$    class(integrand), allocatable :: difference
+!$      !! The difference of the two arguments. Has dynamic type [[ice_shelf]].
+!$  end function shelf_sub
+!$
+!$  subroutine shelf_assign(lhs, rhs)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Assigns the `rhs` ice shelf to this, `lhs`, one. All components
+!$    ! will be the same following the assignment.
+!$    !
+!$    class(ice_shelf), intent(inout) :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)    :: rhs
+!$      !! The object to be assigned. Must have dynamic type [[ice_shelf]],
+!$      !! or a runtime error will occur.
+!$  end subroutine shelf_assign
 
   function shelf_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
@@ -233,7 +235,19 @@ contains
     !
     class(ice_shelf), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
+    allocate(thickness, source=this%thickness)
   end function shelf_thickness
+
+  function shelf_velocity(this) result(velocity)
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the velocity of the ice shelf across its domain.
+    !
+    class(ice_shelf), intent(in)     :: this
+    class(vector_field), allocatable :: velocity !! The ice velocity.
+    allocate(velocity, source=this%velocity)
+  end function shelf_velocity
 
   function shelf_density(this) result(density)
     !* Author: Christopher MacMackin

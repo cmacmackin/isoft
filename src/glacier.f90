@@ -30,11 +30,11 @@ module glacier_mod
   !
   use iso_fortran_env, only: r8 => real64
   use foodie, only: integrand
-  use factual_mod, only: scalar_field
+  use factual_mod, only: scalar_field, vector_field
   implicit none
   private
 
-  type, extends(integrand), abstract, public :: glacier
+  type, abstract, public :: glacier
     !* Author: Christopehr MacMackin
     !  Date: April 2016
     !
@@ -42,7 +42,7 @@ module glacier_mod
     ! as ice shelves and ice sheets.
     !
   contains
-    procedure(get_property), deferred :: ice_thickness
+    procedure(get_scalar), deferred   :: ice_thickness
       !! Returns the thickness of the ice in the glacier across the domain.
     procedure(get_r8), deferred       :: ice_density
       !! Returns the density of the ice, which is assumed to be uniform.
@@ -52,17 +52,25 @@ module glacier_mod
       !! Computes the residual of the system of equations describing the
       !! glacier.
     procedure(setter), deferred       :: update
-      !! Sets the state of the glacier  .
+      !! Sets the state of the glacier.
   end type glacier
 
   abstract interface
-    function get_property(this) result(property)
+    function get_scalar(this) result(property)
       import :: glacier
       import :: scalar_field
       class(glacier), intent(in)       :: this
       class(scalar_field), allocatable :: property
         !! The value of whatever property of the glacier is being returned.
-    end function get_property
+    end function get_scalar
+    
+!$    function get_vector(this) result(property)
+!$      import :: glacier
+!$      import :: vector_field
+!$      class(glacier), intent(in)       :: this
+!$      class(vector_field), allocatable :: property
+!$        !! The value of whatever property of the glacier is being returned.
+!$    end function get_vector
     
     function get_r8(this) result(property)
       import :: glacier

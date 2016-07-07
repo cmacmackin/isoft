@@ -31,7 +31,8 @@ module ice_sheet_mod
   use iso_fortran_env, only: r8 => real64
   use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func
-  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field
   implicit none
   private
 
@@ -48,19 +49,20 @@ module ice_sheet_mod
     type(cheb1d_vector_field) :: velocity  
       !! Flow velocity of ice sheet, $\vec{u}$
   contains
-    procedure            :: t => sheet_dt
-    procedure            :: local_error => sheet_local_error
-    procedure            :: integrand_multiply_integrand => sheet_m_sheet
-    procedure            :: integrand_multiply_real => sheet_m_real
-    procedure, pass(rhs) :: real_multiply_integrand => real_m_sheet
-    procedure            :: add => sheet_add
-    procedure            :: sub => sheet_sub
-    procedure            :: assign_integrand => sheet_assign
-    procedure            :: ice_thickness => sheet_thickness
-    procedure            :: ice_density => sheet_density
-    procedure            :: ice_temperature => sheet_temperature
-    procedure            :: residual => sheet_residual
-    procedure            :: update => sheet_update
+!$    procedure            :: t => sheet_dt
+!$    procedure            :: local_error => sheet_local_error
+!$    procedure            :: integrand_multiply_integrand => sheet_m_sheet
+!$    procedure            :: integrand_multiply_real => sheet_m_real
+!$    procedure, pass(rhs) :: real_multiply_integrand => real_m_sheet
+!$    procedure            :: add => sheet_add
+!$    procedure            :: sub => sheet_sub
+!$    procedure            :: assign_integrand => sheet_assign
+    procedure :: ice_thickness => sheet_thickness
+    procedure :: ice_velocity => sheet_velocity
+    procedure :: ice_density => sheet_density
+    procedure :: ice_temperature => sheet_temperature
+    procedure :: residual => sheet_residual
+    procedure :: update => sheet_update
   end type ice_sheet
 
   interface ice_sheet
@@ -89,141 +91,141 @@ contains
     procedure(velocity_func)             :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice sheet.
-    type(ice_shelf)                      :: this
+    type(ice_sheet)                      :: this
       !! An ice sheet object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
   end function constructor
   
-  function sheet_dt(self,t)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Computes the derivative of the ice sheet with respect to time. As
-    ! the only property of the ice which explicitely changes with time is
-    ! the ice thickness, that will be the only portion of the returned type
-    ! which actually corresponds to the derivative.
-    !
-    class(ice_sheet), intent(in)   :: self
-    real(r8), intent(in), optional :: t
-      !! Time at which to evaluate the derivative
-    class(integrand), allocatable  :: sheet_dt
-      !! The time rate of change of the ice sheet. Has dynamic type
-      !! [[ice_sheet]].
-  end function sheet_dt
-
-  function sheet_local_error(lhs, rhs) result(error)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Calculates a real scalar to represent the absolute difference between
-    ! two ice_sheet objects. `rhs` must be a a [[ice_sheet]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_sheet), intent(in) :: lhs
-      !! Self
-    class(integrand), intent(in) :: rhs
-      !! The ice sheet object which is being compared against.
-    real(r8) :: error
-      !! The scalar representation of the absolute difference between these
-      !! two ice shelves.
-  end function sheet_local_error
-
-  function sheet_m_sheet(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice sheet object by another. That is to say, it 
-    ! performs element-wise multiplication of the state vectors 
-    ! representing the two arguments. `rhs` must be an [[ice_sheet]]
-    ! object, or a runtime error will occur.
-    !
-    class(ice_sheet), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice sheet object being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
-  end function sheet_m_sheet
-
-  function sheet_m_real(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice sheet object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice sheet.
-    !
-    class(ice_sheet), intent(in)  :: lhs
-      !! Self
-    real(r8), intent(in)          :: rhs
-      !! The scalar being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
-  end function sheet_m_real
-
-  function real_m_sheet(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice sheet object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice sheet.
-    !
-    real(r8), intent(in)          :: lhs
-      !! The scalar being multiplied by.
-    class(ice_sheet), intent(in)  :: rhs
-      !! Self
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
-  end function real_m_sheet
-
-  function sheet_add(lhs, rhs) result(sum)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Adds one ice sheet object to another. That is to say, it performs
-    ! element-wise addition of the state vectors representing the two
-    ! arguments. `rhs` must be an [[ice_sheet]] object, or a runtime
-    ! error will occur.
-    !
-    class(ice_sheet), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice sheet object being added.
-    class(integrand), allocatable :: sum
-      !! The sum of the two arguments. Has dynamic type [[ice_sheet]].
-  end function sheet_add
-
-  function sheet_sub(lhs, rhs) result(difference)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Subtracts one ice sheet object from another. That is to say, it 
-    ! performs element-wise addition of the state vectors representing 
-    ! the two arguments. `rhs` must be a a [[ice_sheet]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_sheet), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice sheet object being subtracted.
-    class(integrand), allocatable :: difference
-      !! The difference of the two arguments. Has dynamic type [[ice_sheet]].
-  end function sheet_sub
-
-  subroutine sheet_assign(lhs, rhs)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Assigns the `rhs` ice sheet to this, `lhs`, one. All components
-    ! will be the same following the assignment.
-    !
-    class(ice_sheet), intent(inout) :: lhs
-      !! Self
-    class(integrand), intent(in)    :: rhs
-      !! The object to be assigned. Must have dynamic type [[ice_sheet]],
-      !! or a runtime error will occur.
-  end subroutine sheet_assign
+!$  function sheet_dt(self,t)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Computes the derivative of the ice sheet with respect to time. As
+!$    ! the only property of the ice which explicitely changes with time is
+!$    ! the ice thickness, that will be the only portion of the returned type
+!$    ! which actually corresponds to the derivative.
+!$    !
+!$    class(ice_sheet), intent(in)   :: self
+!$    real(r8), intent(in), optional :: t
+!$      !! Time at which to evaluate the derivative
+!$    class(integrand), allocatable  :: sheet_dt
+!$      !! The time rate of change of the ice sheet. Has dynamic type
+!$      !! [[ice_sheet]].
+!$  end function sheet_dt
+!$
+!$  function sheet_local_error(lhs, rhs) result(error)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Calculates a real scalar to represent the absolute difference between
+!$    ! two ice_sheet objects. `rhs` must be a a [[ice_sheet]] object, or a
+!$    ! runtime error will occur.
+!$    !
+!$    class(ice_sheet), intent(in) :: lhs
+!$      !! Self
+!$    class(integrand), intent(in) :: rhs
+!$      !! The ice sheet object which is being compared against.
+!$    real(r8) :: error
+!$      !! The scalar representation of the absolute difference between these
+!$      !! two ice shelves.
+!$  end function sheet_local_error
+!$
+!$  function sheet_m_sheet(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice sheet object by another. That is to say, it 
+!$    ! performs element-wise multiplication of the state vectors 
+!$    ! representing the two arguments. `rhs` must be an [[ice_sheet]]
+!$    ! object, or a runtime error will occur.
+!$    !
+!$    class(ice_sheet), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice sheet object being multiplied by.
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
+!$  end function sheet_m_sheet
+!$
+!$  function sheet_m_real(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice sheet object by a scalar. That is to say, it 
+!$    ! performs element-wise multiplication of the state vector 
+!$    ! representing the ice sheet.
+!$    !
+!$    class(ice_sheet), intent(in)  :: lhs
+!$      !! Self
+!$    real(r8), intent(in)          :: rhs
+!$      !! The scalar being multiplied by.
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
+!$  end function sheet_m_real
+!$
+!$  function real_m_sheet(lhs, rhs) result(product)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Multiplies one ice sheet object by a scalar. That is to say, it 
+!$    ! performs element-wise multiplication of the state vector 
+!$    ! representing the ice sheet.
+!$    !
+!$    real(r8), intent(in)          :: lhs
+!$      !! The scalar being multiplied by.
+!$    class(ice_sheet), intent(in)  :: rhs
+!$      !! Self
+!$    class(integrand), allocatable :: product
+!$      !! The product of the two arguments. Has dynamic type [[ice_sheet]].
+!$  end function real_m_sheet
+!$
+!$  function sheet_add(lhs, rhs) result(sum)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Adds one ice sheet object to another. That is to say, it performs
+!$    ! element-wise addition of the state vectors representing the two
+!$    ! arguments. `rhs` must be an [[ice_sheet]] object, or a runtime
+!$    ! error will occur.
+!$    !
+!$    class(ice_sheet), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice sheet object being added.
+!$    class(integrand), allocatable :: sum
+!$      !! The sum of the two arguments. Has dynamic type [[ice_sheet]].
+!$  end function sheet_add
+!$
+!$  function sheet_sub(lhs, rhs) result(difference)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Subtracts one ice sheet object from another. That is to say, it 
+!$    ! performs element-wise addition of the state vectors representing 
+!$    ! the two arguments. `rhs` must be a a [[ice_sheet]] object, or a
+!$    ! runtime error will occur.
+!$    !
+!$    class(ice_sheet), intent(in)  :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)  :: rhs
+!$      !! The ice sheet object being subtracted.
+!$    class(integrand), allocatable :: difference
+!$      !! The difference of the two arguments. Has dynamic type [[ice_sheet]].
+!$  end function sheet_sub
+!$
+!$  subroutine sheet_assign(lhs, rhs)
+!$    !* Author: Christopher MacMackin
+!$    !  Date: April 2016
+!$    !
+!$    ! Assigns the `rhs` ice sheet to this, `lhs`, one. All components
+!$    ! will be the same following the assignment.
+!$    !
+!$    class(ice_sheet), intent(inout) :: lhs
+!$      !! Self
+!$    class(integrand), intent(in)    :: rhs
+!$      !! The object to be assigned. Must have dynamic type [[ice_sheet]],
+!$      !! or a runtime error will occur.
+!$  end subroutine sheet_assign
 
   function sheet_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
@@ -234,6 +236,17 @@ contains
     class(ice_sheet), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
   end function sheet_thickness
+
+  function sheet_velocity(this) result(velocity)
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the velocity of the ice sheet across its domain.
+    !
+    class(ice_sheet), intent(in)     :: this
+    class(vector_field), allocatable :: velocity !! The ice velocity.
+    allocate(velocity, source=this%velocity)
+  end function sheet_velocity
 
   function sheet_density(this) result(density)
     !* Author: Christopher MacMackin
