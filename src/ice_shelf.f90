@@ -240,7 +240,7 @@ contains
 
   function shelf_velocity(this) result(velocity)
     !* Author: Christopher MacMackin
-    !  Date: April 2016
+    !  Date: July 2016
     !
     ! Returns the velocity of the ice shelf across its domain.
     !
@@ -271,7 +271,7 @@ contains
     real(r8)                     :: temperature !! The ice density.
   end function shelf_temperature
 
-  function shelf_residual(this, melt_rate, basal_drag_parameter, &
+  function shelf_residual(this, previous_state, melt_rate, basal_drag_parameter, &
                           water_density) result(residual) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -282,6 +282,8 @@ contains
     ! one of the equations in the system.
     !
     class(ice_shelf), intent(in)        :: this
+    class(glacier), intent(in)          :: previous_state
+      !! The state of the ice shelf in the previous time step
     class(scalar_field), intent(in)     :: melt_rate
       !! Thickness of the ice above the glacier.
     class(scalar_field), intent(in)     :: basal_drag_parameter

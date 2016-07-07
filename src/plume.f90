@@ -81,9 +81,9 @@ module plume_mod
       ! when an object is being instantiated.
       !
       import :: r8
-      real(r8), dimension(:), intent(in)  :: location
+      real(r8), dimension(:), intent(in) :: location
         !! The position $\vec{x}$ at which to compute the thickness
-      real(r8), dimension(2), allocatable :: thickness
+      real(r8), dimension(2)             :: velocity
         !! The velocity vector of the water in the plume at `location`
     end function velocity_func
   end interface

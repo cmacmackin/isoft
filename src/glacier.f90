@@ -80,12 +80,14 @@ module glacier_mod
         !! The value of whatever property of the glacier is being returned.
     end function get_r8
 
-    function get_residual(this, melt_rate, basal_drag_parameter, &
+    function get_residual(this, previous_state, melt_rate, basal_drag_parameter, &
                           water_density) result(residual)
       import :: glacier
       import :: scalar_field
       import :: r8
       class(glacier), intent(in)          :: this
+      class(glacier), intent(in)          :: previous_state
+        !! The state of the glacier in the previous time step
       class(scalar_field), intent(in)     :: melt_rate
         !! Thickness of the ice above the glacier
       class(scalar_field), intent(in)     :: basal_drag_parameter
@@ -127,7 +129,7 @@ module glacier_mod
       
     function velocity_func(location) result(velocity)
       !* Author: Chris MacMackin
-      !  Date: April 2016
+      !  Date: July 2016
       !
       ! Abstract interface for function providing the [[glacier]] velocity
       ! when a concrete object is being instantiated.
