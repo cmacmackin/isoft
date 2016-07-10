@@ -30,7 +30,7 @@ module cryosphere_mod
   ! is the fundamental data type of the ISOFT software suite.
   !
   use iso_fortran_env, only: r8 => real64
-  use foodie, only: integrand
+  !use foodie, only: integrand
   use basal_surface_mod, only: basal_surface
   use glacier_mod, only: glacier
   implicit none

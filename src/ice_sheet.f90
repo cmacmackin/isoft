@@ -29,7 +29,7 @@ module ice_sheet_mod
   ! a vertically integrated model of an ice sheet.
   !
   use iso_fortran_env, only: r8 => real64
-  use foodie, only: integrand
+  !use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field

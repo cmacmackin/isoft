@@ -29,7 +29,7 @@ module glacier_mod
   ! as ice sheets and ice shelves.
   !
   use iso_fortran_env, only: r8 => real64
-  use foodie, only: integrand
+  !use foodie, only: integrand
   use factual_mod, only: scalar_field, vector_field
   implicit none
   private
