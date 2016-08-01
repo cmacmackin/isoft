@@ -20,7 +20,7 @@
 !  MA 02110-1301, USA.
 !  
 
-module ice_shelf_mod
+module ice_shelf_test
   !* Author: Christopher MacMackin
   !  Date: April 2016
   !  License: GPLv3
@@ -29,242 +29,180 @@ module ice_shelf_mod
   ! a vertically integrated model of an ice shelf.
   !
   use iso_fortran_env, only: r8 => real64
-  use foodie, only: integrand
-  use glacier_mod, only: glacier
-  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use pfunit_mod
+  use ice_shelf_mod, only: ice_shelf
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field
   implicit none
-  private
 
-  type, extends(glacier), public :: ice_shelf
-    !* Author: Chris MacMackin
-    !  Date: April 2016
-    !
-    ! A concrete implementation of the [[glacier]] type, using a vertically
-    ! integrated model of an ice shelf. This model is 1-dimensional only.
-    !
-    private
-    type(cheb1d_scalar_field) :: thickness 
-      !! Thickness of ice shelf, $h$
-    type(cheb1d_vector_field) :: velocity  
-      !! Flow velocity of ice shelf, $\vec{u}$
+  integer, parameter :: resolution = 50
+  real(r8), parameter :: big_x = 2.702702703
+
+  @TestCase
+  type, extends(testcase) :: test_shelf
+    type(ice_shelf) :: shelf1, shelf2
+    integer         :: nodes = resolution
+    real(r8)        :: lower1 = 0.0_r8, upper1 = 2.7_r8
+    real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
+    real(r8)        :: density = 1.0_r8, temperature = -15._r8, &
+                       lambda = 3.1_r8, chi = 7.0e-5_r8
   contains
-    procedure            :: t => shelf_dt
-    procedure            :: local_error => shelf_local_error
-    procedure            :: integrand_multiply_integrand => shelf_m_shelf
-    procedure            :: integrand_multiply_real => shelf_m_real
-    procedure, pass(rhs) :: real_multiply_integrand => real_m_shelf
-    procedure            :: add => shelf_add
-    procedure            :: sub => shelf_sub
-    procedure            :: assign_integrand => shelf_assign
-    procedure            :: ice_thickness => shelf_thickness
-    procedure            :: ice_density => shelf_density
-    procedure            :: ice_temperature => shelf_temperature
-    procedure            :: residual => shelf_residual
-    procedure            :: update => shelf_update
-  end type ice_shelf
+    procedure :: setup
+  end type test_shelf
 
 contains
   
-  function shelf_dt(self,t)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Computes the derivative of the ice shelf with respect to time. As
-    ! the only property of the ice which explicitely changes with time is
-    ! the ice thickness, that will be the only portion of the returned type
-    ! which actually corresponds to the derivative.
-    !
-    class(ice_shelf), intent(in)   :: self
-    real(r8), intent(in), optional :: t
-      !! Time at which to evaluate the derivative
-    class(integrand), allocatable  :: shelf_dt
-      !! The time rate of change of the ice shelf. Has dynamic type
-      !! [[ice_shelf]].
-  end function shelf_dt
+  function thickness1(location), result(thickness)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = (1._r8 - location(1)/big_x)/velocity1(location)
+  end function thickness1
+  
+  function thickness2(location), result(thickness)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = 1.0_r8/abs(location(1))
+  end function thickness2
 
-  function shelf_local_error(lhs, rhs) result(error)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Calculates a real scalar to represent the absolute difference between
-    ! two ice_shelf objects. `rhs` must be a a [[ice_shelf]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_shelf), intent(in) :: lhs
-      !! Self
-    class(integrand), intent(in) :: rhs
-      !! The ice shelf object which is being compared against.
-    real(r8) :: error
-      !! The scalar representation of the absolute difference between these
-      !! two ice shelves.
-  end function shelf_local_error
+  function velocity1(location) result(velocity)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+  end function velocity1
 
-  function shelf_m_shelf(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by another. That is to say, it 
-    ! performs element-wise multiplication of the state vectors 
-    ! representing the two arguments. `rhs` must be an [[ice_shelf]]
-    ! object, or a runtime error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_m_shelf
+  function velocity2(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity(1) = 1.0_r8 - exp(location(1)/8.0_r8)
+  end function velocity2
 
-  function shelf_m_real(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice shelf.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    real(r8), intent(in)          :: rhs
-      !! The scalar being multiplied by.
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_m_real
+  subroutine setup(this)
+    class(test_shelf), intent(inout) :: this
+    real(r8), dimension(1,2) :: domain1, domain2
+    domain1(1,1) = this%lower1
+    domain1(1,2) = this%upper1
+    domain2(1,1) = this%lower2
+    domain2(1,2) = this%upper2
+    this%shelf1 = ice_shelf(domain1, this%nodes, thickness1, velocity1)
+    this%shelf2 = ice_shelf(domain2, this%nodes, thickness2, velocity2, &
+                           this%density, this%temperature, this%lambda, this%chi)
+  end subroutine setup
 
-  function real_m_shelf(lhs, rhs) result(product)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-    ! performs element-wise multiplication of the state vector 
-    ! representing the ice shelf.
-    !
-    real(r8), intent(in)          :: lhs
-      !! The scalar being multiplied by.
-    class(ice_shelf), intent(in)  :: rhs
-      !! Self
-    class(integrand), allocatable :: product
-      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-  end function real_m_shelf
+  subroutine test_field(expected, actual)
+    class(abstract_field) :: expected, actual
+    dom = actual%domain(),.true.)
+    @assertEqual(expected%domain(),actual%domain(),message='Incorrect domain returned.')
+    @assertEqual(expected%resolution(),actual%resolution(),message='Incorrect resolution returned.')
+    select type(expected)
+    class is(scalar_field)
+      select type(actual)
+      class is(scalar_field)
+        @assertTrue(expected == actual,message='Incorrect field contents')
+      class default
+        error stop 1
+      end select
+    class is(vector_field)
+      select type(actual)
+      class is(vector_field)
+        @assertTrue(expected == actual,message='Incorrect field contents')
+      class default
+        error stop 1
+      end select
+    class default
+       error stop 1
+    end select
+  end subroutine test_field
 
-  function shelf_add(lhs, rhs) result(sum)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Adds one ice shelf object to another. That is to say, it performs
-    ! element-wise addition of the state vectors representing the two
-    ! arguments. `rhs` must be an [[ice_shelf]] object, or a runtime
-    ! error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being added.
-    class(integrand), allocatable :: sum
-      !! The sum of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_add
+  @Test
+  subroutine test_thickness(this)
+    class(test_shelf), intent(inout) :: this
+    class(cheb1d_scalar_field) :: actual_thickness
+    class(cheb1d_scalar_field) :: expected_thickness
+    real(r8), dimension(2) :: dom
+    integer, dimension(1) :: res
+    expected_thickness = cheb1d_scalar_field(this%nodes, thickness1, &
+                                             this%lower1, this%upper1)
+    actual_thickness = this%shelf1%ice_thickness()
+    call test_field(expected_field, actual_field)
+    expected_thickness = cheb1d_scalar_field(this%nodes, thickness2, &
+                                             this%lower2, this%upper2)
+    actual_thickness = this%shelf2%ice_thickness()
+    call test_field(expected_field, actual_field)
+  end subroutine test_thickness
 
-  function shelf_sub(lhs, rhs) result(difference)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Subtracts one ice shelf object from another. That is to say, it 
-    ! performs element-wise addition of the state vectors representing 
-    ! the two arguments. `rhs` must be a a [[ice_shelf]] object, or a
-    ! runtime error will occur.
-    !
-    class(ice_shelf), intent(in)  :: lhs
-      !! Self
-    class(integrand), intent(in)  :: rhs
-      !! The ice shelf object being subtracted.
-    class(integrand), allocatable :: difference
-      !! The difference of the two arguments. Has dynamic type [[ice_shelf]].
-  end function shelf_sub
+!$  @Test
+!$  subroutine test_velocity(this)
+!$    class(test_shelf), intent(inout) :: this
+!$    class(cheb1d_vector_field) :: actual_thickness
+!$    class(cheb1d_vector_field) :: expected_thickness
+!$    real(r8), dimension(2) :: dom
+!$    integer, dimension(1) :: res
+!$    expected_thickness = cheb1d_scalar_field(this%nodes, velocity1, &
+!$                                             this%lower1, this%upper1)
+!$    actual_thickness = this%shelf1%velocity_thickness()
+!$    call test_field(expected_field, actual_field)
+!$    expected_thickness = cheb1d_scalar_field(this%nodes, velocity2, &
+!$                                             this%lower2, this%upper2)
+!$    actual_thickness = this%shelf2%velocity_thickness()
+!$    call test_field(expected_field, actual_field)
+!$  end subroutine test_velocity
 
-  subroutine shelf_assign(lhs, rhs)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Assigns the `rhs` ice shelf to this, `lhs`, one. All components
-    ! will be the same following the assignment.
-    !
-    class(ice_shelf), intent(inout) :: lhs
-      !! Self
-    class(integrand), intent(in)    :: rhs
-      !! The object to be assigned. Must have dynamic type [[ice_shelf]],
-      !! or a runtime error will occur.
-  end subroutine shelf_assign
+  @Test
+  subroutine test_density(this)
+    class(test_shelf), intent(inout) :: this
+    @assertEqual(0.889320388_r8,this%shelf1%ice_density(),message='Ice density incorrect')
+    @assertEqual(this%density,this%shelf2%ice_density(),message='Ice density incorrect')
+  end subroutine test_density
 
-  function shelf_thickness(this) result(thickness)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Returns the thickness of the ice shelf across its domain.
-    !
-    class(ice_shelf), intent(in)     :: this
-    class(scalar_field), allocatable :: thickness !! The ice thickness.
-  end function shelf_thickness
+  @Test
+  subroutine test_temperature(this)
+    class(test_shelf), intent(inout) :: this
+    @assertEqual(-10._r8,this%shelf1%ice_temperature(),message='Ice density incorrect')
+    @assertEqual(this%temperature,this%shelf2%ice_temperature(),message='Ice density incorrect')
+  end subroutine test_temperature
 
-  function shelf_density(this) result(density)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Returns the density of the ice in the shelf, which is assumed to be
-    ! uniform across its domain.
-    !
-    class(ice_shelf), intent(in) :: this
-    real(r8)                     :: density !! The ice density.
-  end function shelf_density
+  @Test
+  subroutine test_residual(this)
+    class(test_shelf), intent(inout)    :: this
+    real(r8), dimension(:), allocatable :: actual, expected
+    type(cheb1d_scalar_field) :: water, melt, drag
+    water = cheb1d_scalar_field(this%nodes, water_density, this%lower1, &
+                                this%upper1)
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
+    drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
+                               this%upper1)
+    actual = this%shelf1%residual(this,melt,drag,water)
+    allocate(expected, mold=actual)
+    expected = 0.0_r8
+    @assertEqual(expected,actual,message='Incorrect residual returned.')
+  contains
+    function water_density(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: water_density
+      water_density = 1.0_r8
+    end function water_density
+    function melt_rate(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: melt_rate
+      melt_rate = 1.0_r8 
+    end function melt_rate
+    function drag_coef(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: drag_coef
+      zero = 0.0_r8
+    end function drag_coef
+  end subroutine test_residual
 
-  function shelf_temperature(this) result(temperature)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Returns the density of the ice in the shelf, which is assumed to be
-    ! uniform across its domain.
-    !
-    class(ice_shelf), intent(in) :: this
-    real(r8)                     :: temperature !! The ice density.
-  end function shelf_temperature
+  @Test
+  subroutine test_update(this)
+    class(test_shelf), intent(inout)    :: this
+    real(r8), dimension(:), allocatable :: state_vector
+    @assertNotAll(this%shelf1%state_vector()==this%shelf2%state_vector(),message='Shelf returning wronge state vector')
+    call this%shelf2%update(this%shelf1%state_vector())
+    @assertEqual(this%shelf1%state_vector,this%shelf2%state_vector,message='State vector not update.')
+  end subroutine test_update
 
-  function shelf_residual(this, melt_rate, basal_drag_parameter, &
-                          water_density) result(residual) 
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Returns the residual when the current state of the glacier is run
-    ! through the system of equations describing it. The residual takes the
-    ! form of a 1D array, with each element respresenting the residual for
-    ! one of the equations in the system.
-    !
-    class(ice_shelf), intent(in)        :: this
-    class(scalar_field), intent(in)     :: melt_rate
-      !! Thickness of the ice above the glacier.
-    class(scalar_field), intent(in)     :: basal_drag_parameter
-      !! A paramter, e.g. coefficient of friction, needed to calculate the
-      !! drag on basal surface of the glacier.
-    class(scalar_field), intent(in)     :: water_density
-      !! The density of the water below the glacier.
-    real(r8), dimension(:), allocatable :: residual
-      !! The residual of the system of equations describing the glacier.
-  end function shelf_residual
-
-  subroutine shelf_update(this, state_vector, time)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Updates the state of the ice shelf from its state vector. The state
-    ! vector is a real array containing the value of each of the ice shelf's
-    ! properties at each of the locations on the grid used in discretization.
-    !
-    class(ice_shelf), intent(inout)     :: this
-    real(r8), dimension(:), intent(in)  :: state_vector
-      !! A real array containing the data describing the state of the
-      !! glacier.
-    real(r8), intent(in), optional      :: time
-      !! The time at which the glacier is in this state. If not present
-      !! then assumed to be same as previous value passed.
-  end subroutine shelf_update
-
-end module ice_shelf_mod
+end module ice_shelf_test
