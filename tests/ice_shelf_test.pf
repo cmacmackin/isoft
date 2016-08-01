@@ -175,6 +175,7 @@ contains
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
     actual = this%shelf1%residual(this,melt,drag,water)
+    @assertEqual(this%shelf1%data_size(),size(actual),message='Residual array of wronge size')
     allocate(expected, mold=actual)
     expected = 0.0_r8
     @assertEqual(expected,actual,message='Incorrect residual returned.')
@@ -200,6 +201,7 @@ contains
   subroutine test_update(this)
     class(test_shelf), intent(inout)    :: this
     real(r8), dimension(:), allocatable :: state_vector
+    @assertEqual(this%shelf1%data_size(),size(this%shelf1%state_vector),message='State vector of wrong size')
     @assertNotAll(this%shelf1%state_vector()==this%shelf2%state_vector(),message='Shelf returning wronge state vector')
     call this%shelf2%update(this%shelf1%state_vector())
     @assertEqual(this%shelf1%state_vector,this%shelf2%state_vector,message='State vector not update.')
