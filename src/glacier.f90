@@ -53,10 +53,13 @@ module glacier_mod
       !! glacier.
     procedure(setter), deferred       :: update
       !! Sets the state of the glacier.
+    procedure(get_i), deferred        :: data_size
+      !! Returns the number of elements in the glacier's state vector
+    procedure(get_r81d), deferred     :: state_vector
   end type glacier
 
   abstract interface
-    function get_scalar(this) result(property)
+    pure function get_scalar(this) result(property)
       import :: glacier
       import :: scalar_field
       class(glacier), intent(in)       :: this
@@ -72,7 +75,7 @@ module glacier_mod
 !$        !! The value of whatever property of the glacier is being returned.
 !$    end function get_vector
     
-    function get_r8(this) result(property)
+    pure function get_r8(this) result(property)
       import :: glacier
       import :: r8
       class(glacier), intent(in) :: this
@@ -99,6 +102,14 @@ module glacier_mod
         !! The residual of the system of equations describing the glacier
     end function get_residual
 
+    pure function get_r81d(this) result(state_vector)
+      import :: glacier
+      import :: r8
+      class(glacier), intent(in)          :: this
+      real(r8), dimension(:), allocatable :: state_vector
+        !! The state vector of the glacier
+    end function get_r81d
+
     subroutine setter(this, state_vector, time)
       import :: glacier
       import :: r8
@@ -110,6 +121,13 @@ module glacier_mod
         !! The time at which the glacier is in this state. If not present
         !! then assumed to be same as previous value passed.
     end subroutine setter
+
+    pure function get_i(this) result(property)
+      import :: glacier
+      class(glacier), intent(in) :: this
+      integer                    :: property
+        !! The value of whatever property of the glacier is being returned.
+    end function get_i
   end interface
 
   abstract interface
@@ -137,7 +155,7 @@ module glacier_mod
       import :: r8
       real(r8), dimension(:), intent(in) :: location
         !! The position $\vec{x}$ at which to compute the thickness
-      real(r8), dimension(:), allocatable :: thickness
+      real(r8), dimension(:), allocatable :: velocity
         !! The velocity vector of the ice in the glacier at `location`
     end function velocity_func
   end interface

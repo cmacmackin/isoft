@@ -116,7 +116,7 @@ module nitsol_mod
         !! Work array with length depending on the solver used as follows:
         !!
         !!GMRES
-      !!:    $n\times(\text{kdmax}+5)+\text{kdmax}\times(\text{kdmax}+3)$,
+        !!:    $n\times(\text{kdmax}+5)+\text{kdmax}\times(\text{kdmax}+3)$,
         !!     where kdmax is the maximum Krylove subspace dimension, either
         !!     the default value of 20 or another value specified by the user
         !!BiCGSTAB

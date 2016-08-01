@@ -48,6 +48,12 @@ module ice_shelf_mod
       !! Thickness of ice shelf, $h$
     type(cheb1d_vector_field) :: velocity  
       !! Flow velocity of ice shelf, $\vec{u}$
+    real(r8)                  :: lambda
+      !! The dimensionless ratio 
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
+    real(r8)                  :: chi
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -58,11 +64,13 @@ module ice_shelf_mod
 !$    procedure            :: sub => shelf_sub
 !$    procedure            :: assign_integrand => shelf_assign
     procedure :: ice_thickness => shelf_thickness
-    procedure :: ice_velocity => shelf_velocity
+!$    procedure :: ice_velocity => shelf_velocity
     procedure :: ice_density => shelf_density
     procedure :: ice_temperature => shelf_temperature
     procedure :: residual => shelf_residual
     procedure :: update => shelf_update
+    procedure :: data_size => shelf_data_size
+    procedure :: state_vector => shelf_state_vector
   end type ice_shelf
 
   interface ice_shelf
@@ -71,7 +79,8 @@ module ice_shelf_mod
 
 contains
   
-  function constructor(domain, thickness, velocity) result(this)
+  function constructor(domain, resolution, thickness, velocity, density, &
+                       temperature, lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -85,12 +94,24 @@ contains
       !! the boundaries apply. If the second index is 1 then it corresponds
       !! to the lower bound. If the second index is 2 then it corresponds to
       !! the upper bound.
+    integer, dimension(:), intent(in)    :: resolution
+      !! The number of data points in each dimension.
     procedure(thickness_func)            :: thickness
       !! A function which calculates the initial value of the thickness of 
       !! the ice shelf at a given location.
     procedure(velocity_func)             :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice shelf.
+    real(r8), intent(in), optional       :: density
+      !! The density of the ice in the ice shelf.
+    real(r8), intent(in), optional       :: temperature
+      !! The temperature of the ice in the ice shelf.
+    real(r8), intent(in), optional       :: lambda
+      !! The dimensionless ratio 
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$.
+    real(r8), intent(in), optional       :: chi
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$.
     type(ice_shelf)                      :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
@@ -227,7 +248,7 @@ contains
 !$      !! or a runtime error will occur.
 !$  end subroutine shelf_assign
 
-  function shelf_thickness(this) result(thickness)
+  pure function shelf_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -238,7 +259,7 @@ contains
     allocate(thickness, source=this%thickness)
   end function shelf_thickness
 
-  function shelf_velocity(this) result(velocity)
+  pure function shelf_velocity(this) result(velocity)
     !* Author: Christopher MacMackin
     !  Date: July 2016
     !
@@ -249,7 +270,7 @@ contains
     allocate(velocity, source=this%velocity)
   end function shelf_velocity
 
-  function shelf_density(this) result(density)
+  pure function shelf_density(this) result(density)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -260,7 +281,7 @@ contains
     real(r8)                     :: density !! The ice density.
   end function shelf_density
 
-  function shelf_temperature(this) result(temperature)
+  pure function shelf_temperature(this) result(temperature)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -311,5 +332,31 @@ contains
       !! The time at which the glacier is in this state. If not present
       !! then assumed to be same as previous value passed.
   end subroutine shelf_update
+
+  pure function shelf_data_size(this)
+    !* Author: Christopher MacMackin
+    !  Date: August 2016
+    !
+    ! Returns the number of elements in the ice shelf's state vector.
+    ! This is the size of the vector returned by [[ice_shelf:residual]]
+    ! and [[ice_shelf:state_vector]]and taken as an argument by 
+    ! [[ice_shelf:update]].
+    !
+    class(ice_shelf), intent(in) :: this
+    integer :: shelf_data_size
+      !! The number of elements in the ice shelf's state vector.
+  end function shelf_data_size
+
+  pure function shelf_state_vector(this) result(state_vector) 
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the state vector for the current state of the ice shelf. 
+    ! This residual takes the form of a 1D array.
+    !
+    class(ice_shelf), intent(in)        :: this
+    real(r8), dimension(:), allocatable :: state_vector
+      !! The state vector describing the ice shelf.
+  end function shelf_state_vector
 
 end module ice_shelf_mod

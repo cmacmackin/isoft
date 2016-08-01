@@ -50,6 +50,18 @@ module plume_mod
       !! The temperature of the plume
     type(cheb1d_scalar_field) :: salinity
       !! The salinity of the plume
+    type(cheb1d_scalar_field) :: melt_rate
+      !! The rate at which the plume is causing the overlying ice shelf to
+      !! lose thickness
+    real(r8)                  :: delta
+      !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
+    real(r8)                  :: nu
+      !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
+    real(r8)                  :: mu
+      !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
+    real(r8)                  :: sigma
+      !! The dimensionless ratio 
+      !! $\sigma \equiv \frac{U_0^2}{h_0g} = S_0\beta_S$
   contains
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
@@ -90,8 +102,8 @@ module plume_mod
 
 contains
 
-  function constructor(domain, thickness, velocity, temperature, salinity) &
-                                                                result(this)
+  function constructor(domain, resolution, thickness, velocity, temperature, &
+                       salinity, delta, nu, mu, sigma) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -105,6 +117,8 @@ contains
       !! boundaries apply. If the second index is 1 then it corresponds to
       !! the lower bound. If the second index is 2 then it corresponds to
       !! the upper bound.
+    integer, dimension(:), intent(in)    :: resolution
+      !! The number of data points in each dimension
     procedure(scalar_func)               :: thickness
       !! A function which calculates the initial value of the thickness of 
       !! the plume at a given location.
@@ -117,9 +131,19 @@ contains
     procedure(scalar_func)               :: salinity
       !! A function which calculates the initial value of the salinity of 
       !! the plume at a given location.
+    real(r8), intent(in) :: delta
+      !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
+    real(r8), intent(in) :: nu
+      !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
+    real(r8), intent(in) :: mu
+      !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
+    real(r8), intent(in) :: sigma
+      !! The dimensionless ratio 
+      !! $\sigma \equiv \frac{U_0^2}{h_0g} = S_0\beta_S$
     type(plume) :: this
       !! A plume object with its domain and initial conditions set according
       !! to the arguments of the constructor function.
+    
   end function constructor
 
   function plume_melt(this) result(melt)
@@ -132,6 +156,7 @@ contains
     class(plume), intent(in)         :: this
     class(scalar_field), allocatable :: melt
       !! The melt rate at the base of the ice shelf.
+    allocate(melt, source=this%melt_rate)
   end function plume_melt
 
   function plume_drag_parameter(this) result(drag)
@@ -156,7 +181,9 @@ contains
     ! Computes and returns the density of the plume water beneath the ice
     ! shelf. The density of this water would vary depending on how much 
     ! saline ambient water has been entrained into the plume versus how
-    ! much fresh water has been released due to melting.
+    ! much fresh water has been released due to melting. However, if the
+    ! Boussinesq approximation is used, then it may simply be a reference 
+    ! density.
     !
     class(plume), intent(in)         :: this
     class(scalar_field), allocatable :: density
@@ -164,12 +191,12 @@ contains
   end function plume_water_density
    
   function plume_residual(this, ice_thickness, ice_density, ice_temperature) &
-                                                              result(residual)
+                                                            result(residual)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
     ! Using the current state of the plume, this computes the residual
-    ! of the system of equatiosn which is used to describe the it.
+    ! of the system of equations which is used to describe the it.
     ! The residual takes the form of a 1D array, with each element 
     ! respresenting the residual for one of the equations in the system.
     !

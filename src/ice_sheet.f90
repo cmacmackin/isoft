@@ -48,6 +48,12 @@ module ice_sheet_mod
       !! Thickness of ice sheet, $h$
     type(cheb1d_vector_field) :: velocity  
       !! Flow velocity of ice sheet, $\vec{u}$
+    real(r8)                  :: lambda
+      !! The dimensionless ratio 
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
+    real(r8)                  :: chi
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
   contains
 !$    procedure            :: t => sheet_dt
 !$    procedure            :: local_error => sheet_local_error
@@ -58,11 +64,13 @@ module ice_sheet_mod
 !$    procedure            :: sub => sheet_sub
 !$    procedure            :: assign_integrand => sheet_assign
     procedure :: ice_thickness => sheet_thickness
-    procedure :: ice_velocity => sheet_velocity
+!$    procedure :: ice_velocity => sheet_velocity
     procedure :: ice_density => sheet_density
     procedure :: ice_temperature => sheet_temperature
     procedure :: residual => sheet_residual
     procedure :: update => sheet_update
+    procedure :: data_size => sheet_data_size
+    procedure :: state_vector => sheet_state_vector
   end type ice_sheet
 
   interface ice_sheet
@@ -71,7 +79,8 @@ module ice_sheet_mod
 
 contains
   
-  function constructor(domain, thickness, velocity) result(this)
+  function constructor(domain, resolution, thickness, velocity, lambda, chi) &
+                                                                result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -85,12 +94,20 @@ contains
       !! the boundaries apply. If the second index is 1 then it corresponds
       !! to the lower bound. If the second index is 2 then it corresponds to
       !! the upper bound.
+    integer, dimension(:), intent(in)    :: resolution
+      !! The number of data points in each dimension
     procedure(thickness_func)            :: thickness
       !! A function which calculates the initial value of the thickness of 
       !! the ice sheet at a given location.
     procedure(velocity_func)             :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice sheet.
+    real(r8), intent(in)                 :: lambda
+      !! The dimensionless ratio 
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
+    real(r8), intent(in)                 :: chi
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     type(ice_sheet)                      :: this
       !! An ice sheet object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
@@ -227,7 +244,7 @@ contains
 !$      !! or a runtime error will occur.
 !$  end subroutine sheet_assign
 
-  function sheet_thickness(this) result(thickness)
+  pure function sheet_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -248,7 +265,7 @@ contains
     allocate(velocity, source=this%velocity)
   end function sheet_velocity
 
-  function sheet_density(this) result(density)
+  pure function sheet_density(this) result(density)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -259,7 +276,7 @@ contains
     real(r8)                     :: density !! The ice density.
   end function sheet_density
 
-  function sheet_temperature(this) result(temperature)
+  pure function sheet_temperature(this) result(temperature)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -310,5 +327,31 @@ contains
       !! The time at which the glacier is in this state. If not present
       !! then assumed to be same as previous value passed.
   end subroutine sheet_update
+
+  pure function sheet_data_size(this)
+    !* Author: Christopher MacMackin
+    !  Date: August 2016
+    !
+    ! Returns the number of elements in the ice sheet's state vector.
+    ! This is the size of the vector returned by [[ice_sheet:residual]]
+    ! and [[ice_shelf:state_vector]]and taken as an argument by 
+    ! [[ice_shelf:update]].
+    !
+    class(ice_sheet), intent(in) :: this
+    integer :: sheet_data_size
+      !! The number of elements in the ice sheet's state vector.
+  end function sheet_data_size
+
+  pure function sheet_state_vector(this) result(state_vector) 
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the state vector for the current state of the ice sheet. 
+    ! This residual takes the form of a 1D array.
+    !
+    class(ice_sheet), intent(in)        :: this
+    real(r8), dimension(:), allocatable :: state_vector
+      !! The state vector describing the ice sheet.
+  end function sheet_state_vector
 
 end module ice_sheet_mod
