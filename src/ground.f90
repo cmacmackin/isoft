@@ -48,6 +48,8 @@ module ground_mod
     procedure :: water_density => ground_water_density
     procedure :: residual => ground_residual
     procedure :: update => ground_update
+    procedure :: data_size => ground_data_size
+    procedure :: state_vector => ground_state_vector
   end type ground
 
   interface ground
@@ -145,5 +147,31 @@ contains
       !! The time at which the ground is in this state. If not
       !! present then assumed to be same as previous value passed.
   end subroutine ground_update
+
+  pure function ground_data_size(this)
+    !* Author: Christopher MacMackin
+    !  Date: August 2016
+    !
+    ! Returns the number of elements in the ground's state vector.
+    ! This is the size of the vector returned by [[ground:residual]]
+    ! and [[ground:state_vector]] and taken as an argument by 
+    ! [[ground:update]].
+    !
+    class(ground), intent(in) :: this
+    integer                   :: ground_data_size
+      !! The number of elements in the ground's state vector.
+  end function ground_data_size
+
+  pure function ground_state_vector(this) result(state_vector) 
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the state vector for the current state of the ground. 
+    ! This takes the form of a 1D array.
+    !
+    class(ground), intent(in)           :: this
+    real(r8), dimension(:), allocatable :: state_vector
+      !! The state vector describing the ground.
+  end function ground_state_vector
 
 end module ground_mod

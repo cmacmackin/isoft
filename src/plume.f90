@@ -68,6 +68,8 @@ module plume_mod
     procedure :: water_density => plume_water_density
     procedure :: residual => plume_residual
     procedure :: update => plume_update
+    procedure :: data_size => plume_data_size
+    procedure :: state_vector => plume_state_vector
   end type plume
 
   abstract interface
@@ -227,5 +229,31 @@ contains
       !! The time at which the plume is in this state. If not
       !! present then assumed to be same as previous value passed.
   end subroutine plume_update
+
+  pure function plume_data_size(this)
+    !* Author: Christopher MacMackin
+    !  Date: August 2016
+    !
+    ! Returns the number of elements in the plume's state vector.
+    ! This is the size of the vector returned by [[plume:residual]]
+    ! and [[plume:state_vector]] and taken as an argument by 
+    ! [[plume:update]].
+    !
+    class(plume), intent(in) :: this
+    integer                  :: plume_data_size
+      !! The number of elements in the plume's state vector.
+  end function plume_data_size
+
+  pure function plume_state_vector(this) result(state_vector) 
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the state vector for the current state of the plume. 
+    ! This takes the form of a 1D array.
+    !
+    class(plume), intent(in)            :: this
+    real(r8), dimension(:), allocatable :: state_vector
+      !! The state vector describing the plume.
+  end function plume_state_vector
 
 end module plume_mod

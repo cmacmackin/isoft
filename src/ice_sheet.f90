@@ -334,7 +334,7 @@ contains
     !
     ! Returns the number of elements in the ice sheet's state vector.
     ! This is the size of the vector returned by [[ice_sheet:residual]]
-    ! and [[ice_shelf:state_vector]]and taken as an argument by 
+    ! and [[ice_shelf:state_vector]] and taken as an argument by 
     ! [[ice_shelf:update]].
     !
     class(ice_sheet), intent(in) :: this
@@ -347,7 +347,7 @@ contains
     !  Date: April 2016
     !
     ! Returns the state vector for the current state of the ice sheet. 
-    ! This residual takes the form of a 1D array.
+    ! This takes the form of a 1D array.
     !
     class(ice_sheet), intent(in)        :: this
     real(r8), dimension(:), allocatable :: state_vector

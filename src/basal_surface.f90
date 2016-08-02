@@ -55,6 +55,11 @@ module basal_surface_mod
       !! basal surface.
     procedure(setter), deferred       :: update
       !! Sets the state of the basal surface
+    procedure(get_i), deferred        :: data_size
+      !! Returns the number of elements in the glacier's state vector
+    procedure(get_r81d), deferred     :: state_vector
+      !! Returns the glacier's state vector, a 1D array with all necessary 
+      !! data to describe its state.
   end type basal_surface
 
   abstract interface
@@ -84,6 +89,14 @@ module basal_surface_mod
         !! surface.
     end function get_residual
 
+    pure function get_r81d(this) result(state_vector)
+      import :: basal_surface
+      import :: r8
+      class(basal_surface), intent(in)          :: this
+      real(r8), dimension(:), allocatable :: state_vector
+        !! The state vector of the basal surface
+    end function get_r81d
+
     subroutine setter(this, state_vector, time)
       import :: basal_surface
       import :: r8
@@ -95,6 +108,14 @@ module basal_surface_mod
         !! The time at which the basal surface is in this state. If not
         !! present then assumed to be same as previous value passed.
     end subroutine setter
+
+    pure function get_i(this) result(property)
+      import :: basal_surface
+      class(basal_surface), intent(in) :: this
+      integer                    :: property
+        !! The value of whatever property of the basal surface is being
+        !! returned.
+    end function get_i
   end interface
 
 end module basal_surface_mod

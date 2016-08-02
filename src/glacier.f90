@@ -56,6 +56,8 @@ module glacier_mod
     procedure(get_i), deferred        :: data_size
       !! Returns the number of elements in the glacier's state vector
     procedure(get_r81d), deferred     :: state_vector
+      !! Returns the glacier's state vector, a 1D array with all necessary 
+      !! data to describe its state.
   end type glacier
 
   abstract interface

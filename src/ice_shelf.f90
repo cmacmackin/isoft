@@ -339,11 +339,11 @@ contains
     !
     ! Returns the number of elements in the ice shelf's state vector.
     ! This is the size of the vector returned by [[ice_shelf:residual]]
-    ! and [[ice_shelf:state_vector]]and taken as an argument by 
+    ! and [[ice_shelf:state_vector]] and taken as an argument by 
     ! [[ice_shelf:update]].
     !
     class(ice_shelf), intent(in) :: this
-    integer :: shelf_data_size
+    integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
   end function shelf_data_size
 
@@ -352,7 +352,7 @@ contains
     !  Date: April 2016
     !
     ! Returns the state vector for the current state of the ice shelf. 
-    ! This residual takes the form of a 1D array.
+    ! This takes the form of a 1D array.
     !
     class(ice_shelf), intent(in)        :: this
     real(r8), dimension(:), allocatable :: state_vector
