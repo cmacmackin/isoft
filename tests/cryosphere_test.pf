@@ -20,7 +20,7 @@
 !  MA 02110-1301, USA.
 !  
 
-module cryosphere_mod
+module cryosphere_test
   !* Author: Christopher MacMackin
   !  Date: April 2016
   !  License: GPLv3
@@ -198,4 +198,4 @@ contains
       !! or a runtime error will occur.
   end subroutine cryosphere_assign
 
-end module cryosphere_mod
+end module cryosphere_test

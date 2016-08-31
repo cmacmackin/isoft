@@ -183,13 +183,13 @@ contains
     ! Computes and returns the density of the plume water beneath the ice
     ! shelf. The density of this water would vary depending on how much 
     ! saline ambient water has been entrained into the plume versus how
-    ! much fresh water has been released due to melting. However, if the
-    ! Boussinesq approximation is used, then it may simply be a reference 
-    ! density.
+    ! much fresh water has been released due to melting. However, the
+    ! Boussinesq approximation is used here and only a single reference 
+    ! density is returned.
     !
-    class(plume), intent(in)         :: this
-    class(scalar_field), allocatable :: density
-      !! The melt rate at the base of the ice sheet.
+    class(plume), intent(in) :: this
+    real(r8)                 :: density
+      !! The density of the water at the base of the ice sheet.
   end function plume_water_density
    
   function plume_residual(this, ice_thickness, ice_density, ice_temperature) &

@@ -11,3 +11,4 @@ doc/
 *.smod
 a.out
 *.x
+*.d

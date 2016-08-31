@@ -105,8 +105,8 @@ contains
     ! in the case of an ice sheet, but is included so that the ground data
     ! type can have the same interface as the [[plume]] data type.
     !
-    class(ground), intent(in)        :: this
-    class(scalar_field), allocatable :: density
+    class(ground), intent(in) :: this
+    real(r8)                  :: density
       !! The density of any water at the base of the ice sheet.
   end function ground_water_density
    

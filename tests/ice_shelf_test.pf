@@ -23,13 +23,14 @@
 module ice_shelf_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use test_utils, only: test_field
   use ice_shelf_mod, only: ice_shelf
-  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field
+  use factual_mod, only: abstract_field, scalar_field, vector_field, &
+                         cheb1d_scalar_field, cheb1d_vector_field
   implicit none
 
   integer, parameter :: resolution = 50
-  real(r8), parameter :: big_x = 2.702702703
+  real(r8), parameter :: big_x = 2.702702703_r8
   real(r8), parameter :: ice_density = 0.889320388_r8
 
   @TestCase
@@ -84,41 +85,13 @@ contains
     this%shelf2 = ice_shelf(domain2, this%nodes, thickness2, velocity2)
   end subroutine setup
 
-  subroutine test_field(expected, actual)
-    !! Tests whether two fields are the same
-    class(abstract_field) :: expected, actual
-    dom = actual%domain(),.true.)
-    @assertEqual(expected%domain(),actual%domain(),message='Incorrect domain returned.')
-    @assertEqual(expected%resolution(),actual%resolution(),message='Incorrect resolution returned.')
-    select type(expected)
-    class is(scalar_field)
-      select type(actual)
-      class is(scalar_field)
-        @assertTrue(expected == actual,message='Incorrect field contents')
-      class default
-        error stop 1
-      end select
-    class is(vector_field)
-      select type(actual)
-      class is(vector_field)
-        @assertTrue(expected == actual,message='Incorrect field contents')
-      class default
-        error stop 1
-      end select
-    class default
-       error stop 1
-    end select
-  end subroutine test_field
-
   @Test
   subroutine test_thickness(this)
     !! Tests that a shelf returns the thickness field for which it was
     !! initialized.
     class(test_shelf), intent(inout) :: this
-    class(cheb1d_scalar_field) :: actual_thickness
-    class(cheb1d_scalar_field) :: expected_thickness
-    real(r8), dimension(2) :: dom
-    integer, dimension(1) :: res
+    type(cheb1d_scalar_field) :: actual_thickness
+    type(cheb1d_scalar_field) :: expected_thickness
     expected_thickness = cheb1d_scalar_field(this%nodes, thickness1, &
                                              this%lower1, this%upper1)
     actual_thickness = this%shelf1%ice_thickness()
@@ -131,11 +104,11 @@ contains
 
 !$  @Test
 !$  subroutine test_velocity(this)
+!$    !! Tests that a sheet returns the velocity for which it was 
+!$    !! initialized.
 !$    class(test_shelf), intent(inout) :: this
-!$    class(cheb1d_vector_field) :: actual_thickness
-!$    class(cheb1d_vector_field) :: expected_thickness
-!$    real(r8), dimension(2) :: dom
-!$    integer, dimension(1) :: res
+!$    type(cheb1d_vector_field) :: actual_thickness
+!$    type(cheb1d_vector_field) :: expected_thickness
 !$    expected_thickness = cheb1d_scalar_field(this%nodes, velocity1, &
 !$                                             this%lower1, this%upper1)
 !$    actual_thickness = this%shelf1%velocity_thickness()
@@ -200,7 +173,7 @@ contains
 
   @Test
   subroutine test_update(this)
-    !! Tests two fields have same state vectors after one is updated with
+    !! Tests two shelves have same state vectors after one is updated with
     !! the state vector of the other.
     class(test_shelf), intent(inout)    :: this
     real(r8), dimension(:), allocatable :: state_vector

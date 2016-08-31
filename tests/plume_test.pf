@@ -23,13 +23,23 @@
 module plume_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use test_utils, only: test_field
   use plume_mod, only: plume
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   implicit none
   private
 
+  integer, parameter :: resolution = 50
+  real(r8), parameter :: big_x = 2.702702703
+  real(r8), parameter :: ice_density = 0.889320388_r8
+
   type, extends(testcase), public :: test_plume
+    type(plume) :: plume1, plume2
+    integer     :: nodes = resolution
+    real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
+    real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
+    real(r8)    :: delta, nu, mu, sigma
   contains
     procedure :: setup
   end type test_plume
@@ -39,5 +49,47 @@ contains
   subroutine setup(this)
     class(test_plume), intent(inout) :: this
   end subroutine setup
+
+  @Test
+  subroutine test_basal_melt(this)
+    !! Test that the plume calculates teh correct basal melt rate
+    !! given how it was initialised.
+    class(test_plume), intent(inout) :: this
+    class(cheb1d_scalar_field) :: actual_thickness
+    class(cheb1d_scalar_field) :: expected_thickness
+  end subroutine test_basal_melt
+
+  @Test
+  subroutine test_basal_drag(this)
+    !! Test that the plume calculates teh correct basal drag coefficient
+    !! given how it was initialised.
+    class(test_plume), intent(inout) :: this
+    class(cheb1d_scalar_field) :: actual_drag
+    class(cheb1d_scalar_field) :: expected_drag
+  end subroutine test_basal_drag
+
+  @Test
+  subroutine test_water_density(this)
+    !! Test that the plume returns the water density for which it was
+    !! initialised.
+    class(test_plume), intent(inout) :: this
+  end subroutine test_water_density
+
+  @Test
+  subroutine test_residual(this)
+    !! Test the residual for the analytical steady state XXX
+    class(test_plume), intent(inout) :: this
+    real(r8), dimension(:), allocatable :: actual, expected
+    type(cheb1d_scalar_field) :: thickness
+    real(r8) :: density, temperature
+  end subroutine test_residual
+
+  @Test
+  subroutine test_update(this)
+    !! Test two plumes have the same state vectors after one is updated
+    !! with the state vector of the other.
+    class(test_plume), intent(inout)    :: this
+    real(r8), dimension(:), allocatable :: state_vector
+  end subroutine test_update
 
 end module plume_mod
