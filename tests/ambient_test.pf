@@ -20,23 +20,22 @@
 !  MA 02110-1301, USA.
 !  
 
-module cryosphere_test
+module ambient_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field
 
-  type, extends(testcase), public :: test_cryo
-    type(plume) :: cryo1, cryo2
-    integer     :: nodes = resolution
-    real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
-    real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
+  type, extends(testcase), public :: test_amb
+    type(ambient) :: amb1, amb2
   contains
     procedure :: setup
-  end type test_cryo
+  end type test_amb
 
 contains
 
   subroutine setup(this)
-    class(test_cryo), intent(inout) :: this
+    class(test_nitsol), intent(inout) :: this
   end subroutine setup
 
-end module cryosphere_test
+end module ambient_test

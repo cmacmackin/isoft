@@ -1,5 +1,5 @@
 !
-!  plume_test.f90
+!  plume_test.pf
 !  This file is part of ISOFT.
 !  
 !  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
@@ -28,7 +28,6 @@ module plume_test
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   implicit none
-  private
 
   integer, parameter :: resolution = 50
   real(r8), parameter :: big_x = 2.702702703
@@ -92,4 +91,4 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
   end subroutine test_update
 
-end module plume_mod
+end module plume_test
