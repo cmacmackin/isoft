@@ -20,7 +20,7 @@
 !  MA 02110-1301, USA.
 !  
 
-module test_utils_mod
+module test_utils
   use pfunit_mod
   use factual_mod, only: abstract_field, scalar_field, vector_field 
   implicit none
@@ -52,4 +52,4 @@ contains
     end select
   end subroutine test_field
 
-end module test_utils_mod
+end module test_utils

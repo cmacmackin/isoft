@@ -33,6 +33,7 @@ module ground_test
   real(r8), parameter :: big_x = 2.702702703
   real(r8), parameter :: ice_density = 0.889320388_r8
 
+  @TestCase
   type, extends(testcase), public :: test_ground
     type(ground) :: ground1, ground2
     integer     :: nodes = resolution
@@ -54,8 +55,8 @@ contains
     !! Test that the ground calculates teh correct basal melt rate
     !! given how it was initialised.
     class(test_ground), intent(inout) :: this
-    class(cheb1d_scalar_field) :: actual_thickness
-    class(cheb1d_scalar_field) :: expected_thickness
+    type(cheb1d_scalar_field) :: actual_thickness
+    type(cheb1d_scalar_field) :: expected_thickness
   end subroutine test_basal_melt
 
   @Test
@@ -63,8 +64,8 @@ contains
     !! Test that the ground calculates teh correct basal drag coefficient
     !! given how it was initialised.
     class(test_ground), intent(inout) :: this
-    class(cheb1d_scalar_field) :: actual_drag
-    class(cheb1d_scalar_field) :: expected_drag
+    type(cheb1d_scalar_field) :: actual_drag
+    type(cheb1d_scalar_field) :: expected_drag
   end subroutine test_basal_drag
 
   @Test

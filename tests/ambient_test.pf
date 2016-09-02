@@ -20,22 +20,23 @@
 !  MA 02110-1301, USA.
 !  
 
-module ambient_test
-  use iso_fortran_env, only: r8 => real64
-  use pfunit_mod
-  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field
-
-  type, extends(testcase), public :: test_amb
-    type(ambient) :: amb1, amb2
-  contains
-    procedure :: setup
-  end type test_amb
-
-contains
-
-  subroutine setup(this)
-    class(test_nitsol), intent(inout) :: this
-  end subroutine setup
-
-end module ambient_test
+!!$module ambient_test
+!!$  use iso_fortran_env, only: r8 => real64
+!!$  use pfunit_mod
+!!$  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+!!$                         cheb1d_vector_field
+!!$  use ambient_mod, only: ambient_conditions
+!!$
+!!$  type, extends(testcase), public :: test_amb
+!!$    type(ambient_conditions) :: amb1, amb2
+!!$  contains
+!!$    procedure :: setup
+!!$  end type test_amb
+!!$
+!!$contains
+!!$
+!!$  subroutine setup(this)
+!!$    class(test_amb), intent(inout) :: this
+!!$  end subroutine setup
+!!$
+!!$end module ambient_test

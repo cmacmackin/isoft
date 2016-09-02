@@ -1,0 +1,71 @@
+!
+!  bc_test.f90
+!  This file is part of ISOFT.
+!  
+!  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
+!  
+!  This program is free software; you can redistribute it and/or modify
+!  it under the terms of the GNU General Public License as published by
+!  the Free Software Foundation; either version 2 of the License, or
+!  (at your option) any later version.
+!  
+!  This program is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!  GNU General Public License for more details.
+!  
+!  You should have received a copy of the GNU General Public License
+!  along with this program; if not, write to the Free Software
+!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+!  MA 02110-1301, USA.
+!  
+
+module bc_test
+  use pfunit_mod
+  use factual_mod, only: cheb1d_scalar_field, cheb1d_vector_field
+  use plume_boundary_mod, only: plume_boundary
+  use glacier_boundary_mod, only: glacier_boundary
+  use iso_fortran_env, only: r8 => real64
+  implicit none
+
+contains
+
+  @Test
+  subroutine test_defaults()
+    type(plume_boundary)      :: test_plume
+    type(glacier_boundary)    :: test_glacier
+    type(cheb1d_scalar_field) :: scalar
+    type(cheb1d_vector_field) :: vector
+    
+    @assertFalse(test_plume%thickness_north_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%thickness_east_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%thickness_south_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%thickness_west_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%velocity_north_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%velocity_east_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%velocity_south_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%velocity_west_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%temperature_north_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%temperature_east_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%temperature_south_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%salinity_west_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%salinity_north_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%salinity_east_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%salinity_south_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertFalse(test_plume%salinity_west_is_dirichlet(),message='Default plume boundary condition set to Dirichlet.')
+    @assertEqual(0,test_plume%residual_size(),message='Default plume boundary claims residual has non-zero size.')
+    @assertEqual(0,size(test_plume%boundary_residuals(scalar,vector,scalar,scalar,0.0_r8)),message='Non-empty residual.')
+    
+    @assertFalse(test_glacier%thickness_north_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%thickness_east_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%thickness_south_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%thickness_west_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%velocity_north_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%velocity_east_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%velocity_south_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertFalse(test_glacier%velocity_west_is_dirichlet(),message='Default glacier boundary condition set to Dirichlet.')
+    @assertEqual(0,test_glacier%residual_size(),message='Default glacier claims residual has non-zero size.')
+    @assertEqual(0,size(test_glacier%boundary_residuals(scalar,vector,0.0_r8)),message='Non-empty residual.')
+  end subroutine test_defaults
+
+end module bc_test

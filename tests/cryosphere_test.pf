@@ -23,9 +23,12 @@
 module cryosphere_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use cryosphere_mod, only: cryosphere
+
+  integer, parameter :: resolution = 50
 
   type, extends(testcase), public :: test_cryo
-    type(plume) :: cryo1, cryo2
+    type(cryosphere) :: cryo1, cryo2
     integer     :: nodes = resolution
     real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8

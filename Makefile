@@ -56,7 +56,7 @@ else ifeq ($(VENDOR_),intel)
 endif
 
 # Include paths
-FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include
+FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
 LIBS := -L$(LIBDIR) -lfftw3
@@ -95,10 +95,9 @@ $(EXEC): $(OBJS) $(FLIB)
 tests: $(TEXEC)
 	./$(TEXEC)
 
-$(TEXEC): $(FLIB) $(LIB) $(TOBJS)
-	$(F90) -I$(PFUNIT)/mod -I$(PFUNIT)/include  \
-		$(PFUNIT)/include/driver.F90 $< $(FCFLAGS) \
-		$(LIBS) -o $@
+$(TEXEC): $(FLIB) $(LIB) $(TOBJS) $(TDIR)/testSuites.inc
+	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 \
+		$< $(FCFLAGS) $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 install_exec: exec
 	cp $(EXEC) $(BINDIR)
@@ -122,7 +121,9 @@ else ifeq ($(MAKECMDGOALS),doc)
 else
 -include $(OBJS:.o=.d) $(TOBJS:.o=.d)
 endif
-include $(PFUNIT)/include/base.mk
+
+mtest:
+	@echo $(TOBJS)
 
 %.d: %.pf get_deps
 	./get_deps $< $$\(MDIR\) "$(EXTERNAL_MODS)" $(PROJECT_INCDIRS) > $@
@@ -146,6 +147,8 @@ $(MDIR):
 	@mkdir -p $@
 
 .PHONEY: clean clean_obj clean_mod clean_backups doc
+
+.PRECIOUS: %.F90
 
 clean: clean_obj clean_mod clean_deps clean_backups
 

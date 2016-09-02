@@ -224,8 +224,8 @@ contains
       !! The value of the boundary conditions
   end function dirichlet_none_vec
 
-  function boundary_residuals(this, thickness, velocity, t) &
-                                 result(residuals)
+  function boundary_residuals(this, thickness, velocity, temperature, &
+                              salinity, t) result(residuals)
     !* Author: Chris MacMackin
     !  Date: September 2016
     !
@@ -238,6 +238,10 @@ contains
       !! A field containing the thickness of the plume
     class(vector_field), intent(in)     :: velocity
       !! A field containing the flow velocity of the plume
+    class(scalar_field), intent(in)     :: temperature
+      !! The field containing the temperature of the plume
+    class(scalar_field), intent(in)     :: salinity
+      !! The field containing the salinity of the plume
     real(r8), intent(in)                :: t
       !! The time at which the boundary conditions are to be calculated.
     real(r8), allocatable, dimension(:) :: residuals
