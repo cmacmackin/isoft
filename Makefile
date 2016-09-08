@@ -145,7 +145,7 @@ clean: clean_obj clean_mod clean_deps clean_backups
 
 clean_obj:
 	@echo Deleting all object files
-	@/bin/rm -rf $(OBJS)
+	@/bin/rm -rf $(OBJS) $(TOBJS)
 
 clean_mod:
 	@echo Deleting all module files
