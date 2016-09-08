@@ -32,7 +32,8 @@ module plume_test
   integer, parameter :: resolution = 50
   real(r8), parameter :: big_x = 2.702702703
   real(r8), parameter :: ice_density = 0.889320388_r8
-
+  
+  @TestCase
   type, extends(testcase), public :: test_plume
     type(plume) :: plume1, plume2
     integer     :: nodes = resolution
@@ -51,11 +52,11 @@ contains
 
   @Test
   subroutine test_basal_melt(this)
-    !! Test that the plume calculates teh correct basal melt rate
+    !! Test that the plume calculates the correct basal melt rate
     !! given how it was initialised.
     class(test_plume), intent(inout) :: this
-    class(cheb1d_scalar_field) :: actual_thickness
-    class(cheb1d_scalar_field) :: expected_thickness
+    type(cheb1d_scalar_field) :: actual_thickness
+    type(cheb1d_scalar_field) :: expected_thickness
   end subroutine test_basal_melt
 
   @Test
@@ -63,8 +64,8 @@ contains
     !! Test that the plume calculates teh correct basal drag coefficient
     !! given how it was initialised.
     class(test_plume), intent(inout) :: this
-    class(cheb1d_scalar_field) :: actual_drag
-    class(cheb1d_scalar_field) :: expected_drag
+    type(cheb1d_scalar_field) :: actual_drag
+    type(cheb1d_scalar_field) :: expected_drag
   end subroutine test_basal_drag
 
   @Test

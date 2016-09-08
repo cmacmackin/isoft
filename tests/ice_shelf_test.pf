@@ -47,26 +47,28 @@ module ice_shelf_test
 
 contains
   
-  function thickness1(location), result(thickness)
+  pure function thickness1(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    thickness = (1._r8 - location(1)/big_x)/velocity1(location)
+    real(r8), dimension(2) :: vel
+    vel = velocity1(location)
+    thickness = (1._r8 - location(1)/big_x)/vel(1)
   end function thickness1
   
-  function thickness2(location), result(thickness)
+  pure function thickness2(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
     thickness = 1.0_r8/abs(location(1))
   end function thickness2
 
-  function velocity1(location) result(velocity)
+  pure function velocity1(location) result(velocity)
     real(r8), dimension(:), intent(in) :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
     velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
   end function velocity1
 
-  function velocity2(location) result(velocity)
+  pure function velocity2(location) result(velocity)
     real(r8), dimension(:), intent(in)  :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
@@ -80,9 +82,9 @@ contains
     domain1(1,2) = this%upper1
     domain2(1,1) = this%lower2
     domain2(1,2) = this%upper2
-    this%shelf1 = ice_shelf(domain1, this%nodes, thickness1, velocity1, &
-                           this%density, this%temperature, this%lambda, this%chi)
-    this%shelf2 = ice_shelf(domain2, this%nodes, thickness2, velocity2)
+    this%shelf1 = ice_shelf(domain1, [this%nodes], thickness1, velocity1, &
+                            this%density, this%temperature, this%lambda, this%chi)
+    this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
   end subroutine setup
 
   @Test
@@ -95,11 +97,11 @@ contains
     expected_thickness = cheb1d_scalar_field(this%nodes, thickness1, &
                                              this%lower1, this%upper1)
     actual_thickness = this%shelf1%ice_thickness()
-    call test_field(expected_field, actual_field)
+    call test_field(expected_thickness, actual_thickness)
     expected_thickness = cheb1d_scalar_field(this%nodes, thickness2, &
                                              this%lower2, this%upper2)
     actual_thickness = this%shelf2%ice_thickness()
-    call test_field(expected_field, actual_field)
+    call test_field(expected_thickness, actual_thickness)
   end subroutine test_thickness
 
 !$  @Test
@@ -148,26 +150,26 @@ contains
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    actual = this%shelf1%residual(this,melt,drag,water)
+    actual = this%shelf1%residual(this%shelf2,melt,drag,water)
     @assertEqual(this%shelf1%data_size(),size(actual),message='Residual array of wronge size')
-    allocate(expected, mold=actual)
+    allocate(expected(size(actual)))
     expected = 0.0_r8
     @assertEqual(expected,actual,message='Incorrect residual returned.')
   contains
-    function water_density(location)
+    pure function water_density(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: water_density
       water_density = 1.0_r8
     end function water_density
-    function melt_rate(location)
+    pure function melt_rate(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: melt_rate
       melt_rate = 1.0_r8 
     end function melt_rate
-    function drag_coef(location)
+    pure function drag_coef(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: drag_coef
-      zero = 0.0_r8
+      drag_coef = 0.0_r8
     end function drag_coef
   end subroutine test_residual
 
@@ -177,10 +179,10 @@ contains
     !! the state vector of the other.
     class(test_shelf), intent(inout)    :: this
     real(r8), dimension(:), allocatable :: state_vector
-    @assertEqual(this%shelf1%data_size(),size(this%shelf1%state_vector),message='State vector of wrong size')
+    @assertEqual(this%shelf1%data_size(),size(this%shelf1%state_vector()),message='State vector of wrong size')
     @assertNotAll(this%shelf1%state_vector()==this%shelf2%state_vector(),message='Shelf returning wronge state vector')
     call this%shelf2%update(this%shelf1%state_vector())
-    @assertEqual(this%shelf1%state_vector,this%shelf2%state_vector,message='State vector not update.')
+    @assertEqual(this%shelf1%state_vector(),this%shelf2%state_vector(),message='State vector not update.')
   end subroutine test_update
 
 end module ice_shelf_test

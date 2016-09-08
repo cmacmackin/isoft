@@ -47,30 +47,32 @@ module ice_sheet_test
 
 contains
   
-  function thickness1(x) result(thickness)
+  pure function thickness1(x) result(thickness)
     real(r8), dimension(:), intent(in) :: x
-    real(r8) :: thickness
-    thickness = (1._r8 - location(1)/big_x)/velocity1(location)
+    real(r8)                           :: thickness
+    real(r8), dimension(2) :: vel
+    vel = velocity1(x)
+    thickness = (1._r8 - x(1)/big_x)/vel(1)
   end function thickness1
   
-  function thickness2(x) result(thickness)
+  pure function thickness2(x) result(thickness)
     real(r8), dimension(:), intent(in) :: x
-    real(r8) :: thickness
-    thickness = 1.0_r8/abs(location(1))
+    real(r8)                           :: thickness
+    thickness = 1.0_r8/abs(x(1))
   end function thickness2
 
-  function velocity1(x) result(velocity)
-    real(r8), dimension(:), intent(in) :: x
-    real(r8), dimension(:), allocatable :: velocity
-    allocate(velocity(1))
-    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
-  end function velocity1
-
-  function velocity2(x) result(velocity)
+  pure function velocity1(x) result(velocity)
     real(r8), dimension(:), intent(in)  :: x
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
-    velocity(1) = 1.0_r8 - exp(location(1)/8.0_r8)
+    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - x(1)/big_x))
+  end function velocity1
+
+  pure function velocity2(x) result(velocity)
+    real(r8), dimension(:), intent(in)  :: x
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity(1) = 1.0_r8 - exp(x(1)/8.0_r8)
   end function velocity2
 
   subroutine setup(this)
@@ -145,21 +147,21 @@ contains
                                this%upper1)
     actual = this%sheet1%residual(this%sheet1,melt,drag,water)
     @assertEqual(this%sheet1%data_size(),size(actual),message='Residual array of wronge size')
-    allocate(expected, mold=actual)
+    allocate(expected(size(actual)))
     expected = 0.0_r8
     @assertEqual(expected,actual,message='Incorrect residual returned.')
   contains
-    function water_density(location)
+    pure function water_density(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: water_density
       water_density = 1.0_r8
     end function water_density
-    function melt_rate(location)
+    pure function melt_rate(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: melt_rate
       melt_rate = 1.0_r8 
     end function melt_rate
-    function drag_coef(location)
+    pure function drag_coef(location)
       real(r8), dimension(:), intent(in) :: location
       real(r8) :: drag_coef
       drag_coef = 0.0_r8

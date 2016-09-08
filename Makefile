@@ -36,23 +36,23 @@ LIBDIR := $(PREFIX)/lib
 INCDIR := $(PREFIX)/include
 BINDIR := $(PREFIX)/bin
 
+# Include paths internal to project
+PROJECT_INCDIRS := $(FMDIR) $(TDIR)
+
 # The compiler
 VENDOR ?= GNU
 VENDOR_ = $(shell echo $(VENDOR) | tr A-Z a-z)
 
-# Include paths internal to project
-PROJECT_INCDIRS := $(FMDIR) $(TDIR)
-
-ifeq ($(VENDOR_),gnu)
-  F90      := gfortran
-  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -J$(MDIR)
-  LDFLAGS  := -O0 -g 
-  COVFLAGS := -fprofile-arcs -ftest-coverage
-else ifeq ($(VENDOR_),intel)
+ifeq ($(VENDOR_),intel)
   F90      := ifort
   FCFLAGS  := -O0 -g -I$(INC) -module $(MDIR) -traceback -assume realloc_lhs
   LDFLAGS  := -O0 -g -traceback
   COVFLAGS := 
+else
+  F90      := gfortran
+  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -J$(MDIR)
+  LDFLAGS  := -O0 -g 
+  COVFLAGS := -fprofile-arcs -ftest-coverage
 endif
 
 # Include paths
@@ -85,22 +85,20 @@ all: all_objects tests
 
 all_objects: $(OBJS)
 
-tests: $(TEXEC)
-
 exec: $(EXEC) 
 
 $(EXEC): $(OBJS) $(FLIB)
 	$(F90) $^ $(LDFLAGS) -o $@
 
+install_exec: exec
+	cp $(EXEC) $(BINDIR)
+
 tests: $(TEXEC)
 	./$(TEXEC)
 
-$(TEXEC): $(FLIB) $(LIB) $(TOBJS) $(TDIR)/testSuites.inc
-	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 \
-		$< $(FCFLAGS) $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
-
-install_exec: exec
-	cp $(EXEC) $(BINDIR)
+$(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
+	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 $(COVFLAGS) \
+		$(FCFLAGS) $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
 
@@ -122,16 +120,13 @@ else
 -include $(OBJS:.o=.d) $(TOBJS:.o=.d)
 endif
 
-mtest:
-	@echo $(TOBJS)
-
 %.d: %.pf get_deps
 	./get_deps $< $$\(MDIR\) "$(EXTERNAL_MODS)" $(PROJECT_INCDIRS) > $@
 
 # General rule for building Fortran files, where $(1) is the file extension
 define fortran_rule
 %.o: %.$(1) $(FMOD) | $(MDIR)
-	$$(F90) $$(FCFLAGS) -c $$< -o $$@
+	$$(F90) $$(COVFLAGS) $$(FCFLAGS) -c $$< -o $$@
 
 %.d: %.$(1) get_deps
 	./get_deps $$< \$$$$\(MDIR\) "$$(EXTERNAL_MODS)" $$(PROJECT_INCDIRS) > $$@
@@ -145,10 +140,6 @@ $(foreach EXT,$(_F_EXT),$(eval $(call fortran_rule,$(EXT))))
 
 $(MDIR):
 	@mkdir -p $@
-
-.PHONEY: clean clean_obj clean_mod clean_backups doc
-
-.PRECIOUS: %.F90
 
 clean: clean_obj clean_mod clean_deps clean_backups
 
@@ -174,3 +165,6 @@ clean_backups:
 
 doc: documentation.md
 	ford $<
+
+.PHONEY: all all_objects exec install_exec tests lib install_lib clean \
+	 clean_obj clean_mod clean_backups doc
