@@ -27,6 +27,7 @@ module ice_shelf_test
   use ice_shelf_mod, only: ice_shelf
   use factual_mod, only: abstract_field, scalar_field, vector_field, &
                          cheb1d_scalar_field, cheb1d_vector_field
+  use newtonian_viscosity_mod, only: newtonian_viscosity
   implicit none
 
   integer, parameter :: resolution = 50
@@ -83,7 +84,8 @@ contains
     domain2(1,1) = this%lower2
     domain2(1,2) = this%upper2
     this%shelf1 = ice_shelf(domain1, [this%nodes], thickness1, velocity1, &
-                            this%density, this%temperature, this%lambda, this%chi)
+                            this%density, this%temperature,               &
+                            newtonian_viscosity(1.0_r8), this%lambda, this%chi)
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
   end subroutine setup
 
