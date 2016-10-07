@@ -163,7 +163,7 @@ contains
     class(plume), intent(in)         :: this
     class(scalar_field), allocatable :: melt
       !! The melt rate at the base of the ice shelf.
-    allocate(melt, source=this%melt_rate)
+    allocate(melt, source=this%melt_formulation%melt_rate())
   end function plume_melt
 
   function plume_drag_parameter(this) result(drag)
