@@ -31,6 +31,8 @@ module plume_mod
   use iso_fortran_env, only: r8 => real64
   use basal_surface_mod, only: basal_surface
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use entrainment_mod, only: abstract_entrainment
+  use melt_relationship_mod, only: abstract_melt_relationship
   implicit none
   private
 
@@ -50,9 +52,12 @@ module plume_mod
       !! The temperature of the plume
     type(cheb1d_scalar_field) :: salinity
       !! The salinity of the plume
-    type(cheb1d_scalar_field) :: melt_rate
-      !! The rate at which the plume is causing the overlying ice shelf to
-      !! lose thickness
+    class(abstract_entrainment), allocatable :: entrainment_formulation
+      !! An object which provides the parameterisation for entrainment
+      !! of water into the plume.
+    class(abstract_melt_relationship), allocatable :: melt_formulation
+      !! An object which provides teh parameterisation for melting,
+      !! salt, and heat fluxes from the plume to the ice.
     real(r8)                  :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
     real(r8)                  :: nu

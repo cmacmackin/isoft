@@ -85,8 +85,8 @@ module glacier_mod
         !! The value of whatever property of the glacier is being returned.
     end function get_r8
 
-    function get_residual(this, previous_state, melt_rate, basal_drag_parameter, &
-                          water_density) result(residual)
+    function get_residual(this, previous_state, melt_rate, &
+                          basal_drag_parameter, water_density) result(residual)
       import :: glacier
       import :: scalar_field
       import :: r8
