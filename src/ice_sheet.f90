@@ -33,6 +33,7 @@ module ice_sheet_mod
   use glacier_mod, only: glacier, thickness_func, velocity_func
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
+  use viscosity_mod, only: abstract_viscosity
   implicit none
   private
 
@@ -54,6 +55,8 @@ module ice_sheet_mod
     real(r8)                  :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
+    class(abstract_viscosity), allocatable :: viscosity_law
+      !! An object representing the model used for ice viscosity.
   contains
 !$    procedure            :: t => sheet_dt
 !$    procedure            :: local_error => sheet_local_error
@@ -79,8 +82,8 @@ module ice_sheet_mod
 
 contains
   
-  function constructor(domain, resolution, thickness, velocity, lambda, chi) &
-                                                                result(this)
+  function constructor(domain, resolution, thickness, velocity, &
+                       viscosity_law, lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -102,6 +105,8 @@ contains
     procedure(velocity_func)             :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice sheet.
+    class(abstract_viscosity), intent(in) :: viscosity_law
+      !! An object which calculates the viscosity of the ice.
     real(r8), intent(in)                 :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$

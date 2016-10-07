@@ -33,6 +33,7 @@ module ice_shelf_mod
   use glacier_mod, only: glacier, thickness_func, velocity_func
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
+  use viscosity_mod, only: abstract_viscosity
   implicit none
   private
 
@@ -54,6 +55,8 @@ module ice_shelf_mod
     real(r8)                  :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
+    class(abstract_viscosity), allocatable :: viscosity_law
+      !! An object representing the model used for ice viscosity.
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -80,7 +83,7 @@ module ice_shelf_mod
 contains
   
   function constructor(domain, resolution, thickness, velocity, density, &
-                       temperature, lambda, chi) result(this)
+                       temperature, viscosity_law, lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -88,31 +91,33 @@ contains
     ! by the arguments. At present only a 1D model is supported. If
     ! information is provided for higher dimensions then it will be ignored.
     !
-    real(r8), dimension(:,:), intent(in) :: domain
+    real(r8), dimension(:,:), intent(in)  :: domain
       !! An array containing the upper and lower limits of the domain for
       !! the ice shelf. The first index represents the dimension for which
       !! the boundaries apply. If the second index is 1 then it corresponds
       !! to the lower bound. If the second index is 2 then it corresponds to
       !! the upper bound.
-    integer, dimension(:), intent(in)    :: resolution
+    integer, dimension(:), intent(in)     :: resolution
       !! The number of data points in each dimension.
-    procedure(thickness_func)            :: thickness
+    procedure(thickness_func)             :: thickness
       !! A function which calculates the initial value of the thickness of 
       !! the ice shelf at a given location.
-    procedure(velocity_func)             :: velocity
+    procedure(velocity_func)              :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice shelf.
-    real(r8), intent(in), optional       :: density
+    real(r8), intent(in), optional        :: density
       !! The density of the ice in the ice shelf.
-    real(r8), intent(in), optional       :: temperature
+    real(r8), intent(in), optional        :: temperature
       !! The temperature of the ice in the ice shelf.
-    real(r8), intent(in), optional       :: lambda
+    class(abstract_viscosity), intent(in) :: viscosity_law
+      !! An object which calculates the viscosity of the ice.
+    real(r8), intent(in), optional        :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$.
-    real(r8), intent(in), optional       :: chi
+    real(r8), intent(in), optional        :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$.
-    type(ice_shelf)                      :: this
+    type(ice_shelf)                       :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
   end function constructor

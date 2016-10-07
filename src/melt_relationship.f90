@@ -1,5 +1,5 @@
 !
-!  entrainment.f90
+!  melt_relationship.f90
 !  This file is part of ISOFT.
 !  
 !  Copyright 2016 Chris MacMackin <cmacmackin@physics.ox.ac.uk>
@@ -35,7 +35,7 @@ module melt_relationship_mod
 
   type, abstract, public :: abstract_melt_relationship
     !* Author: Christopher MacMackin
-    !  Date: April 2016
+    !  Date: October 2016
     !
     ! An abstract data type for calculating melting of an ice shelf into
     ! a vertically integrated [[plume]]. The melt rate, as well as

@@ -1,5 +1,5 @@
 !
-!  entrainment.f90
+!  viscosity.f90
 !  This file is part of ISOFT.
 !  
 !  Copyright 2016 Chris MacMackin <cmacmackin@physics.ox.ac.uk>
@@ -20,12 +20,12 @@
 !  MA 02110-1301, USA.
 !  
 
-module entrainment_mod
+module viscosity_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
   !  License: GPLv3
   !
-  ! Provides an abstract data type to model entrainment into a
+  ! Provides an abstract data type to model viscosity into a
   ! vertically integrated plume. 
   !
   use iso_fortran_env, only: r8 => real64
@@ -33,41 +33,37 @@ module entrainment_mod
   implicit none
   private
 
-  type, abstract, public :: abstract_entrainment
+  type, abstract, public :: abstract_viscosity
     !* Author: Christopher MacMackin
     !  Date: October 2016
     !
-    ! An abstract data type for calculating entrainment of ambient
-    ! ocean water into a vertically integrated [[plume]].
+    ! An abstract data type for calculating viscosity of a vertically
+    ! integrated [[glacier]]. 
     !
   contains
-    procedure(get_entrainment), deferred   :: entrainment_rate
-      !! Returns the entrainment rate for ambient water into the plume.
-  end type abstract_entrainment
+    procedure(get_viscosity), deferred   :: ice_viscosity
+      !! Returns the viscosity for the ice.
+  end type abstract_viscosity
 
   abstract interface
-    function get_entrainment(this, velocity, thickness, depth, time) &
-                                                    result(property)
-      import :: abstract_entrainment
+    function get_viscosity(this, velocity, temperature, time) result(property)
+      import :: abstract_viscosity
       import :: vector_field
       import :: scalar_field
       import :: r8
-      class(abstract_entrainment), intent(in) :: this
-      class(vector_field), intent(in)  :: velocity
-        !! The velocity field of the plume into which fluid is being 
-        !! entrained.
-      class(scalar_field), intent(in)  :: thickness
-        !! The thickness of the plume into which fluid is being
-        !! entrained
-      class(scalar_field), intent(in)  :: depth
-        !! The depth of the upper surface of the plume into which
-        !! fluid is being entrained
-      real(r8), intent(in), optional   :: time
-        !! The time at which the entrainment is being calculated. If not
+      class(abstract_viscosity), intent(in) :: this
+      class(vector_field), intent(in) :: velocity
+        !! The velocity field of the ice for which the velocity is
+        !! being calculated
+      real(r8), intent(in)            :: temperature
+        !! The temperature of the ice for which viscosity is being
+        !! calculated.
+      real(r8), intent(in), optional  :: time
+        !! The time at which the viscosity is being calculated. If not
         !! present then assumed to be same as previous value passed.
       class(scalar_field), allocatable :: property
-        !! The value of the entrainment
-    end function get_entrainment
+        !! The value of the viscosity
+    end function get_viscosity
   end interface
 
-end module entrainment_mod
+end module viscosity_mod

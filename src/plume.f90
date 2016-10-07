@@ -64,9 +64,6 @@ module plume_mod
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
     real(r8)                  :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
-    real(r8)                  :: sigma
-      !! The dimensionless ratio 
-      !! $\sigma \equiv \frac{U_0^2}{h_0g} = S_0\beta_S$
   contains
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
@@ -110,7 +107,8 @@ module plume_mod
 contains
 
   function constructor(domain, resolution, thickness, velocity, temperature, &
-                       salinity, delta, nu, mu, sigma) result(this)
+                       salinity, entrainment_formulation, melt_formulation,  &
+                       delta, nu, mu, sigma) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -138,6 +136,11 @@ contains
     procedure(scalar_func)               :: salinity
       !! A function which calculates the initial value of the salinity of 
       !! the plume at a given location.
+    class(abstract_entrainment), intent(in) :: entrainment_formulation
+      !! An object which calculates entrainment into the plume.
+    class(abstract_melt_relationship), intent(in) :: melt_formulation
+      !! An object which calculates melting and the resulting thermal
+      !! transfer into/out of the plume.
     real(r8), intent(in) :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
     real(r8), intent(in) :: nu
