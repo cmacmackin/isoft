@@ -38,7 +38,12 @@ module jenkins1991_entrainment_mod
     !* Author: Christopher MacMackin
     !  Date: October 2016
     !
-    ! A parameterisation of entrainment as described by Jenkins (1991). 
+    ! A parameterisation of entrainment ($e$) as described by Jenkins
+    ! (1991): $$e = E_0 |\vec{U}\sin(\theta) \simeq
+    ! E_0|\vec{U}||\nabla b|.$$ Here, $E_0$ is a coefficient typically
+    ! taken to be 0.036 (the default value), $\vec{U}$ is the velocity
+    ! of the plume, $\theta$ is the angle of slope of the ice shelf
+    ! base, and $b$ is the basal depth of the ice shelf.
     !
     private
     real(r8) :: coefficient = 0.036_r8
@@ -64,6 +69,26 @@ contains
 
   function jenkins1991_rate(this, velocity, thickness, depth, time) &
                                                    result(entrainment)
+    !* Author: Christopher MacMackin
+    !  Date: October 2016
+    !
+    ! $$e = E_0 |\vec{U}\sin(\theta) \simeq E_0|\vec{U}||\nabla b|$$
+    ! Here, $E_0$ is a coefficient typically taken to be 0.036 (the
+    ! default value), $\vec{U}$ is the velocity of the plume, $\theta$
+    ! is the angle of slope of the ice shelf base, and $b$ is the
+    ! basal depth of the ice shelf.
+    !
+    ! @Warning
+    ! The calculation must be performed as
+    ! ```fortran
+    ! this%coefficient * depth%d_dx(1) * velocity%norm()
+    ! ```
+    ! with the variables in a different order than how the equation is
+    ! usually formulated. If they are in the correct order then
+    ! `gfortran` expects the result to be a [[vector_field(type)]]. It
+    ! is not clear whether this is due to a bug in `gfortran` or in
+    ! `factual`.
+    !
     class(jenkins1991_entrainment), intent(in) :: this
     class(vector_field), intent(in)            :: velocity
       !! The velocity field of the plume into which fluid is being 
@@ -79,7 +104,9 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), allocatable           :: entrainment
       !! The value of the entrainment
-    entrainment = this%coefficient * velocity%norm() * thickness%d_dx(1)
+    !allocate(entrainment, &
+    !         source=this%coefficient * depth%d_dx(1) * velocity%norm())
+    entrainment = this%coefficient * depth%d_dx(1) * velocity%norm()
   end function jenkins1991_rate
 
 end module jenkins1991_entrainment_mod
