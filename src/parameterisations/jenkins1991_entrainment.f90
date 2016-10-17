@@ -38,12 +38,12 @@ module jenkins1991_entrainment_mod
     !* Author: Christopher MacMackin
     !  Date: October 2016
     !
-    ! A parameterisation of entrainment ($e$) as described by Jenkins
+    ! A parameterisation of entrainment (\(e\)) as described by Jenkins
     ! (1991): $$e = E_0 |\vec{U}\sin(\theta) \simeq
-    ! E_0|\vec{U}||\nabla b|.$$ Here, $E_0$ is a coefficient typically
-    ! taken to be 0.036 (the default value), $\vec{U}$ is the velocity
-    ! of the plume, $\theta$ is the angle of slope of the ice shelf
-    ! base, and $b$ is the basal depth of the ice shelf.
+    ! E_0|\vec{U}||\nabla b|.$$ Here, \(E_0\) is a coefficient typically
+    ! taken to be 0.036 (the default value), \(\vec{U}\) is the velocity
+    ! of the plume, \(\theta\) is the angle of slope of the ice shelf
+    ! base, and \(b\) is the basal depth of the ice shelf.
     !
     private
     real(r8) :: coefficient = 0.036_r8
@@ -73,9 +73,9 @@ contains
     !  Date: October 2016
     !
     ! $$e = E_0 |\vec{U}\sin(\theta) \simeq E_0|\vec{U}||\nabla b|$$
-    ! Here, $E_0$ is a coefficient typically taken to be 0.036 (the
-    ! default value), $\vec{U}$ is the velocity of the plume, $\theta$
-    ! is the angle of slope of the ice shelf base, and $b$ is the
+    ! Here, \(E_0\) is a coefficient typically taken to be 0.036 (the
+    ! default value), \(\vec{U}\) is the velocity of the plume, \(\theta\)
+    ! is the angle of slope of the ice shelf base, and \(b\) is the
     ! basal depth of the ice shelf.
     !
     ! @Warning
@@ -104,9 +104,8 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), allocatable           :: entrainment
       !! The value of the entrainment
-    !allocate(entrainment, &
-    !         source=this%coefficient * depth%d_dx(1) * velocity%norm())
-    entrainment = this%coefficient * depth%d_dx(1) * velocity%norm()
+    allocate(entrainment, &
+             source=this%coefficient * depth%d_dx(1) * velocity%norm())
   end function jenkins1991_rate
 
 end module jenkins1991_entrainment_mod

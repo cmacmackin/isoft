@@ -49,6 +49,10 @@ module dallaston2015_melt_mod
     ! [[abstract_melt_relationship:heat_equation_terms]],
     ! [[abstract_melt_relationship:salt_equation_terms]].
     ! 
+    class(scalar_field), allocatable :: melt_values
+      !! Stores the resulting melt rate
+    real(r8) :: beta
+      !! The inverse stefan number, $$\beta = \frac{c(T_a - T_m}{L}$$
   contains
     procedure :: solve_for_melt => dallaston2015_solve
     procedure :: heat_equation_terms => dallaston2015_heat
@@ -77,9 +81,12 @@ module dallaston2015_melt_mod
 
 contains
 
-  function constructor() result(this)
+  function constructor(beta) result(this)
+    real(r8), intent(in) :: beta
+      !! The inverse stefan number, $$\beta = \frac{c(T_a - T_m}{L}$$
     type(dallaston2015_melt) :: this
       !! The newly created object representing the melt relationship.
+    this%beta = beta
   end function constructor
 
   subroutine dallaston2015_solve(this, velocity, pressure, temperature, &
@@ -98,6 +105,8 @@ contains
     real(r8), intent(in), optional           :: time
       !! The time at which the melting is being solved for. If not
       !! present then assumed to be same as previous value passed.
+    if (allocated(this%melt_values)) deallocate(this%melt_values)
+    allocate(this%melt_values, source=velocity%norm())
   end subroutine dallaston2015_solve
 
   pure function dallaston2015_heat(this) result(heat)
@@ -105,6 +114,8 @@ contains
     class(scalar_field), allocatable      :: heat
       !! The value of the contribution made by melting/thermal
       !! transfer to the heat equation for a [[plume]]
+    allocate(heat, mold=this%melt_values)
+    heat = (this%beta + 1.0_r8) * this%melt_values
   end function dallaston2015_heat
 
   pure function dallaston2015_salt(this) result(salt)
@@ -118,6 +129,7 @@ contains
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: melt
       !! The melt rate from the ice into the plume water.
+    allocate(melt, source=this%melt_values)
   end function dallaston2015_melt_rate
 
   pure function dallaston2015_has_heat(this) result(has_heat)
@@ -125,6 +137,7 @@ contains
     logical                               :: has_heat
       !! Whether this formulation of melting contributes terms to
       !! the heat equation of the plume.
+    has_heat = .true.
   end function dallaston2015_has_heat
 
   pure function dallaston2015_has_salt(this) result(has_salt)
@@ -132,6 +145,7 @@ contains
     logical                               :: has_salt
       !! Whether this formulation of melting contributes terms to
       !! the salinity equation of the plume.
+    has_salt = .false.
   end function dallaston2015_has_salt
 
 end module dallaston2015_melt_mod

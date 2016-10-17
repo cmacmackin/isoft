@@ -38,27 +38,27 @@ module melt_relationship_mod
     !  Date: October 2016
     !
     ! An abstract data type for calculating melting of an ice shelf into
-    ! a vertically integrated [[plume]]. The melt rate, as well as
+    ! a vertically integrated [[plume(type)]]. The melt rate, as well as
     ! effect on termperature and salinity, are calculated by calling
-    ! [[abstract_melt_relationship:solve_for_melt]] and then accessed
-    ! using [[abstract_melt_relationship:melt_rate]],
-    ! [[abstract_melt_relationship:heat_equation_terms]],
-    ! [[abstract_melt_relationship:salt_equation_terms]]. 
+    ! [[abstract_melt_relationship(type):solve_for_melt]] and then accessed
+    ! using [[abstract_melt_relationship(type):melt_rate]],
+    ! [[abstract_melt_relationship(type):heat_equation_terms]],
+    ! [[abstract_melt_relationship(type):salt_equation_terms]]. 
     ! 
   contains
     procedure(solve), deferred      :: solve_for_melt
     procedure(get_scalar), deferred :: salt_equation_terms
       !! Returns the terms this melt formulation contributes to the
       !! salt equation, after they have been solved for using
-      !! [[abstract_melt_relationship:solve_for_melt]].
+      !! [[abstract_melt_relationship(type):solve_for_melt]].
     procedure(get_scalar), deferred :: heat_equation_terms
       !! Returns the terms this melt formulation contributes to the
       !! heat equation, after they have been solved for using
-      !! [[abstract_melt_relationship:solve_for_melt]]. 
+      !! [[abstract_melt_relationship(type):solve_for_melt]]. 
     procedure(get_scalar), deferred :: melt_rate
       !! Returns the melt rate calculated using this formulation,
       !! after it has been solved for using 
-      !! [[abstract_melt_relationship:solve_for_melt]]. 
+      !! [[abstract_melt_relationship(type):solve_for_melt]]. 
     procedure(has_terms), deferred  :: has_heat_terms
       !! Whether this formulation of melting contributes any terms to
       !! a plume's heat equation.

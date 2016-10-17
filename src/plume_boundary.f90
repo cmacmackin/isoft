@@ -48,9 +48,9 @@ module plume_boundary_mod
     ! conditions of plumes are to be specified. The descendent types
     ! can contain whatever data is needed to compute the result. For
     ! general boundary conditions, it provides the routine 
-    ! [[plume_boundary:get_boundaries_residual]] to return an array
+    ! [[plume_boundary(type):get_boundaries_residual]] to return an array
     ! with the residuals representing deviation from satisfying the
-    ! conditions. This can then be appended to a [[plume]]'s residual 
+    ! conditions. This can then be appended to a [[plume(type)]]'s residual 
     ! array. Given that, depending on the numerical algorithm,
     ! computational savings can be made when a Dirichlet boundary is
     ! used, routines are also provided to indicated whether this is the case
@@ -172,7 +172,7 @@ module plume_boundary_mod
       !! appended to a plume's state vector
     procedure :: residual_size
       !! Provides an integer indicating the size of the array returned by
-      !! [[plume_boundary:boundary_residuals]]. 
+      !! [[plume_boundary(type):boundary_residuals]]. 
   end type plume_boundary
 
   abstract interface
@@ -229,7 +229,7 @@ contains
     !* Author: Chris MacMackin
     !  Date: September 2016
     !
-    ! Default implementation of the [[plume_boundary:boundary_residuals]]
+    ! Default implementation of the [[plume_boundary(type):boundary_residuals]]
     ! method. It returns a zero-length array, effectively indicating free
     ! boundaries.
     !
@@ -255,9 +255,9 @@ contains
     !* Author: Chris MacMackin
     !  Date: September 2016
     !
-    ! Default implementation of the [[plume_boundary:residual_size]]
+    ! Default implementation of the [[plume_boundary(type):residual_size]]
     ! routine providing the size of the residual array returned by
-    ! [[plume_boundary:boundary_residuals]]. For performance
+    ! [[plume_boundary(type):boundary_residuals]]. For performance
     ! reasons, this routine does not simply use the `size()`
     ! intrinisic on the residual array and should be implemented for
     ! each, boundary condition sub-type. Preferably it will return a
@@ -266,7 +266,7 @@ contains
     class(plume_boundary), intent(in) :: this
     integer :: residual_size
       !! The number of elements in the array returned by
-      !! [[plume_boundary:boundary_residuals]]
+      !! [[plume_boundary(type):boundary_residuals]]
     residual_size = 0
     return
   end function residual_size

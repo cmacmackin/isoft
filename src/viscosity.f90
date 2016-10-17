@@ -38,7 +38,7 @@ module viscosity_mod
     !  Date: October 2016
     !
     ! An abstract data type for calculating viscosity of a vertically
-    ! integrated [[glacier]]. 
+    ! integrated [[glacier(type)]]. 
     !
   contains
     procedure(get_viscosity), deferred   :: ice_viscosity

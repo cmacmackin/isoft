@@ -25,7 +25,7 @@ module plume_mod
   !  Date: April 2016
   !  License: GPLv3
   !
-  ! Provides a concrete implementation of the [[basal_surface]] data type,
+  ! Provides a concrete implementation of the [[basal_surface(type)]] data type,
   ! representing a buoyant plume beneath an ice shelf.
   !
   use iso_fortran_env, only: r8 => real64
@@ -40,8 +40,9 @@ module plume_mod
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
-    ! A concrete implementation of the [[basal_surface]] abstract data type,
-    ! representing the buoyant plume beneath an ice shelf.
+    ! A concrete implementation of the [[basal_surface(type)]]
+    ! abstract data type, representing the buoyant plume beneath an
+    ! ice shelf.
     !
     private
     type(cheb1d_scalar_field) :: thickness
@@ -79,8 +80,9 @@ module plume_mod
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
-      ! Abstract interface for function providing the initial values for the
-      ! scalar properties of a [[plume]] object when it is being instantiated.
+      ! Abstract interface for function providing the initial values
+      ! for the scalar properties of a [[plume(type)]] object when it
+      ! is being instantiated.
       !
       import :: r8
       real(r8), dimension(:), intent(in) :: location
@@ -93,7 +95,7 @@ module plume_mod
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
-      ! Abstract interface for function providing the [[plume]] velocity
+      ! Abstract interface for function providing the [[plume(type)]] velocity
       ! when an object is being instantiated.
       !
       import :: r8
@@ -112,9 +114,10 @@ contains
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
-    ! Instantiates a [[plume]] object with initial coniditions provided by the
-    ! arguments.At present only a 1D model is supported. If information is
-    ! provided for higher dimensions then it will be ignored.
+    ! Instantiates a [[plume(type)]] object with initial coniditions
+    ! provided by the arguments.At present only a 1D model is
+    ! supported. If information is provided for higher dimensions then
+    ! it will be ignored.
     !
     real(r8), dimension(:,:), intent(in) :: domain
       !! An array containing the upper and lower limits of the domain for
@@ -177,7 +180,7 @@ contains
     ! the frictional drag the plume exerts on the bottom of the ice
     ! shelf. The plume would actually tend to exert no drag on the bottom
     ! of the ice shelf, but this method is present so that there is a
-    ! consistent interface with the [[ground]] data type.
+    ! consistent interface with the [[ground(type)]] data type.
     !
     class(plume), intent(in)         :: this
     class(scalar_field), allocatable :: drag
@@ -243,9 +246,9 @@ contains
     !  Date: August 2016
     !
     ! Returns the number of elements in the plume's state vector.
-    ! This is the size of the vector returned by [[plume:residual]]
-    ! and [[plume:state_vector]] and taken as an argument by 
-    ! [[plume:update]].
+    ! This is the size of the vector returned by [[plume(type):residual]]
+    ! and [[plume(type):state_vector]] and taken as an argument by 
+    ! [[plume(type):update]].
     !
     class(plume), intent(in) :: this
     integer                  :: plume_data_size
