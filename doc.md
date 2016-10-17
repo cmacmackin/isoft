@@ -12,10 +12,11 @@ summary: Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and
 project_github: https://github.com/cmacmackin/isoft
 display: public
          protected
-	 private
+         private
 graph: true
 source: true
-page_dir: pages
+include: ~/.local/include
+media_dir: ./media
 
 ISOFT is a piece of software/suite of tools which I use to simulate the
 evolution of ice shelves coupled to ocean plumes. At present it is still
