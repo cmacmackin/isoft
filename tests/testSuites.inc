@@ -1,2 +1,3 @@
 ADD_TEST_SUITE(bc_test_suite)
-
+ADD_TEST_SUITE(dallaston2015_melt_test_suite)
+ADD_TEST_SUITE(jenkins1991_entrainment_test_suite)

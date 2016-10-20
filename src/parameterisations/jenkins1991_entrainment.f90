@@ -29,7 +29,7 @@ module jenkins1991_entrainment_mod
   ! in the form of the parameterisation used by Jenkins (1991).
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field, vector_field
+  use factual_mod!, only: scalar_field, vector_field, abs
   use entrainment_mod, only: abstract_entrainment
   implicit none
   private
@@ -104,8 +104,9 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), allocatable           :: entrainment
       !! The value of the entrainment
-    allocate(entrainment, &
-             source=this%coefficient * depth%d_dx(1) * velocity%norm())
+    call depth%allocate_scalar_field(entrainment)
+    entrainment = abs(depth%d_dx(1)) ! Needed due to ICE when try to put aqll on one line. TODO: Create minimal example and submit bug report.
+    entrainment = this%coefficient * entrainment * velocity%norm()
   end function jenkins1991_rate
 
 end module jenkins1991_entrainment_mod

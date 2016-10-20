@@ -40,6 +40,8 @@ module newtonian_viscosity_mod
     !
     ! An implementation of Newtonian (constant) viscosity for a glacier. 
     !
+    private
+    real(r8) :: viscosity_value = 0.0_r8
   contains
     procedure :: ice_viscosity => newtonian_ice_viscosity
       !! Returns the viscosity for the ice.
@@ -57,6 +59,7 @@ contains
       !! to return.
     type(newtonian_viscosity) :: this
       !! The viscosity object being created.
+    this%viscosity_value = viscosity_value
   end function constructor
 
   function newtonian_ice_viscosity(this, velocity, temperature, time) &

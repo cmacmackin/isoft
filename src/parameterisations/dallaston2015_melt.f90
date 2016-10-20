@@ -114,7 +114,8 @@ contains
     class(scalar_field), allocatable      :: heat
       !! The value of the contribution made by melting/thermal
       !! transfer to the heat equation for a [[plume]]
-    allocate(heat, mold=this%melt_values)
+    if (.not. allocated(this%melt_values)) error stop('Melt values not allocated')
+    call this%melt_values%allocate_scalar_field(heat)
     heat = (this%beta + 1.0_r8) * this%melt_values
   end function dallaston2015_heat
 
@@ -129,6 +130,7 @@ contains
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: melt
       !! The melt rate from the ice into the plume water.
+    if (.not. allocated(this%melt_values)) error stop('Melt values not allocated')
     allocate(melt, source=this%melt_values)
   end function dallaston2015_melt_rate
 
