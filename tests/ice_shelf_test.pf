@@ -32,7 +32,6 @@ module ice_shelf_test
 
   integer, parameter :: resolution = 50
   real(r8), parameter :: big_x = 2.702702703_r8
-  real(r8), parameter :: ice_density = 0.889320388_r8
 
   @TestCase
   type, extends(testcase) :: test_shelf
@@ -40,8 +39,8 @@ module ice_shelf_test
     integer         :: nodes = resolution
     real(r8)        :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
-    real(r8)        :: density = ice_density, temperature = -15._r8, &
-                       lambda = 1._r8/big_x, chi = 4._r8/(1._r8 - ice_density)
+    real(r8)        :: temperature = -15._r8, lambda = 1._r8/big_x, &
+                       chi = 4._r8
   contains
     procedure :: setup
   end type test_shelf
@@ -84,8 +83,8 @@ contains
     domain2(1,1) = this%lower2
     domain2(1,2) = this%upper2
     this%shelf1 = ice_shelf(domain1, [this%nodes], thickness1, velocity1, &
-                            this%density, this%temperature,               &
-                            newtonian_viscosity(1.0_r8), this%lambda, this%chi)
+                            this%temperature, newtonian_viscosity(1.0_r8), &
+                            this%lambda, this%chi)
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
   end subroutine setup
 

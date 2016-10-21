@@ -82,7 +82,7 @@ module ice_shelf_mod
 
 contains
   
-  function constructor(domain, resolution, thickness, velocity, density, &
+  function constructor(domain, resolution, thickness, velocity, &
                        temperature, viscosity_law, lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -105,8 +105,6 @@ contains
     procedure(velocity_func)                        :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice shelf.
-    real(r8), intent(in), optional                  :: density
-      !! The density of the ice in the ice shelf.
     real(r8), intent(in), optional                  :: temperature
       !! The temperature of the ice in the ice shelf.
     class(abstract_viscosity), intent(in), optional :: viscosity_law
@@ -114,10 +112,11 @@ contains
       !! specified, then Glen's law will be used with $n=3$.
     real(r8), intent(in), optional                  :: lambda
       !! The dimensionless ratio 
-      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$.
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH_0u_0}$.
     real(r8), intent(in), optional                  :: chi
       !! The dimensionless ratio
-      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$.
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}\left(1 -
+      !! \frac{\rho_i}{\rho_0}\right)$.
     type(ice_shelf)                                 :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.

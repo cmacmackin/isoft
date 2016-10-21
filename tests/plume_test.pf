@@ -31,7 +31,6 @@ module plume_test
 
   integer, parameter :: resolution = 50
   real(r8), parameter :: big_x = 2.702702703
-  real(r8), parameter :: ice_density = 0.889320388_r8
   
   @TestCase
   type, extends(testcase), public :: test_plume
@@ -45,6 +44,31 @@ module plume_test
   end type test_plume
 
 contains
+
+  pure function depth1(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: depth1
+    depth1 = (1._r8 - location(1)/big_x) / &
+             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+  end function depth1
+
+  pure function depth2(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: depth2
+    depth2 = 1.0_r8/(location(1)**2 + 1.0_r8)
+  end function depth2
+
+  pure function thickness1(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: thickness1
+    thickness1 = depth1([0.0_r8]) - depth1(location)
+  end function thickness1
+
+  pure function thickness2(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: thickness2
+    thickness2 = depth2([-1.0_r8]) - depth2(location)
+  end function thickness2
 
   subroutine setup(this)
     class(test_plume), intent(inout) :: this
@@ -61,7 +85,7 @@ contains
 
   @Test
   subroutine test_basal_drag(this)
-    !! Test that the plume calculates teh correct basal drag coefficient
+    !! Test that the plume calculates the correct basal drag coefficient
     !! given how it was initialised.
     class(test_plume), intent(inout) :: this
     type(cheb1d_scalar_field) :: actual_drag
