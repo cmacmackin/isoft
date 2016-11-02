@@ -105,8 +105,11 @@ contains
     real(r8), intent(in), optional           :: time
       !! The time at which the melting is being solved for. If not
       !! present then assumed to be same as previous value passed.
-    if (allocated(this%melt_values)) deallocate(this%melt_values)
-    allocate(this%melt_values, source=velocity%norm())
+    if (allocated(this%melt_values)) then
+      this%melt_values = velocity%norm()
+    else
+      allocate(this%melt_values, source=velocity%norm())
+    end if
   end subroutine dallaston2015_solve
 
   pure function dallaston2015_heat(this) result(heat)

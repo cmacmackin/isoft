@@ -63,20 +63,29 @@ contains
   end function constructor
 
   function newtonian_ice_viscosity(this, velocity, temperature, time) &
-                                                   result(viscosity)
+                                                    result(viscosity)
     class(newtonian_viscosity), intent(in) :: this
-    class(vector_field), intent(in)       :: velocity
+    class(vector_field), intent(in)        :: velocity
       !! The velocity field of the ice for which the velocity is
       !! being calculated
-    real(r8), intent(in)                  :: temperature
+    real(r8), intent(in)                   :: temperature
       !! The temperature of the ice for which viscosity is being
       !! calculated.
-    real(r8), intent(in), optional        :: time
+    real(r8), intent(in), optional         :: time
       !! The time at which the viscosity is being calculated. If not
       !! present then assumed to be same as previous value passed.
-    class(scalar_field), allocatable      :: viscosity
+    class(scalar_field), allocatable       :: viscosity
       !! The value of the viscosity
-    
+    real(r8), dimension(2,1) :: domain
+    domain = velocity%domain()
+    call velocity%allocate_scalar_field(viscosity)
+    !viscosity = 
+  contains
+    function visc(x)
+      real(r8), dimension(:), intent(in) :: x
+      real(r8) :: visc
+      visc = this%viscosity_value
+    end function visc
   end function newtonian_ice_viscosity
 
 end module newtonian_viscosity_mod

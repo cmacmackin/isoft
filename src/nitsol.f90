@@ -47,7 +47,7 @@ module nitsol_mod
         !! Dimension of the problem
       real(r8), dimension(n), intent(inout) :: x
         !! Vector of length n, initial guess on input and final
-        !! approximaet solution on output
+        !! approximate solution on output
 
       interface
          subroutine f(n, xcur, fcur, rpar, ipar, itrmf)
@@ -57,7 +57,7 @@ module nitsol_mod
            integer                                  :: n
              !! Dimension of the problem
            real(r8), dimension(*), intent(in)       :: xcur
-             !! Array of length `n` containing the current $x$ value
+             !! Array of length `n` containing the current \(x\) value
            real(r8), dimension(*), intent(out)      :: fcur
              !! Array of length `n` containing f(xcur) on output
            real(r8), dimension(*), intent(inout)    :: rpar
@@ -71,23 +71,23 @@ module nitsol_mod
 
          subroutine jacv(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
            !! User-supplied subroutine for optionally evaluating
-           !! $J\vec{v}$ or $P^{-1}\vec{v}$, where $J$ is the Jacobian
-           !! of $f$ and $P$ is a right preconditioning operator. If
-           !! neither analytic $J\vec{v}$ evaluations nor right
+           !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+           !! of \(f\) and \(P\) is a right preconditioning operator. If
+           !! neither analytic \(J\vec{v}\) evaluations nor right
            !! preconditioning is used, this can be a dummy subroutine;
            !! if right preconditioning is used but not analytic
-           !! $J\vec{v}$ evaluations, this need only evaluate
-           !! $P^{-1}\vec{v}$.
+           !! \(J\vec{v}\) evaluations, this need only evaluate
+           !! \(P^{-1}\vec{v}\).
            import :: r8
            integer, intent(in)                   :: n
              !! Dimension of the problem
            real, dimension(*), intent(in)        :: xcur
              !! Array of lenght `n` containing the current $x$ value
            real, dimension(*), intent(in)        :: fcur
-             !! Array of lenght `n` containing the current $f(x)$ value
+             !! Array of lenght `n` containing the current \(f(x)\) value
            integer, intent(in)                   :: ijob
              !! Integer flat indicating which product is desired. 0
-             !! indicates $z = J\vec{v}). 1 indicates $z = P^{-1}\vec{v}$.
+             !! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
            real(r8), dimension(*), intent(in)    :: v
              !! An array of length `n` to be multiplied
            real(r8), dimension(*), intent(out)   :: z
@@ -100,7 +100,7 @@ module nitsol_mod
            integer, intent(out)                  :: itrmjv
              !! Termination flag. 0 indcates normal termination, 1
              !! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
-             !! failure to produce $P^{-1}\vec{v}$/
+             !! failure to produce \(P^{-1}\vec{v}\)
          end subroutine jacv
       end interface
 
@@ -116,13 +116,13 @@ module nitsol_mod
         !! Work array with length depending on the solver used as follows:
         !!
         !!GMRES
-        !!:    $n\times(\text{kdmax}+5)+\text{kdmax}\times(\text{kdmax}+3)$,
+        !!:    \(n\times(\text{kdmax}+5)+\text{kdmax}\times(\text{kdmax}+3)\),
         !!     where kdmax is the maximum Krylove subspace dimension, either
         !!     the default value of 20 or another value specified by the user
         !!BiCGSTAB
-        !!:    $11n$
+        !!:    \(11n\)
         !!TFQMR
-        !!:    $14n$
+        !!:    \(14n\)
       real(r8), dimension(*), intent(inout) :: rpar
         !! Parameter/work array passed to the `f` and `jacv` routines
       integer, dimension(*), intent(inout)  :: ipar
@@ -133,22 +133,22 @@ module nitsol_mod
         !!-k
         !!:    illegal value in `input(k)`
         !!0
-        !!:    normal termination: $||F|| < \text{ftol}$ or $||\text{step}||
-        !!     < \text{stptol}$
+        !!:    normal termination: \(||F|| < \text{ftol}\) or \(||\text{step}||
+        !!     < \text{stptol}\)
         !!1
         !!:    `nnimax` nonlinar iterations reached without success
         !!2
-        !!:    failure to evaluate $F$
+        !!:    failure to evaluate \(F\)
         !!3
-        !!:    in `nitjv`, $J\vec{v}$  failure
+        !!:    in `nitjv`, \(J\vec{v}\)  failure
         !!4
-        !!:    in `nitjv`, $P^{-1}\vec{v}$ failure
+        !!:    in `nitjv`, \(P^{-1}\vec{v}\) failure
         !!5
         !!:    in `nitdrv`, insufficient initial model norm reduction for
         !!     adequate progress. **Note:** This can occur for several
         !!     reasons; examine `itrmks` on return from the Krylov solver
         !!     for further information. (This will be printed out if
-        !!     $\text{iplvl}\ge 3$; see the discussion of optional common
+        !!     \(\text{iplvl}\ge 3\); see the discussion of optional common
         !!     blocks below.)
         !!6
         !!:    in `nitbt`, failure to reach an acceptable step through

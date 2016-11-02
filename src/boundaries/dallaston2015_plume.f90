@@ -45,6 +45,15 @@ module dallaston2015_plume_boundary_mod
     ! Dirichlet conditions at the west (incoming) boundary and free
     ! conditions at the east (outgoing) boundary.
     !
+    private
+    real(r8) :: thickness = 0.0_r8
+      !! The thickness of the plume at the inflowing boundary
+    real(r8) :: velocity = 1.0_r8
+      !! The velocity of the plume at the inflowing boundary
+    real(r8) :: temperature = 0.0_r8
+      !! The temperature of the plume at the inflowing boundary
+    real(r8) :: salinity = 0.0_r8
+      !! The salinity of the plume at the inflowing boundary
   contains
     procedure :: thickness_west_is_dirichlet => dallaston2015_is_dirichlet
       !! Returns `.true.` if constant Dirichlet conditions are used at the
@@ -72,10 +81,33 @@ module dallaston2015_plume_boundary_mod
       !! at the west boundary.
   end type dallaston2015_plume_boundary
 
-  abstract interface
-  end interface
+  interface dallast2015_plume_boundary
+    module procedure constructor
+  end interface dallast2015_plume_boundary
 
 contains
+
+  function constructor(thickness, velocity, temperature, salinity) result(this)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Constructs a boundary condition object for an ice shelf based on
+    ! the conditions used in Dallaston et al. (2015).
+    !
+    real(r8), intent(in) :: thickness
+      !! The water thickness at the inflowing plume boundary
+    real(r8), intent(in) :: velocity
+      !! The longitudinal water velocity at the inflowing plume boundary
+    real(r8), intent(in) :: temperature
+      !! The water temperature at the inflowing plume boundary
+    real(r8), intent(in) :: salinity
+      !! The water salinity at the inflowing plume boundary
+    type(dallaston2015_plume_boundary) :: this
+    this%thickness = thickness
+    this%velocity = velocity
+    this%temperature = temperature
+    this%salinity = salinity
+  end function constructor
  
   function dallaston2015_is_dirichlet(this)
     !* Author: Chris MacMackin
@@ -102,23 +134,23 @@ contains
       !! The time at which the boundary condition is to be calculated.
     real(r8) :: boundary_value
       !! The value of the boundary conditions
-    boundary_value = 0.0_r8
+    boundary_value = this%thickness
   end function dallaston2015_thickness
 
-  function dirichlet_none_vec(this, t)
+  function dallaston2015_velocity(this,t) result(boundary_value)
     !* Author: Chris MacMackin
     !  Date: September 2016
     !
-    ! Defualt implementation of the routines to get vector Dirichlet
-    ! boundary conditions, which returns an uninitialised variable, as they 
-    ! should be overriden if the result is to actually be used.
+    ! Specifies the boundary value for the velocity at the west boundary.
     !
-    class(dallaston2015_plume_boundary), intent(in)   :: this
+    class(dallaston2015_plume_boundary), intent(in) :: this
     real(r8), intent(in)                :: t
       !! The time at which the boundary condition is to be calculated.
-    real(r8), allocatable, dimension(:) :: dirichlet_none_vec
+    real(r8), allocatable, dimension(:) :: boundary_value
       !! The value of the boundary conditions
-  end function dirichlet_none_vec
+    allocate(boundary_value(1))
+    boundary_value = this%velocity
+  end function dallaston2015_velocity
 
   function dallaston2015_salinity(this, t) result(boundary_value)
     !* Author: Chris MacMackin
@@ -131,7 +163,7 @@ contains
       !! The time at which the boundary condition is to be calculated.
     real(r8) :: boundary_value
       !! The value of the boundary conditions
-    boundary_value = 0.0_r8
+    boundary_value = this%salinity
   end function dallaston2015_salinity
 
   function dallaston2015_temperature(this, t) result(boundary_value)
@@ -145,7 +177,7 @@ contains
       !! The time at which the boundary condition is to be calculated.
     real(r8) :: boundary_value
       !! The value of the boundary conditions
-    boundary_value = 0.0_r8 !FIXME: This is supposed to be equal to the freezing point, but I'm not certain how to get that for Dallaston2015, as they only provide the forcing.
+    boundary_value = this%temperature !FIXME: This is supposed to be equal to the freezing point, but I'm not certain how to get that for Dallaston2015, as they only provide the forcing.
   end function dallaston2015_temperature
 
 end module dallaston2015_plume_boundary_mod

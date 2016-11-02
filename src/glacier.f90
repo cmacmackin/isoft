@@ -53,6 +53,8 @@ module glacier_mod
       !! glacier.
     procedure(setter), deferred       :: update
       !! Sets the state of the glacier.
+    procedure(time_setter), deferred  :: set_time
+      !! Sets the time record for this glacier.
     procedure(get_i), deferred        :: data_size
       !! Returns the number of elements in the glacier's state vector
     procedure(get_r81d), deferred     :: state_vector
@@ -112,17 +114,22 @@ module glacier_mod
         !! The state vector of the glacier
     end function get_r81d
 
-    subroutine setter(this, state_vector, time)
+    subroutine setter(this, state_vector)
       import :: glacier
       import :: r8
       class(glacier), intent(inout)      :: this
       real(r8), dimension(:), intent(in) :: state_vector
         !! A real array containing the data describing the state of the
         !! glacier.
-      real(r8), intent(in), optional     :: time
-        !! The time at which the glacier is in this state. If not present
-        !! then assumed to be same as previous value passed.
     end subroutine setter
+
+    subroutine time_setter(this, time)
+      import :: glacier
+      import :: r8
+      class(glacier), intent(inout) :: this
+      real(r8), intent(in)          :: time
+        !! The time at which the glacier is in the present state.
+    end subroutine time_setter
 
     pure function get_i(this) result(property)
       import :: glacier

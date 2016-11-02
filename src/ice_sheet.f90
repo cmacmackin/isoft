@@ -45,9 +45,9 @@ module ice_sheet_mod
     ! integrated model of an ice sheet. This model is 1-dimensional only.
     !
     private
-    type(cheb1d_scalar_field) :: thickness 
+    type(cheb1d_scalar_field) :: thickness
       !! Thickness of ice sheet, $h$
-    type(cheb1d_vector_field) :: velocity  
+    type(cheb1d_vector_field) :: velocity
       !! Flow velocity of ice sheet, $\vec{u}$
     real(r8)                  :: lambda
       !! The dimensionless ratio 
@@ -57,6 +57,8 @@ module ice_sheet_mod
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
+    real(r8)                  :: time
+      !! The time at which the ice shelf is in this state
   contains
 !$    procedure            :: t => sheet_dt
 !$    procedure            :: local_error => sheet_local_error
@@ -72,6 +74,7 @@ module ice_sheet_mod
     procedure :: ice_temperature => sheet_temperature
     procedure :: residual => sheet_residual
     procedure :: update => sheet_update
+    procedure :: set_time => sheet_set_time
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
   end type ice_sheet
@@ -316,7 +319,7 @@ contains
       !! The residual of the system of equations describing the glacier.
   end function sheet_residual
 
-  subroutine sheet_update(this, state_vector, time)
+  subroutine sheet_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -328,10 +331,20 @@ contains
     real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! glacier.
-    real(r8), intent(in), optional     :: time
-      !! The time at which the glacier is in this state. If not present
-      !! then assumed to be same as previous value passed.
   end subroutine sheet_update
+
+  subroutine sheet_set_time(this, time)
+    !* Author: Christopher MacMackin
+    !  Date: November 2016
+    !
+    ! Sets the time information held by the ice sheet object. This is
+    ! the time at which the ice sheet is in its current state.
+    !
+    class(ice_sheet), intent(inout) :: this
+    real(r8), intent(in)            :: time
+      !! The time at which the glacier is in the present state.
+    this%time = time
+  end subroutine sheet_set_time
 
   pure function sheet_data_size(this)
     !* Author: Christopher MacMackin

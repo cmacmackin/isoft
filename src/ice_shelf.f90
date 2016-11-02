@@ -57,6 +57,8 @@ module ice_shelf_mod
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
+    real(r8)                  :: time
+      !! The time at which the ice shelf is in this state
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -72,6 +74,7 @@ module ice_shelf_mod
     procedure :: ice_temperature => shelf_temperature
     procedure :: residual => shelf_residual
     procedure :: update => shelf_update
+    procedure :: set_time => shelf_set_time
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
   end type ice_shelf
@@ -321,7 +324,7 @@ contains
       !! The residual of the system of equations describing the glacier.
   end function shelf_residual
 
-  subroutine shelf_update(this, state_vector, time)
+  subroutine shelf_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -333,10 +336,20 @@ contains
     real(r8), dimension(:), intent(in)  :: state_vector
       !! A real array containing the data describing the state of the
       !! glacier.
-    real(r8), intent(in), optional      :: time
-      !! The time at which the glacier is in this state. If not present
-      !! then assumed to be same as previous value passed.
   end subroutine shelf_update
+
+  subroutine shelf_set_time(this, time)
+    !* Author: Christopher MacMackin
+    !  Date: November 2016
+    !
+    ! Sets the time information held by the ice shelf object. This is
+    ! the time at which the ice sheet is in its current state.
+    !
+    class(ice_shelf), intent(inout) :: this
+    real(r8), intent(in)            :: time
+      !! The time at which the glacier is in the present state.
+    this%time = time
+  end subroutine shelf_set_time
 
   pure function shelf_data_size(this)
     !* Author: Christopher MacMackin
