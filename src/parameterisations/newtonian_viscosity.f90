@@ -53,7 +53,7 @@ module newtonian_viscosity_mod
 
 contains
 
-  function constructor(viscosity_value) result(this)
+  pure function constructor(viscosity_value) result(this)
     real(r8), intent(in) :: viscosity_value
       !! The numerical value of the viscosity which this type is meant 
       !! to return.

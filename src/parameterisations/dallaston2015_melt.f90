@@ -81,7 +81,7 @@ module dallaston2015_melt_mod
 
 contains
 
-  function constructor(beta) result(this)
+  pure function constructor(beta) result(this)
     real(r8), intent(in) :: beta
       !! The inverse stefan number, $$\beta = \frac{c(T_a - T_m}{L}$$
     type(dallaston2015_melt) :: this

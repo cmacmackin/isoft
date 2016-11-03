@@ -59,7 +59,7 @@ module jenkins1991_entrainment_mod
 
 contains
 
-  function constructor(coefficient) result(this)
+  pure function constructor(coefficient) result(this)
     real(r8), intent(in) :: coefficient
       !! The entrainment coefficient, $E_0$ to be used
     type(jenkins1991_entrainment) :: this

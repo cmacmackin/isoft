@@ -87,7 +87,7 @@ module dallaston2015_plume_boundary_mod
 
 contains
 
-  function constructor(thickness, velocity, temperature, salinity) result(this)
+  pure function constructor(thickness, velocity, temperature, salinity) result(this)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
