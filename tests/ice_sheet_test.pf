@@ -145,7 +145,7 @@ contains
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    actual = this%sheet1%residual(this%sheet1,melt,drag,water)
+    actual = this%sheet1%residual([this%sheet1],melt,drag,water)
     @assertEqual(this%sheet1%data_size(),size(actual),message='Residual array of wronge size')
     allocate(expected(size(actual)))
     expected = 0.0_r8

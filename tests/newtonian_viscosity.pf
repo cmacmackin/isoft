@@ -25,7 +25,7 @@ module newtonian_viscosity_test
   use pfunit_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
-  use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
+  use newtonian_viscosity_mod, only: newtonian_viscosity
 
   integer, parameter :: resolution = 50
 
@@ -58,20 +58,20 @@ contains
   end function velocity2
 
   subroutine setup(this)
-    class(test_entrain), intent(inout) :: this
+    class(viscosity_test), intent(inout) :: this
     this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1)
     this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,extra_dims=1)
     this%time1 = 1.0d5
     this%time2 = -5.7_r8
     this%temp1 = 1.0_r8
     this%temp2 = -3.5_r8
-    this%visc1 = newtonian_viscosity(this%visc1)
-    this%visc2 = newtonian_viscosity(this%visc2)
+    this%visc1 = newtonian_viscosity(this%viscval1)
+    this%visc2 = newtonian_viscosity(this%viscval2)
   end subroutine setup
 
   @Test
   subroutine test_entrainment_values(this)
-    class(test_viscosity), intent(inout) :: this
+    class(viscosity_test), intent(inout) :: this
 
   end subroutine test_entrainment_values
 
