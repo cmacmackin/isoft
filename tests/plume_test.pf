@@ -27,6 +27,8 @@ module plume_test
   use plume_mod, only: plume
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
+  use dallaston2015_melt_mod, only: dallaston2015_melt
+  use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
   implicit none
 
   integer, parameter :: resolution = 50

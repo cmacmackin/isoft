@@ -34,6 +34,7 @@ module ice_shelf_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use viscosity_mod, only: abstract_viscosity
+  use glacier_boundary_mod, only: glacier_boundary
   implicit none
   private
 
@@ -57,6 +58,9 @@ module ice_shelf_mod
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
+    class(glacier_boundary), allocatable   :: boudnaries
+      !! An object specifying the boundary conditions for the ice
+      !! shelf.
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
   contains
@@ -86,7 +90,8 @@ module ice_shelf_mod
 contains
   
   function constructor(domain, resolution, thickness, velocity, &
-                       temperature, viscosity_law, lambda, chi) result(this)
+                       temperature, viscosity_law, boundaries, &
+                       lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -113,6 +118,8 @@ contains
     class(abstract_viscosity), intent(in), optional :: viscosity_law
       !! An object which calculates the viscosity of the ice. If not
       !! specified, then Glen's law will be used with $n=3$.
+    class(glacier_boundary), intent(in), optional   :: boundaries
+      !! An object specifying the boundary conditions for the ice shelf.
     real(r8), intent(in), optional                  :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH_0u_0}$.
@@ -300,8 +307,8 @@ contains
     real(r8)                     :: temperature !! The ice density.
   end function shelf_temperature
 
-  function shelf_residual(this, previous_states, melt_rate, basal_drag_parameter, &
-                          water_density) result(residual) 
+  function shelf_residual(this, previous_states, melt_rate, &
+                          basal_drag_parameter, water_density) result(residual) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !

@@ -33,6 +33,8 @@ module plume_mod
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
+  use plume_boundary_mod, only: plume_boundary
+  use ambient_mod, only: ambient_conditions
   implicit none
   private
 
@@ -57,8 +59,13 @@ module plume_mod
       !! An object which provides the parameterisation for entrainment
       !! of water into the plume.
     class(abstract_melt_relationship), allocatable :: melt_formulation
-      !! An object which provides teh parameterisation for melting,
+      !! An object which provides the parameterisation for melting,
       !! salt, and heat fluxes from the plume to the ice.
+    class(ambient_conditions), allocatable :: ambient_conds
+      !! An object specifying the temperature and salinity of the
+      !! ambient ocean at its interface with the plume.
+    class(plume_boundary), allocatable :: boundaries
+      !! An object specifying the boundary conditions for the plume.
     real(r8)                  :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
     real(r8)                  :: nu
@@ -113,7 +120,7 @@ contains
 
   function constructor(domain, resolution, thickness, velocity, temperature, &
                        salinity, entrainment_formulation, melt_formulation,  &
-                       delta, nu, mu, sigma) result(this)
+                       ambient_conds, boundaries, delta, nu, mu, sigma) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -142,18 +149,23 @@ contains
     procedure(scalar_func)               :: salinity
       !! A function which calculates the initial value of the salinity of 
       !! the plume at a given location.
-    class(abstract_entrainment), intent(in) :: entrainment_formulation
+    class(abstract_entrainment), optional, intent(in) :: entrainment_formulation
       !! An object which calculates entrainment into the plume.
-    class(abstract_melt_relationship), intent(in) :: melt_formulation
+    class(abstract_melt_relationship), optional, intent(in) :: melt_formulation
       !! An object which calculates melting and the resulting thermal
       !! transfer into/out of the plume.
-    real(r8), intent(in) :: delta
+    class(ambient_conditions), optional, intent(in) :: ambient_conds
+      !! An object specifying the salinity and temperature of the
+      !! ambient ocean.
+    class(plume_boundary), optional, intent(in) :: boundaries
+      !! An object providing the boundary conditions for the plume.
+    real(r8), optional, intent(in) :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
-    real(r8), intent(in) :: nu
+    real(r8), optional, intent(in) :: nu
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
-    real(r8), intent(in) :: mu
+    real(r8), optional, intent(in) :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
-    real(r8), intent(in) :: sigma
+    real(r8), optional, intent(in) :: sigma
       !! The dimensionless ratio 
       !! $\sigma \equiv \frac{U_0^2}{h_0g} = S_0\beta_S$
     type(plume) :: this

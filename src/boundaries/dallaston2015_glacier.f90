@@ -20,7 +20,7 @@
 !  MA 02110-1301, USA.
 !  
 
-module dallaston2015_plume_boundary_mod
+module dallaston2015_glacier_boundary_mod
   !* Author: Christopher MacMackin
   !  Date: November 2016
   !  License: GPLv3
@@ -100,7 +100,7 @@ contains
     !* Author: Chris MacMackin
     !  Date: September 2016
     !
-    ! Specifies Dirichlet inflow (west) boundaries for plume
+    ! Specifies Dirichlet inflow (west) boundaries for ice shelf
     ! thickness, velocity, temperature, and salinity.
     !
     class(dallaston2015_glacier_boundary), intent(in) :: this
@@ -153,4 +153,4 @@ contains
     boundary_value = this%velocity
   end function dallaston2015_velocity
 
-end module dallaston2015_plume_boundary_mod
+end module dallaston2015_glacier_boundary_mod
