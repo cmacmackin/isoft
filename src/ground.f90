@@ -48,6 +48,7 @@ module ground_mod
     procedure :: water_density => ground_water_density
     procedure :: residual => ground_residual
     procedure :: update => ground_update
+    procedure :: set_time => ground_set_time
     procedure :: data_size => ground_data_size
     procedure :: state_vector => ground_state_vector
   end type ground
@@ -131,7 +132,7 @@ contains
       !! The residual of the system of equations describing the ground.
   end function ground_residual
 
-  subroutine ground_update(this, state_vector, time)
+  subroutine ground_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -143,10 +144,19 @@ contains
     real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! ground.
-    real(r8), intent(in), optional     :: time
-      !! The time at which the ground is in this state. If not
-      !! present then assumed to be same as previous value passed.
   end subroutine ground_update
+
+  subroutine ground_set_time(this, time)
+    !* Author: Christopher MacMackin
+    !  Date: November 2016
+    !
+    ! Sets the time information held by the ground object. This is
+    ! the time at which the ground is in its current state.
+    !
+    class(ground), intent(inout) :: this
+    real(r8), intent(in)         :: time
+      !! The time at which the ground is in the present state.
+  end subroutine ground_set_time
 
   pure function ground_data_size(this)
     !* Author: Christopher MacMackin

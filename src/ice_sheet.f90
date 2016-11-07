@@ -110,10 +110,10 @@ contains
       !! (vector) of the ice at a given location in an ice sheet.
     class(abstract_viscosity), intent(in), optional :: viscosity_law
       !! An object which calculates the viscosity of the ice.
-    real(r8), intent(in)                            :: lambda
+    real(r8), intent(in), optional                  :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
-    real(r8), intent(in)                            :: chi
+    real(r8), intent(in), optional                  :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     type(ice_sheet)                                 :: this
@@ -295,7 +295,7 @@ contains
     real(r8)                     :: temperature !! The ice density.
   end function sheet_temperature
 
-  function sheet_residual(this, previous_state, melt_rate, basal_drag_parameter, &
+  function sheet_residual(this, previous_states, melt_rate, basal_drag_parameter, &
                           water_density) result(residual)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -305,17 +305,22 @@ contains
     ! form of a 1D array, with each element respresenting the residual for
     ! one of the equations in the system.
     !
-    class(ice_sheet), intent(in)        :: this
-    class(glacier), intent(in)          :: previous_state
-      !! The state of the ice sheet in the previous time step
-    class(scalar_field), intent(in)     :: melt_rate
+    class(ice_sheet), intent(in)             :: this
+    class(glacier), dimension(:), intent(in) :: previous_states
+      !! The states of the glacier in the previous time steps. The
+      !! first element of the array should be the most recent. The
+      !! default implementation will only make use of the most recent
+      !! state, but the fact that this is an array allows overriding
+      !! methods to use older states for higher-order integration
+      !! methods.
+    class(scalar_field), intent(in)          :: melt_rate
       !! Thickness of the ice above the glacier.
-    class(scalar_field), intent(in)     :: basal_drag_parameter
+    class(scalar_field), intent(in)          :: basal_drag_parameter
       !! A paramter, e.g. coefficient of friction, needed to calculate the
       !! drag on basal surface of the glacier.
-    class(scalar_field), intent(in)     :: water_density
+    class(scalar_field), intent(in)          :: water_density
       !! The density of the water below the glacier.
-    real(r8), dimension(:), allocatable :: residual
+    real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
   end function sheet_residual
 

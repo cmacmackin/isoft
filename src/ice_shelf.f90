@@ -300,7 +300,7 @@ contains
     real(r8)                     :: temperature !! The ice density.
   end function shelf_temperature
 
-  function shelf_residual(this, previous_state, melt_rate, basal_drag_parameter, &
+  function shelf_residual(this, previous_states, melt_rate, basal_drag_parameter, &
                           water_density) result(residual) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -310,17 +310,22 @@ contains
     ! form of a 1D array, with each element respresenting the residual for
     ! one of the equations in the system.
     !
-    class(ice_shelf), intent(in)        :: this
-    class(glacier), intent(in)          :: previous_state
-      !! The state of the ice shelf in the previous time step
-    class(scalar_field), intent(in)     :: melt_rate
+    class(ice_shelf), intent(in)             :: this
+    class(glacier), dimension(:), intent(in) :: previous_states
+      !! The states of the glacier in the previous time steps. The
+      !! first element of the array should be the most recent. The
+      !! default implementation will only make use of the most recent
+      !! state, but the fact that this is an array allows potential
+      !! other implementations to use older states for higher-order
+      !! integration methods.
+    class(scalar_field), intent(in)          :: melt_rate
       !! Thickness of the ice above the glacier.
-    class(scalar_field), intent(in)     :: basal_drag_parameter
+    class(scalar_field), intent(in)          :: basal_drag_parameter
       !! A paramter, e.g. coefficient of friction, needed to calculate the
       !! drag on basal surface of the glacier.
-    class(scalar_field), intent(in)     :: water_density
+    class(scalar_field), intent(in)          :: water_density
       !! The density of the water below the glacier.
-    real(r8), dimension(:), allocatable :: residual
+    real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
   end function shelf_residual
 

@@ -65,12 +65,15 @@ module plume_mod
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
     real(r8)                  :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
+    real(r8)                  :: time
+      !! The time at which the ice shelf is in this state
   contains
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
     procedure :: water_density => plume_water_density
     procedure :: residual => plume_residual
     procedure :: update => plume_update
+    procedure :: set_time => plume_set_time
     procedure :: data_size => plume_data_size
     procedure :: state_vector => plume_state_vector
   end type plume
@@ -224,7 +227,7 @@ contains
       !! The residual of the system of equations describing the plume.
   end function plume_residual
 
-  subroutine plume_update(this, state_vector, time)
+  subroutine plume_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -236,10 +239,20 @@ contains
     real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! plume.
-    real(r8), intent(in), optional     :: time
-      !! The time at which the plume is in this state. If not
-      !! present then assumed to be same as previous value passed.
   end subroutine plume_update
+
+  subroutine plume_set_time(this, time)
+    !* Author: Christopher MacMackin
+    !  Date: November 2016
+    !
+    ! Sets the time information held by the plume object. This is
+    ! the time at which the plume is in its current state.
+    !
+    class(plume), intent(inout) :: this
+    real(r8), intent(in)        :: time
+      !! The time at which the plume is in the present state.
+    this%time = time
+  end subroutine plume_set_time
 
   pure function plume_data_size(this)
     !* Author: Christopher MacMackin

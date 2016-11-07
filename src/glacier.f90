@@ -60,6 +60,10 @@ module glacier_mod
     procedure(get_r81d), deferred     :: state_vector
       !! Returns the glacier's state vector, a 1D array with all necessary 
       !! data to describe its state.
+    procedure                         :: integrate => glacier_integrate
+      !! Performs a time-step of the integration, taking the state of
+      !! the glacier to the specified time using the provided
+      !! melt-rate data.
   end type glacier
 
   abstract interface
@@ -87,22 +91,27 @@ module glacier_mod
         !! The value of whatever property of the glacier is being returned.
     end function get_r8
 
-    function get_residual(this, previous_state, melt_rate, &
+    function get_residual(this, previous_states, melt_rate, &
                           basal_drag_parameter, water_density) result(residual)
       import :: glacier
       import :: scalar_field
       import :: r8
-      class(glacier), intent(in)          :: this
-      class(glacier), intent(in)          :: previous_state
-        !! The state of the glacier in the previous time step
-      class(scalar_field), intent(in)     :: melt_rate
+      class(glacier), intent(in)               :: this
+      class(glacier), dimension(:), intent(in) :: previous_states
+        !! The states of the glacier in the previous time steps. The
+        !! first element of the array should be the most recent. The
+        !! default implementation will only make use of the most
+        !! recent state, but the fact that this is an array allows
+        !! overriding methods to use older states for higher-order
+        !! integration methods.
+      class(scalar_field), intent(in)          :: melt_rate
         !! Thickness of the ice above the glacier
-      class(scalar_field), intent(in)     :: basal_drag_parameter
+      class(scalar_field), intent(in)          :: basal_drag_parameter
         !! A paramter, e.g. coefficient of friction, needed to calculate the
         !! drag on basal surface of the glacier.
-      class(scalar_field), intent(in)     :: water_density
+      class(scalar_field), intent(in)          :: water_density
         !! The density of the water below the glacier
-      real(r8), dimension(:), allocatable :: residual
+      real(r8), dimension(:), allocatable      :: residual
         !! The residual of the system of equations describing the glacier
     end function get_residual
 
@@ -170,5 +179,28 @@ module glacier_mod
   end interface
 
   public :: thickness_func, velocity_func
+
+contains
+
+  subroutine glacier_integrate(this, old_states, basal_melt, time)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Integrates the glacier's state forward in time by one time
+    ! step. This is done using the NITSOL package of iterative Krylov
+    ! solvers. If a different algorithm for the integration is
+    ! desired, then this method may be overridden in the concrete
+    ! implementations of the glacier type.
+    !
+    class(glacier), intent(inout)            :: this
+    class(glacier), dimension(:), intent(in) :: old_states
+      !! Previous states of the glacier, with the most recent one
+      !! first.
+    class(scalar_field), intent(in)          :: basal_melt
+      !! The melt rate that the bottom of the glacier experiences
+      !! during this time step.
+    real(r8), intent(in)                     :: time
+      !! The time to which the glacier should be integrated
+  end subroutine glacier_integrate
 
 end module glacier_mod

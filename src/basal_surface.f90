@@ -55,11 +55,14 @@ module basal_surface_mod
       !! basal surface.
     procedure(setter), deferred       :: update
       !! Sets the state of the basal surface
+    procedure(time_setter), deferred  :: set_time
+      !! Sets the time record for this basal surface.
     procedure(get_i), deferred        :: data_size
       !! Returns the number of elements in the glacier's state vector
     procedure(get_r81d), deferred     :: state_vector
       !! Returns the glacier's state vector, a 1D array with all necessary 
       !! data to describe its state.
+    procedure                         :: solve => basal_solve
   end type basal_surface
 
   abstract interface
@@ -106,17 +109,22 @@ module basal_surface_mod
         !! The state vector of the basal surface
     end function get_r81d
 
-    subroutine setter(this, state_vector, time)
+    subroutine setter(this, state_vector)
       import :: basal_surface
       import :: r8
       class(basal_surface), intent(inout) :: this
       real(r8), dimension(:), intent(in)  :: state_vector
         !! A real array containing the data describing the state of the
         !! basal surface.
-      real(r8), intent(in), optional      :: time
-        !! The time at which the basal surface is in this state. If not
-        !! present then assumed to be same as previous value passed.
     end subroutine setter
+
+    subroutine time_setter(this, time)
+      import :: basal_surface
+      import :: r8
+      class(basal_surface), intent(inout) :: this
+      real(r8), intent(in)          :: time
+        !! The time at which the basal surface is in the present state.
+    end subroutine time_setter
 
     pure function get_i(this) result(property)
       import :: basal_surface
@@ -126,5 +134,28 @@ module basal_surface_mod
         !! returned.
     end function get_i
   end interface
+
+contains
+
+  subroutine basal_solve(this, ice_thickness, ice_density, &
+                         ice_temperature, time)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Solves the state of the basal surface for the specified ice
+    ! properties, at the specified time. This is done using the NITSOL
+    ! package of iterative Krylov solvers.
+    !
+    class(basal_surface), intent(inout) :: this
+    class(scalar_field), intent(in)     :: ice_thickness
+      !! Thickness of the ice above the basal surface
+    real(r8), intent(in)                :: ice_density
+      !! The density of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)                :: ice_temperature
+      !! The temperature of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)                :: time
+      !! The time to which the basal surface should be solved
+
+  end subroutine basal_solve
 
 end module basal_surface_mod
