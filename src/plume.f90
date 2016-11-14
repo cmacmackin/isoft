@@ -35,6 +35,12 @@ module plume_mod
   use melt_relationship_mod, only: abstract_melt_relationship
   use plume_boundary_mod, only: plume_boundary
   use ambient_mod, only: ambient_conditions
+  use equation_of_state_mod, only: equation_of_state
+  use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
+  use dallaston2015_melt_mod, only: dallaston2015_melt
+  use uniform_ambient_mod, only: uniform_ambient_conditions
+  use dallaston2015_plume_boundary_mod, only: dallaston2015_plume_boundary
+  use linear_eos_mod, only: linear_eos
   implicit none
   private
 
@@ -64,6 +70,9 @@ module plume_mod
     class(ambient_conditions), allocatable :: ambient_conds
       !! An object specifying the temperature and salinity of the
       !! ambient ocean at its interface with the plume.
+    class(equation_of_state), allocatable :: eos
+      !! An object specifying the equation of state relating the plume
+      !! water's density to its temperature and salinity.
     class(plume_boundary), allocatable :: boundaries
       !! An object specifying the boundary conditions for the plume.
     real(r8)                  :: delta
@@ -72,6 +81,11 @@ module plume_mod
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
     real(r8)                  :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
+    real(r8)                  :: epsilon
+      !! A coefficient on the melt term in the continuity equation,
+      !! which may be set to 0 to remove this term. This can be useful
+      !! when testing with simple systems, such as that of Dallaston
+      !! et al. (2015).
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
   contains
@@ -86,7 +100,7 @@ module plume_mod
   end type plume
 
   abstract interface
-    function scalar_func(location) result(thickness)
+    pure function scalar_func(location) result(scalar)
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
@@ -97,11 +111,11 @@ module plume_mod
       import :: r8
       real(r8), dimension(:), intent(in) :: location
         !! The position $\vec{x}$ at which to compute the property
-      real(r8)                           :: thickness
+      real(r8)                           :: scalar
         !! The value of the scalar quantity at `location`
     end function scalar_func
       
-    function velocity_func(location) result(velocity)
+    pure function velocity_func(location) result(vector)
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
@@ -109,9 +123,9 @@ module plume_mod
       ! when an object is being instantiated.
       !
       import :: r8
-      real(r8), dimension(:), intent(in) :: location
+      real(r8), dimension(:), intent(in)  :: location
         !! The position $\vec{x}$ at which to compute the thickness
-      real(r8), dimension(2)             :: velocity
+      real(r8), dimension(:), allocatable :: vector
         !! The velocity vector of the water in the plume at `location`
     end function velocity_func
   end interface
@@ -120,7 +134,8 @@ contains
 
   function constructor(domain, resolution, thickness, velocity, temperature, &
                        salinity, entrainment_formulation, melt_formulation,  &
-                       ambient_conds, boundaries, delta, nu, mu, sigma) result(this)
+                       ambient_conds, eos, boundaries, delta, nu, mu,        &
+                       epsilon) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -149,29 +164,104 @@ contains
     procedure(scalar_func)               :: salinity
       !! A function which calculates the initial value of the salinity of 
       !! the plume at a given location.
-    class(abstract_entrainment), optional, intent(in) :: entrainment_formulation
-      !! An object which calculates entrainment into the plume.
-    class(abstract_melt_relationship), optional, intent(in) :: melt_formulation
+    class(abstract_entrainment), allocatable, optional, &
+                           intent(inout) :: entrainment_formulation
+      !! An object which calculates entrainment into the plume. Will
+      !! be unallocated on exit. Defaults to that used by Jenkins
+      !! (1991) with the coefficient $E_0 = 1$.
+    class(abstract_melt_relationship), allocatable, optional, &
+                           intent(inout) :: melt_formulation
       !! An object which calculates melting and the resulting thermal
-      !! transfer into/out of the plume.
-    class(ambient_conditions), optional, intent(in) :: ambient_conds
+      !! transfer into/out of the plume. Will be unallocated on
+      !! exit. Defaults to that used by Dallaston et al. (2015),
+      !! scaled to be consistent with the nondimensionalisation used
+      !! here.
+    class(ambient_conditions), allocatable, optional, &
+                           intent(inout) :: ambient_conds
       !! An object specifying the salinity and temperature of the
-      !! ambient ocean.
-    class(plume_boundary), optional, intent(in) :: boundaries
-      !! An object providing the boundary conditions for the plume.
-    real(r8), optional, intent(in) :: delta
-      !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
-    real(r8), optional, intent(in) :: nu
-      !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
-    real(r8), optional, intent(in) :: mu
-      !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
-    real(r8), optional, intent(in) :: sigma
-      !! The dimensionless ratio 
-      !! $\sigma \equiv \frac{U_0^2}{h_0g} = S_0\beta_S$
+      !! ambient ocean. Will be unallocated on exit. Defaults to
+      !! uniform ambient salinity and temperature, both of which are
+      !! set to 0 (as temperature and salinity are measured relative
+      !! to some reference value).
+    class(equation_of_state), allocatable, optional, &
+                           intent(inout) :: eos
+      !! An object specifying the equation of state for the water in
+      !! the plume. Will be unallocated on exit. Defaults to
+      !! linearised equation of state with no temperature dependence
+      !! and a haline contraction coefficient of 1. The reference
+      !! density is set to be 1 in the dimensionless units when
+      !! salinity and temeprature are 0.
+    class(plume_boundary), allocatable, optional, &
+                           intent(inout) :: boundaries
+      !! An object providing the boundary conditions for the
+      !! plume. Will be unallocated on exit. Defaults to those used by
+      !! Dallaston et al. (2015).
+    real(r8), optional, intent(in)       :: delta
+      !! The dimensionless ratio $\delta \equiv
+      !! \frac{D_0}{h_0}$. Defaults to 0.036.
+    real(r8), optional, intent(in)       :: nu
+      !! The dimensionless ratio $\nu \equiv
+      !! \frac{\kappa_0}{x_0U_o}$. Defaults to 0.
+    real(r8), optional, intent(in)       :: mu
+      !! The dimensionless ratio $\mu \equiv
+      !! \frac{\C_dx_0}{D_0}$. Defaults to 0.
+    real(r8), optional, intent(in)       :: epsilon
+      !! A coefficient on the melting term in the continuity
+      !! equation. Can be used to turn off this contribution, which
+      !! may be useful depending on the scalings used. Defaults to
+      !! 1.0.
     type(plume) :: this
       !! A plume object with its domain and initial conditions set according
       !! to the arguments of the constructor function.
-    
+    this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
+    this%thickness = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
+    this%thickness = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
+    if (present(entrainment_formulation)) then
+      call move_alloc(entrainment_formulation, this%entrainment_formulation)
+    else
+      allocate(jenkins1991_entrainment :: this%entrainment_formulation)
+    end if
+    if (present(melt_formulation)) then
+      call move_alloc(melt_formulation, this%melt_formulation)
+    else
+      allocate(dallaston2015_melt :: this%melt_formulation)
+    end if
+    if (present(ambient_conds)) then
+      call move_alloc(ambient_conds, this%ambient_conds)
+    else
+      allocate(uniform_ambient_conditions :: this%ambient_conds)
+    end if
+    if (present(eos)) then
+      call move_alloc(eos, this%eos)
+    else
+      allocate(linear_eos :: this%eos)
+    end if
+    if (present(boundaries)) then
+      call move_alloc(boundaries, this%boundaries)
+    else
+      allocate(dallaston2015_plume_boundary :: this%boundaries)
+    end if
+    if (present(delta)) then
+      this%delta = delta
+    else
+      this%delta = 0.036_r8
+    end if
+    if (present(nu)) then
+      this%nu = nu
+    else
+      this%nu = 0.0_r8
+    end if
+    if (present(mu)) then
+      this%mu = mu
+    else
+      this%mu = 0.0_r8
+    end if
+    if (present(epsilon)) then
+      this%epsilon = epsilon
+    else
+      this%epsilon = 1.0_r8
+    end if
   end function constructor
 
   function plume_melt(this) result(melt)
@@ -213,9 +303,14 @@ contains
     ! Boussinesq approximation is used here and only a single reference 
     ! density is returned.
     !
+    ! @NOTE Based on my approach to non-dimensionalisation, I'm pretty
+    ! sure the density should always be 1, making this method
+    ! unneccessary.
+    !
     class(plume), intent(in) :: this
     real(r8)                 :: density
       !! The density of the water at the base of the ice sheet.
+    density = 1.0_r8
   end function plume_water_density
    
   function plume_residual(this, ice_thickness, ice_density, ice_temperature) &
@@ -290,6 +385,8 @@ contains
     class(plume), intent(in)            :: this
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the plume.
+    integer :: count, thick_count, vel_count, salt_count, temp_count
+    
   end function plume_state_vector
 
 end module plume_mod

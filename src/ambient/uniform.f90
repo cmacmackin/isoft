@@ -43,8 +43,8 @@ module uniform_ambient_mod
     ! everywhere uniform.
     !
     private
-    real(r8) :: temperature = 2.0_r8 !TODO: Work out appropriate values
-    real(r8) :: salinity = 1.0_r8
+    real(r8) :: temperature = 0.0_r8
+    real(r8) :: salinity = 0.0_r8
   contains
     procedure :: ambient_temperature => uniform_temperature
       !! Returns the ambient ocean temperature

@@ -46,7 +46,7 @@ module jenkins1991_entrainment_mod
     ! base, and \(b\) is the basal depth of the ice shelf.
     !
     private
-    real(r8) :: coefficient = 0.036_r8
+    real(r8) :: coefficient = 1.0_r8
       !! The entrainment coefficient $E_0$
   contains
     procedure :: entrainment_rate => jenkins1991_rate

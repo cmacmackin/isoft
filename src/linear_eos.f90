@@ -47,15 +47,15 @@ module linear_eos_mod
     real(r8) :: ref_rho = 1.0_r8
       !! The density for the temperature and salinity about which the
       !! equation of state was linearised, \(\rho_0\).
-    real(r8) :: ref_t = (absolute_zero + 2.0_r8)/absolute_zero
+    real(r8) :: ref_t = 0.0_r8
       !! The temperature about which the equation of state was
       !! linearised, \(T_0\).
-    real(r8) :: ref_s = 1.0_r8
+    real(r8) :: ref_s = 0.0_r8
       !! The salinity about which the equation of state was
       !! linearised, \(S_0\).
-    real(r8) :: beta_t = -3.87e-5_r8 * absolute_zero
+    real(r8) :: beta_t = 0.0_r8
       !! The thermal contraction coefficient, \(\beta_T\).
-    real(r8) :: beta_s = 7.86e-4_r8 * 34.5_r8
+    real(r8) :: beta_s = 1.0_r8
       !! The haline contraction coefficient, \(\beta_S\).
   contains
     procedure :: water_density => linear_water_density

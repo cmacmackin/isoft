@@ -26,6 +26,7 @@ module dallaston2015_melt_test
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use dallaston2015_melt_mod, only: dallaston2015_melt
+  implicit none
 
   integer, parameter :: resolution = 50
 

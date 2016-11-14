@@ -26,6 +26,7 @@ module newtonian_viscosity_test
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use newtonian_viscosity_mod, only: newtonian_viscosity
+  implicit none
 
   integer, parameter :: resolution = 50
 

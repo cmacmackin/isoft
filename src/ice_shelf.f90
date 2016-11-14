@@ -90,7 +90,7 @@ module ice_shelf_mod
 contains
   
   function constructor(domain, resolution, thickness, velocity, &
-                       temperature, viscosity_law, boundaries, &
+                       temperature, viscosity_law, boundaries,  &
                        lambda, chi) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016

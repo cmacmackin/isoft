@@ -23,16 +23,102 @@
 module nitsol_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use chebyshev_mod
+  use nitsol_mod
+  implicit none
 
-  type, extends(testcase), public :: test_nitsol
-  contains
-    procedure :: setup
-  end type test_nitsol
+  integer, parameter  :: points = 10
+  integer, parameter  :: n_tot = 3*points
+  integer, parameter  :: kdmax = 20, nnimax = 200
+  real(r8), parameter :: lower_bound = -1.0_r8, upper_bound = 0.0_r8
+  real(r8), parameter :: u_g = 2.0_r8, q_g = 8.0_r8
+  real(r8), parameter :: tol = 1e-8_r8 * n_tot
+
+  real(r8), dimension(points), protected :: xvals
 
 contains
 
-  subroutine setup(this)
-    class(test_nitsol), intent(inout) :: this
-  end subroutine setup
+  @Test
+  subroutine test_solve_dallaston2015()
+    real(r8), dimension(n_tot) :: x_guess
+    real(r8), dimension(n_tot) :: expected
+    real(r8), dimension(n_tot) :: residual
+    real(r8), dimension(:), allocatable :: worker
+    real(r8), dimension(1) :: real_param
+    integer, dimension(1) :: int_param
+    integer, dimension(10) :: input
+    integer, dimension(6) :: output
+    integer :: flag
+
+    input = 0
+    input(1) = nnimax
+    input(4) = kdmax
+    xvals = collocation_points(points-1,lower_bound,upper_bound)
+    expected(1:points)            = xvals - lower_bound
+    expected(points+1:2*points)   = q_g**(1.0_r8/3.0_r8)
+    expected(2*points+1:3*points) = q_g**(2.0_r8/3.0_r8)
+    call test_f(n_tot,expected,residual,real_param,int_param,flag)
+    
+    @assertEqual(flag,0,message='Failed to calculate residual of expected solution')
+    @assertEqual(expected*0.0_r8,residual,tolerance=tol,message='Expected solution did not have zero residual')
+    
+    ! Note that as the resolution increases, the problem becomes
+    ! increasingly difficult to solve with even fairly small
+    ! perturbations from the known solution.
+    x_guess = expected + [sin(xvals*3.141592_r8*2), &
+                          cos(xvals*3.141592_r8),   &
+                          sin(xvals*3.141592_r8/2)]
+    !x_guess(1:points)            = xvals - lower_bound
+    !x_guess(points+1:2*points)   = 2.1_r8
+    !x_guess(2*points+1:3*points) = 4.0_r8
+    allocate( worker(n_tot*(kdmax+5) + kdmax*(kdmax+3)) )
+    call nitsol(n_tot, x_guess, test_f, dummy_jacv, tol, tol, input, &
+                output, worker, real_param, int_param, flag, ddot, dnrm2)
+    @assertEqual(0,flag,message='NITSOL failed to find solution')
+    @assertEqual(expected,x_guess,tolerance=tol,message='NITSOL did not find correct solution.')
+  end subroutine test_solve_dallaston2015
+
+
+  subroutine test_f(n, xcur, fcur, rpar, ipar, itrmf)
+    ! Dallaston's et al. (2015) greatly simplified steady state plume
+    ! problem.
+    integer                               :: n
+      !! Dimension of the problem
+    real(r8), dimension(*), intent(in)    :: xcur
+      !! Array of length `n` containing the current \(x\) value
+    real(r8), dimension(*), intent(out)   :: fcur
+      !! Array of length `n` containing f(xcur) on output
+    real(r8), dimension(*), intent(inout) :: rpar
+      !! Parameter/work array
+    integer, dimension(*), intent(inout)  :: ipar
+      !! Parameter/work array
+    integer, intent(out)                  :: itrmf
+      ! Termination flag. 0 means normal termination, 1 means
+      ! failure to produce f(xcur)
+    integer :: nodes
+    
+    if (mod(n,3) /= 0) then
+      itrmf = 1
+      return
+    end if
+    nodes = n / 3
+    
+    fcur(1:nodes) = xcur(1:nodes) * xcur(nodes+1:2*nodes)
+    call differentiate_1d(fcur(1:nodes),xvals,1)
+    fcur(1:nodes) = fcur(1:nodes) - xcur(nodes+1:2*nodes)
+
+    fcur(nodes+1:2*nodes) = xcur(1:nodes) * xcur(nodes+1:2*nodes)**2
+    call differentiate_1d(fcur(nodes+1:2*nodes),xvals,1)
+    fcur(nodes+1:2*nodes) = fcur(nodes+1:2*nodes) - xcur(2*nodes+1:3*nodes)
+
+    fcur(2*nodes+1:3*nodes) = xcur(2*nodes+1:3*nodes) * xcur(nodes+1:2*nodes)
+    call differentiate_1d(fcur(2*nodes+1:3*nodes),xvals,1)
+
+    fcur(nodes)   = xcur(nodes)*xcur(2*nodes)
+    fcur(2*nodes) = xcur(2*nodes) - u_g
+    fcur(3*nodes) = xcur(3*nodes) - q_g/u_g
+
+    itrmf = 0
+  end subroutine test_f
 
 end module nitsol_test

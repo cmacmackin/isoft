@@ -41,7 +41,7 @@ module newtonian_viscosity_mod
     ! An implementation of Newtonian (constant) viscosity for a glacier. 
     !
     private
-    real(r8) :: viscosity_value = 0.0_r8
+    real(r8) :: viscosity_value = 1.0_r8
   contains
     procedure :: ice_viscosity => newtonian_ice_viscosity
       !! Returns the viscosity for the ice.

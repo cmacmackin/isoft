@@ -26,6 +26,7 @@ module jenkins1991_entrainment_test
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
+  implicit none
 
   integer, parameter :: resolution = 50
 

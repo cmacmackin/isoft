@@ -51,8 +51,9 @@ module dallaston2015_melt_mod
     ! 
     class(scalar_field), allocatable :: melt_values
       !! Stores the resulting melt rate
-    real(r8) :: beta
-      !! The inverse stefan number, $$\beta = \frac{c(T_a - T_m}{L}$$
+    real(r8) :: coefficient = 1449.29936_r8
+      !! The coefficient by which the melt rate gets multiplied to
+      !! calculate the contribution to the heat equation.
   contains
     procedure :: solve_for_melt => dallaston2015_solve
     procedure :: heat_equation_terms => dallaston2015_heat
@@ -81,12 +82,13 @@ module dallaston2015_melt_mod
 
 contains
 
-  pure function constructor(beta) result(this)
-    real(r8), intent(in) :: beta
-      !! The inverse stefan number, $$\beta = \frac{c(T_a - T_m}{L}$$
+  pure function constructor(coefficient) result(this)
+    real(r8), intent(in) :: coefficient
+      !! The coefficient by which the melt rate gets multiplied to
+      !! calculate the contribution to the heat equation.
     type(dallaston2015_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%beta = beta
+    this%coefficient = coefficient
   end function constructor
 
   subroutine dallaston2015_solve(this, velocity, pressure, temperature, &
@@ -119,7 +121,7 @@ contains
       !! transfer to the heat equation for a [[plume]]
     if (.not. allocated(this%melt_values)) error stop('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(heat)
-    heat = (this%beta + 1.0_r8) * this%melt_values
+    heat = this%coefficient * this%melt_values
   end function dallaston2015_heat
 
   pure function dallaston2015_salt(this) result(salt)

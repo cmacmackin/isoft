@@ -50,7 +50,12 @@ module cryosphere_mod
     ! libraries for evolution in time.
     !
     private
-    real(r8) :: time !! The time in the simulation
+    class(glacier), allocatable               :: ice
+      !! A model for the ice shelf or ice sheet
+    class(basal_surface), allocatable         :: sub_ice
+      !! A model for the ground or ocean underneath the ice
+    real(r8)                                  :: time 
+      !! The time in the simulation
   contains
 !$    procedure :: t => cryosphere_dt
 !$    procedure :: local_error => cryosphere_local_error
@@ -64,7 +69,31 @@ module cryosphere_mod
     procedure :: write_data
   end type cryosphere
 
+  interface cryosphere
+    module procedure constructor
+  end interface cryosphere
+
 contains
+
+  function constructor(ice, sub_ice) result(this)
+    !* Author: Christopher MacMackin
+    !  Date: November 2016
+    !
+    ! Create a new [[cryosphere]] object from the provided
+    ! components. This will model the evolution of a glacier/ice
+    ! shelf/ice sheet and its surroundings.
+    !
+    class(glacier), allocatable, intent(inout)       :: ice
+      !! An object modelling the ice sheet or shelf component of this
+      !! system. Will be deallocated on return.
+    class(basal_surface), allocatable, intent(inout) :: sub_ice
+      !! An object modelling the component of this system beneath the
+      !! ice. Will be deallocated on return.
+    type(cryosphere) :: this
+    call move_alloc(ice, this%ice)
+    call move_alloc(sub_ice, this%sub_ice)
+    this%time = 0.0_r8
+  end function constructor
 
   subroutine integrate(this,time)
     !* Author: Christopher MacMackin
@@ -73,9 +102,22 @@ contains
     ! Integrates the cryosphere forward until the specified `time` is
     ! reached.
     !
-  class(cryosphere), intent(in) :: this
+    class(cryosphere), intent(inout) :: this
     real(r8), intent(in) :: time
       !! The time to which to integrate the cryosphere
+    
+    ! As I am integrating only semi-implicitly and solving the plume
+    ! for the current (rather than future) state, I think I should
+    ! pass the current time. I only *think* that this is correct,
+    ! however.
+    call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
+                            this%ice%ice_temperature(), this%time)
+    ! Be wary of passing the ice object as an argument to its own
+    ! routine. Given that it is within an array constructor, a copy
+    ! should be passed. That relies on the compiler not trying to be
+    ! too smart with its optimisations, though.
+    call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), time)
+    this%time = time
   end subroutine integrate
     
   subroutine write_data(this,outfile)
