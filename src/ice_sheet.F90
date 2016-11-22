@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module ice_sheet_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -318,7 +323,7 @@ contains
     class(scalar_field), intent(in)          :: basal_drag_parameter
       !! A paramter, e.g. coefficient of friction, needed to calculate the
       !! drag on basal surface of the glacier.
-    class(scalar_field), intent(in)          :: water_density
+    real(r8), intent(in)                     :: water_density
       !! The density of the water below the glacier.
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.

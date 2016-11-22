@@ -24,15 +24,29 @@ module plume_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
   use test_utils, only: test_field
-  use plume_mod, only: plume
+  use plume_mod, only: plume, constructor
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
-  use dallaston2015_melt_mod, only: dallaston2015_melt
-  use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
+  use entrainment_mod, only: abstract_entrainment
+  use melt_relationship_mod, only: abstract_melt_relationship
+  use plume_boundary_mod, only: plume_boundary
+  use ambient_mod, only: ambient_conditions
+  use equation_of_state_mod, only: equation_of_state
+  use dallaston2015_melt_mod, only: melt => dallaston2015_melt
+  use jenkins1991_entrainment_mod, only: entrainment => jenkins1991_entrainment
+  use uniform_ambient_mod, only: ambient => uniform_ambient_conditions
+  use dallaston2015_plume_boundary_mod, only: boundary => dallaston2015_plume_boundary
+  use linear_eos_mod, only: linear_eos
   implicit none
 
-  integer, parameter :: resolution = 50
-  real(r8), parameter :: big_x = 2.702702703
+  integer, parameter  :: resolution = 50
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
+  real(r8), parameter :: q_g = 1.0_r8
+  real(r8), parameter :: eps_m = 6.9e-4_r8
+  real(r8), parameter :: beta = 0.024
+  real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
+  real(r8), parameter :: r = 1.12_r8
   
   @TestCase
   type, extends(testcase), public :: test_plume
@@ -40,7 +54,8 @@ module plume_test
     integer     :: nodes = resolution
     real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
-    real(r8)    :: delta, nu, mu, sigma
+    real(r8)    :: delta = 0.0_r8, nu = 0.0_r8
+    real(r8)    :: mu = 0.0_r8, epsilon = 0.0_r8
   contains
     procedure :: setup
   end type test_plume
@@ -51,13 +66,13 @@ contains
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth1
     depth1 = (1._r8 - location(1)/big_x) / &
-             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)) / r
   end function depth1
 
   pure function depth2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth2
-    depth2 = 1.0_r8/(location(1)**2 + 1.0_r8)
+    depth2 = 1.0_r8 / (location(1)**2 + 1.0_r8) / r
   end function depth2
 
   pure function thickness1(location)
@@ -72,8 +87,60 @@ contains
     thickness2 = depth2([-1.0_r8]) - depth2(location)
   end function thickness2
 
+  pure function velocity(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: velocity
+    velocity = [q_g**(1.0/3.0)]
+  end function velocity
+
+  pure function salinity1(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: salinity1
+    salinity1 = q_g**(2.0/3.0)/thickness1(location)
+  end function salinity1
+
+  pure function salinity2(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: salinity2
+    salinity2 = q_g**(2.0/3.0)/thickness2(location)
+  end function salinity2
+
+  pure function temp1(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: temp1
+    if (location(1) == 0.0_r8) then
+      temp1 = beta/eps_m
+    else
+      temp1 = (beta + 1.0_r8) * location(1) / thickness1(location)
+    end if
+  end function temp1
+
+  pure function temp2(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: temp2
+    temp2 = (beta + 1.0_r8) * location(1) / thickness2(location)
+  end function temp2
+
   subroutine setup(this)
     class(test_plume), intent(inout) :: this
+    real(r8), dimension(1,2) :: domain1, domain2
+    class(abstract_entrainment), allocatable :: ent
+    class(abstract_melt_relationship), allocatable :: mel
+    class(ambient_conditions), allocatable :: amb
+    class(equation_of_state), allocatable :: eos
+    class(plume_boundary), allocatable :: bound
+    allocate(ent, source=entrainment(1.0_r8))
+    allocate(mel, source=melt(beta,eps_m))
+    allocate(amb, source=ambient(0.0_r8,0.0_r8))
+    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, 1.0_r8))
+    allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),beta/eps_m,salinity1([0.0_r8])))
+    domain1(1,:) = [this%lower1, this%upper1]
+    domain2(1,:) = [this%lower2, this%upper2]
+    this%plume1 = constructor(domain1, [this%nodes], thickness1, velocity,  &
+                        salinity1, temp1, ent, mel, amb, eos, bound, &
+                        this%delta, this%nu, this%mu, this%epsilon)
+    this%plume2 = constructor(domain2, [this%nodes], thickness2, velocity, &
+                        salinity2, temp2, epsilon=this%epsilon)
   end subroutine setup
 
   @Test
@@ -81,8 +148,22 @@ contains
     !! Test that the plume calculates the correct basal melt rate
     !! given how it was initialised.
     class(test_plume), intent(inout) :: this
-    type(cheb1d_scalar_field) :: actual_thickness
-    type(cheb1d_scalar_field) :: expected_thickness
+    type(cheb1d_scalar_field) :: actual_melt
+    type(cheb1d_scalar_field) :: expected_melt
+    actual_melt = this%plume1%basal_melt()
+    expected_melt = cheb1d_scalar_field(this%nodes, m1, this%lower1, this%upper1)
+    call test_field(expected_melt, actual_melt)
+    actual_melt = this%plume2%basal_melt()
+    expected_melt = cheb1d_scalar_field(this%nodes, m1, this%lower1, this%upper1)
+    call test_field(expected_melt, actual_melt)
+  contains
+    pure function m1(x)
+      real(r8), dimension(:), intent(in) :: x
+      real(r8) :: m1
+      real(r8), dimension(1) :: mtmp
+      mtmp = velocity(x)
+      m1 = eps_m*abs(mtmp(1))
+    end function m1
   end subroutine test_basal_melt
 
   @Test
@@ -92,6 +173,7 @@ contains
     class(test_plume), intent(inout) :: this
     type(cheb1d_scalar_field) :: actual_drag
     type(cheb1d_scalar_field) :: expected_drag
+    ! Implement once I have uniform fields.
   end subroutine test_basal_drag
 
   @Test
@@ -99,6 +181,7 @@ contains
     !! Test that the plume returns the water density for which it was
     !! initialised.
     class(test_plume), intent(inout) :: this
+    @assertEqual(1.0_r8, this%plume1%water_density(), message='Incorrect water density returned.')
   end subroutine test_water_density
 
   @Test
@@ -108,6 +191,13 @@ contains
     real(r8), dimension(:), allocatable :: actual, expected
     type(cheb1d_scalar_field) :: thickness
     real(r8) :: density, temperature
+    thickness = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%lower2)
+    density = 1.0_r8 / r
+    temperature = 0.0_r8
+    actual = this%plume1%residual(thickness, density, temperature)
+    allocate(expected(size(actual)))
+    expected = 0.0_r8
+    @assertEqual(expected,actual,message='Non-zero residual returned',tolerance=1.e-9_r8)
   end subroutine test_residual
 
   @Test
@@ -116,6 +206,10 @@ contains
     !! with the state vector of the other.
     class(test_plume), intent(inout)    :: this
     real(r8), dimension(:), allocatable :: state_vector
+    @assertEqual(this%plume1%data_size(),size(this%plume1%state_vector()),message='State vector of wrong size')
+    @assertNotAll(this%plume1%state_vector()==this%plume2%state_vector(),message='Plume returning wronge state vector')
+    call this%plume2%update(this%plume1%state_vector())
+    @assertEqual(this%plume1%state_vector(),this%plume2%state_vector(),message='State vector not updated.')
   end subroutine test_update
 
 end module plume_test

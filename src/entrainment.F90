@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module entrainment_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
@@ -46,7 +51,7 @@ module entrainment_mod
   end type abstract_entrainment
 
   abstract interface
-    function get_entrainment(this, velocity, thickness, depth, time) &
+    pure function get_entrainment(this, velocity, thickness, depth, time) &
                                                     result(property)
       import :: abstract_entrainment
       import :: vector_field

@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module ground_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -112,7 +117,7 @@ contains
   end function ground_water_density
    
   function ground_residual(this, ice_thickness, ice_density, ice_temperature) &
-                                                               result(residual)
+                                                             result(residual)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -121,7 +126,7 @@ contains
     ! The residual takes the form of a 1D array, with each element 
     ! respresenting the residual for one of the equations in the system.
     !
-    class(ground), intent(in)           :: this
+    class(ground), intent(inout)        :: this
     class(scalar_field), intent(in)     :: ice_thickness
       !! Thickness of the ice above the ground.
     real(r8), intent(in)                :: ice_density

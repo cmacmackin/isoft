@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module jenkins1991_entrainment_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
@@ -67,8 +72,8 @@ contains
     this%coefficient = coefficient
   end function constructor
 
-  function jenkins1991_rate(this, velocity, thickness, depth, time) &
-                                                   result(entrainment)
+  pure function jenkins1991_rate(this, velocity, thickness, depth, time) &
+                                                result(entrainment)
     !* Author: Christopher MacMackin
     !  Date: October 2016
     !

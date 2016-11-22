@@ -29,6 +29,8 @@ module jenkins1991_entrainment_test
   implicit none
 
   integer, parameter :: resolution = 50
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
 
   @TestCase
   type, extends(testcase), public :: test_entrain

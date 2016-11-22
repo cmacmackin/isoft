@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module uniform_ambient_mod
   !* Author: Christopher MacMackin
   !  Date: November 2016
@@ -29,10 +34,11 @@ module uniform_ambient_mod
   ! salinity conditions beneath an ice shelf.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field
+  use factual_mod, only: scalar_field, uniform_scalar_field
   use ambient_mod, only: ambient_conditions
   implicit none
   private
+
   
   type, extends(ambient_conditions), public :: uniform_ambient_conditions
     !* Author: Chris MacMackin
@@ -43,8 +49,8 @@ module uniform_ambient_mod
     ! everywhere uniform.
     !
     private
-    real(r8) :: temperature = 0.0_r8
-    real(r8) :: salinity = 0.0_r8
+    type(uniform_scalar_field) :: temperature
+    type(uniform_scalar_field) :: salinity
   contains
     procedure :: ambient_temperature => uniform_temperature
       !! Returns the ambient ocean temperature
@@ -65,16 +71,24 @@ contains
     ! Produces an ambient object which will return the specified
     ! salinity and temeprature values.
     !
-    real(r8), intent(in) :: temperature
-      !! The temperature of the ambient ocean
-    real(r8), intent(in) :: salinity
-      !! The salinity of the ambient ocean
+    real(r8), intent(in), optional :: temperature
+      !! The temperature of the ambient ocean. Default is 0.
+    real(r8), intent(in), optional :: salinity
+      !! The salinity of the ambient ocean. Default is 0.
     type(uniform_ambient_conditions) :: this
-    this%temperature = temperature
-    this%salinity = salinity
+    if (present(temperature)) then
+      this%temperature = uniform_scalar_field(temperature)
+    else
+      this%temperature = uniform_scalar_field(0.0_r8)
+    end if
+    if (present(salinity)) then
+      this%salinity = uniform_scalar_field(salinity)
+    else
+      this%salinity = uniform_scalar_field(0.0_r8)
+    end if
   end function constructor
 
-  function uniform_temperature(this, depth, t) result(property)
+  pure function uniform_temperature(this, depth, t) result(property)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -89,10 +103,10 @@ contains
     class(scalar_field), allocatable              :: property
       !! A field containing the ambient temperature at the depth specified
       !! for each location.
-    ! TODO: Implement this
+    allocate(property, source=this%temperature)
   end function uniform_temperature
 
-  function uniform_salinity(this, depth, t) result(property)
+  pure function uniform_salinity(this, depth, t) result(property)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -107,7 +121,7 @@ contains
     class(scalar_field), allocatable              :: property
       !! A field containing the ambient salinity at the depth specified
       !! for each location.
-    ! TODO: implement this
+    allocate(property, source=this%salinity)
   end function uniform_salinity
 
 end module uniform_ambient_mod

@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module basal_surface_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -30,6 +35,7 @@ module basal_surface_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field
+  use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2
   implicit none
   private
 
@@ -85,11 +91,11 @@ module basal_surface_mod
     end function get_real
     
     function get_residual(this, ice_thickness, ice_density, ice_temperature) &
-                                                              result(residual)
+                                                            result(residual)
       import :: basal_surface
       import :: scalar_field
       import :: r8
-      class(basal_surface), intent(in)    :: this
+      class(basal_surface), intent(inout) :: this
       class(scalar_field), intent(in)     :: ice_thickness
         !! Thickness of the ice above the basal surface
       real(r8), intent(in)                :: ice_density
@@ -155,7 +161,71 @@ contains
       !! The temperature of the ice above the basal surface, assumed uniform
     real(r8), intent(in)                :: time
       !! The time to which the basal surface should be solved
+    logical                                   :: first_call
+    integer, save                             :: nval, kdmax = 20
+    real(r8), dimension(:), allocatable       :: state
+    integer, dimension(10)                    :: input
+    integer, dimension(6)                     :: info
+    real(r8), dimension(:), allocatable, save :: work
+    real(r8), dimension(1)                    :: real_param
+    integer, dimension(1)                     :: int_param
+    integer                                   :: flag
 
+    first_call = .true.
+    if (.not. allocated(work)) then
+      nval = this%data_size()
+      allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
+    end if
+    state = this%state_vector()
+    call this%set_time(time)
+    input = 0
+    input(4) = kdmax
+
+    call nitsol(nval, state, nitsol_residual, dummy_jacv, 1.e-6_r8, &
+                1.e-6_r8, input, info, work, real_param, int_param, &
+                flag, ddot, dnrm2)
+
+    select case(flag)
+    case(0)
+      write(*,*) 'Solved for plume at time', time
+    case(1)
+      write(*,*) 'Reached maximum number of iterations solving for plume'
+      error stop
+    case default
+      write(*,*) 'NITSOL failed when solving plume with error code', flag
+      error stop
+    end select
+
+  contains
+
+    subroutine nitsol_residual(n, xcur, fcur, rpar, ipar, itrmf)
+      !! A routine matching the interface expected by NITSOL which
+      !! returns the residual for the basal surface.
+      integer, intent(in)                   :: n
+        !! Dimension of the problem
+      real(r8), dimension(*), intent(in)    :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(*), intent(out)   :: fcur
+        !! Array of length `n` containing f(xcur) on output
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      integer, intent(out)                  :: itrmf
+        !! Termination flag. 0 means normal termination, 1 means
+        !! failure to produce f(xcur)
+
+      ! If this is the first call of this routine then the
+      ! basal_surface object will already be in the same state as
+      ! reflected in xcur
+      if (first_call) then
+        first_call = .false.
+      else
+        call this%update(xcur(1:n))
+      end if
+      fcur(1:n) = this%residual(ice_thickness,ice_density,ice_temperature)
+      itrmf = 1
+    end subroutine nitsol_residual
   end subroutine basal_solve
 
 end module basal_surface_mod

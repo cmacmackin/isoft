@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module plume_boundary_mod
   !* Author: Christopher MacMackin
   !  Date: September 2016

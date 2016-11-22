@@ -29,13 +29,15 @@ module dallaston2015_melt_test
   implicit none
 
   integer, parameter :: resolution = 50
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
 
   @TestCase
   type, extends(testcase), public :: test_melt
     type(dallaston2015_melt) :: melt1, melt2
     type(cheb1d_scalar_field) :: pressure, temperature, salinity, plume_thickness
     type(cheb1d_vector_field) :: velocity1, velocity2
-    real(r8) :: time1, time2, beta1, beta2
+    real(r8) :: time1, time2, beta1, beta2, conv1, conv2
     integer :: numpoints = resolution
   contains
     procedure :: setup
@@ -98,8 +100,10 @@ contains
     this%time2 = -5.7_r8
     this%beta1 = 1.0_r8
     this%beta2 = -3.5_r8
-    this%melt1 = dallaston2015_melt(this%beta1)
-    this%melt2 = dallaston2015_melt(this%beta2)
+    this%conv1 = 1.0_r8
+    this%conv2 = 5.3e-7_r8
+    this%melt1 = dallaston2015_melt(this%beta1, this%conv1)
+    this%melt2 = dallaston2015_melt(this%beta2, this%conv2)
   end subroutine setup
 
   @Test
@@ -129,9 +133,9 @@ contains
     real(r8), dimension(resolution), parameter :: ones = 1.0_r8
     call solve_melts(this)
     melt = this%melt1%melt_rate()
-    @assertTrue(this%velocity1%component(1)==melt,message='Incorrect melt rate calculated.')
+    @assertTrue(this%conv1*this%velocity1%component(1)==melt,message='Incorrect melt rate calculated.')
     melt = this%melt2%melt_rate()
-    @assertEqual(ones,melt%raw(),tolerance=1.e-15_r8,message='Incorrect melt rate calculated.')
+    @assertEqual(this%conv2*ones,melt%raw(),tolerance=1.e-15_r8,message='Incorrect melt rate calculated.')
   end subroutine test_melt_values
 
   @Test
@@ -140,10 +144,10 @@ contains
     type(cheb1d_scalar_field) :: actual, expected
     call solve_melts(this)
     actual = this%melt1%heat_equation_terms()
-    expected = (this%beta1+1.0_r8)*this%melt1%melt_rate()
+    expected = (this%beta1+1.0_r8)*this%melt1%melt_rate()/this%conv1
     @assertTrue(expected==actual,message='Incorrect heat terms')
     actual = this%melt2%heat_equation_terms()
-    expected = (this%beta2+1.0_r8)*this%melt2%melt_rate()
+    expected = (this%beta2+1.0_r8)*this%melt2%melt_rate()/this%conv2
     @assertTrue(expected==actual,message='Incorrect heat terms')
   end subroutine test_heat_terms
 

@@ -59,7 +59,7 @@ module nitsol_mod
       ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)  
       ! Newton iterative nonlinear solver.
       !
-      ! ####Input parameters
+      !####Input parameters
       !
       ! The `input` array argument allows the user to specify various
       ! options. It should be declared an integer vector of length 11
@@ -183,7 +183,7 @@ module nitsol_mod
       !               from obtaining much residual reduction. 
       !
       !
-      ! ####Output infp parameters
+      !####Output parameters
       !
       ! On output, the components of the `info` argument are as follows:
       !
@@ -206,7 +206,7 @@ module nitsol_mod
           !! User-supplied subroutine for evaluating the function
           !! the zero of which is sought.
           import :: r8
-          integer                               :: n
+          integer, intent(in)                   :: n
             !! Dimension of the problem
           real(r8), dimension(*), intent(in)    :: xcur
             !! Array of length `n` containing the current \(x\) value
@@ -271,8 +271,10 @@ module nitsol_mod
         !!:    \(n\times(\text{kdmax}+5)+\text{kdmax}\times(\text{kdmax}+3)\),
         !!     where kdmax is the maximum Krylove subspace dimension, either
         !!     the default value of 20 or another value specified by the user
+        !!
         !!BiCGSTAB
         !!:    \(11n\)
+        !!
         !!TFQMR
         !!:    \(14n\)
       real(r8), dimension(*), intent(inout) :: rpar
@@ -284,17 +286,23 @@ module nitsol_mod
         !!
         !!-k
         !!:    illegal value in `input(k)`
+        !!
         !!0
         !!:    normal termination: \(||F|| < \text{ftol}\) or \(||\text{step}||
         !!     < \text{stptol}\)
+        !!
         !!1
         !!:    `nnimax` nonlinar iterations reached without success
+        !!
         !!2
         !!:    failure to evaluate \(F\)
+        !!
         !!3
         !!:    in `nitjv`, \(J\vec{v}\)  failure
+        !!
         !!4
         !!:    in `nitjv`, \(P^{-1}\vec{v}\) failure
+        !!
         !!5
         !!:    in `nitdrv`, insufficient initial model norm reduction for
         !!     adequate progress. **Note:** This can occur for several
@@ -302,6 +310,7 @@ module nitsol_mod
         !!     for further information. (This will be printed out if
         !!     \(\text{iplvl}\ge 3\); see the discussion of optional common
         !!     blocks below.)
+        !!
         !!6
         !!:    in `nitbt`, failure to reach an acceptable step through
         !!     backtracking

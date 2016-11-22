@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module ice_shelf_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -63,6 +68,10 @@ module ice_shelf_mod
       !! shelf.
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
+    integer :: thickness_size
+      !! The number of data values in the thickness field
+    integer :: velocity_size
+      !! The number of data values in the velocity field
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -130,6 +139,8 @@ contains
     type(ice_shelf)                                 :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
+    this%thickness_size = this%thickness%raw_size()
+    this%velocity_size = this%velocity%raw_size()
   end function constructor
 
 !$  function shelf_dt(self,t)
@@ -292,8 +303,13 @@ contains
     ! Returns the density of the ice in the shelf, which is assumed to be
     ! uniform across its domain.
     !
+    ! @NOTE Based on my approach to non-dimensionalisation, I'm pretty
+    ! sure the density should always be 1, making this method
+    ! unneccessary.
+    !
     class(ice_shelf), intent(in) :: this
     real(r8)                     :: density !! The ice density.
+    density = 1.0_r8/1.12_r8 !TODO: Will probably want to change this at some point
   end function shelf_density
 
   pure function shelf_temperature(this) result(temperature)
@@ -305,6 +321,7 @@ contains
     !
     class(ice_shelf), intent(in) :: this
     real(r8)                     :: temperature !! The ice density.
+    temperature = -15.0_r8 !TODO: Will probably want to change this at some point.
   end function shelf_temperature
 
   function shelf_residual(this, previous_states, melt_rate, &
@@ -330,7 +347,7 @@ contains
     class(scalar_field), intent(in)          :: basal_drag_parameter
       !! A paramter, e.g. coefficient of friction, needed to calculate the
       !! drag on basal surface of the glacier.
-    class(scalar_field), intent(in)          :: water_density
+    real(r8), intent(in)                     :: water_density
       !! The density of the water below the glacier.
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
@@ -348,6 +365,11 @@ contains
     real(r8), dimension(:), intent(in)  :: state_vector
       !! A real array containing the data describing the state of the
       !! glacier.
+    integer :: i
+    !TODO: Add some assertion-like checks that the state vector is the right size
+    call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
+    i = 1 + this%thickness_size
+    call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
   end subroutine shelf_update
 
   subroutine shelf_set_time(this, time)
@@ -375,6 +397,7 @@ contains
     class(ice_shelf), intent(in) :: this
     integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
+    shelf_data_size = this%thickness%raw_size() + this%velocity%raw_size()
   end function shelf_data_size
 
   pure function shelf_state_vector(this) result(state_vector) 
@@ -387,6 +410,7 @@ contains
     class(ice_shelf), intent(in)        :: this
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice shelf.
+    state_vector = [this%thickness%raw(),this%velocity%raw()]
   end function shelf_state_vector
 
 end module ice_shelf_mod

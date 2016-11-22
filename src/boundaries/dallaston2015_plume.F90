@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module dallaston2015_plume_boundary_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
@@ -81,9 +86,9 @@ module dallaston2015_plume_boundary_mod
       !! at the west boundary.
   end type dallaston2015_plume_boundary
 
-  interface dallast2015_plume_boundary
+  interface dallaston2015_plume_boundary
     module procedure constructor
-  end interface dallast2015_plume_boundary
+  end interface dallaston2015_plume_boundary
 
 contains
 

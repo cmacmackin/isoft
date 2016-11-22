@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module ambient_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -49,7 +54,7 @@ module ambient_mod
   end type ambient_conditions
 
   abstract interface
-    function get_property(this, depth, t) result(property)
+    pure function get_property(this, depth, t) result(property)
       import :: r8
       import :: ambient_conditions
       import :: scalar_field

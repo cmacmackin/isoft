@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module newtonian_viscosity_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
@@ -29,7 +34,7 @@ module newtonian_viscosity_mod
   ! [[abstract_viscosity]] type, for a Newtonian fluid.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field, vector_field
+  use factual_mod, only: scalar_field, vector_field, uniform_scalar_field
   use viscosity_mod, only: abstract_viscosity
   implicit none
   private
@@ -76,16 +81,8 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), allocatable       :: viscosity
       !! The value of the viscosity
-    real(r8), dimension(2,1) :: domain
-    domain = velocity%domain()
-    call velocity%allocate_scalar_field(viscosity)
-    !viscosity = 
-  contains
-    function visc(x)
-      real(r8), dimension(:), intent(in) :: x
-      real(r8) :: visc
-      visc = this%viscosity_value
-    end function visc
+    allocate(uniform_scalar_field :: viscosity)
+    viscosity = uniform_scalar_field(this%viscosity_value)
   end function newtonian_ice_viscosity
 
 end module newtonian_viscosity_mod

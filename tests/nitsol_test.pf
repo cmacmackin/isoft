@@ -82,7 +82,7 @@ contains
   subroutine test_f(n, xcur, fcur, rpar, ipar, itrmf)
     ! Dallaston's et al. (2015) greatly simplified steady state plume
     ! problem.
-    integer                               :: n
+    integer, intent(in)                   :: n
       !! Dimension of the problem
     real(r8), dimension(*), intent(in)    :: xcur
       !! Array of length `n` containing the current \(x\) value

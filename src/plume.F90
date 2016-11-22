@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module plume_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -30,7 +35,8 @@ module plume_mod
   !
   use iso_fortran_env, only: r8 => real64
   use basal_surface_mod, only: basal_surface
-  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field, &
+                         uniform_scalar_field
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
   use plume_boundary_mod, only: plume_boundary
@@ -86,8 +92,19 @@ module plume_mod
       !! which may be set to 0 to remove this term. This can be useful
       !! when testing with simple systems, such as that of Dallaston
       !! et al. (2015).
+    real(r8)                  :: r_val
+      !! The dimensionless ratio of the ocean water density to the
+      !! density of the overlying ice shelf.
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
+    integer :: thickness_size
+      !! The number of data values in the thickness field
+    integer :: velocity_size
+      !! The number of data values in the velocity field
+    integer :: temperature_size
+      !! The number of data values in the temperature field
+    integer :: salinity_size
+      !! the number of data values in the salinity field
   contains
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
@@ -98,6 +115,11 @@ module plume_mod
     procedure :: data_size => plume_data_size
     procedure :: state_vector => plume_state_vector
   end type plume
+
+  interface plume
+    module procedure constructor
+  end interface plume
+public :: constructor
 
   abstract interface
     pure function scalar_func(location) result(scalar)
@@ -135,7 +157,7 @@ contains
   function constructor(domain, resolution, thickness, velocity, temperature, &
                        salinity, entrainment_formulation, melt_formulation,  &
                        ambient_conds, eos, boundaries, delta, nu, mu,        &
-                       epsilon) result(this)
+                       epsilon, r_val) result(this)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -197,19 +219,22 @@ contains
       !! plume. Will be unallocated on exit. Defaults to those used by
       !! Dallaston et al. (2015).
     real(r8), optional, intent(in)       :: delta
-      !! The dimensionless ratio $\delta \equiv
-      !! \frac{D_0}{h_0}$. Defaults to 0.036.
+      !! The dimensionless ratio \(\delta \equiv
+      !! \frac{D_0}{h_0}\). Defaults to 0.036.
     real(r8), optional, intent(in)       :: nu
-      !! The dimensionless ratio $\nu \equiv
-      !! \frac{\kappa_0}{x_0U_o}$. Defaults to 0.
+      !! The dimensionless ratio \(\nu \equiv
+      !! \frac{\kappa_0}{x_0U_o}\). Defaults to 0.
     real(r8), optional, intent(in)       :: mu
-      !! The dimensionless ratio $\mu \equiv
-      !! \frac{\C_dx_0}{D_0}$. Defaults to 0.
+      !! The dimensionless ratio \(\mu \equiv
+      !! \frac{\C_dx_0}{D_0}\). Defaults to 0.
     real(r8), optional, intent(in)       :: epsilon
       !! A coefficient on the melting term in the continuity
       !! equation. Can be used to turn off this contribution, which
       !! may be useful depending on the scalings used. Defaults to
       !! 1.0.
+    real(r8), optional, intent(in)       :: r_val
+      !! The dimensionless ratio of the water density to the ice shelf
+      !! density, \( r = \rho_0/\rho_i. \) Defaults to 1.12.
     type(plume) :: this
       !! A plume object with its domain and initial conditions set according
       !! to the arguments of the constructor function.
@@ -262,6 +287,11 @@ contains
     else
       this%epsilon = 1.0_r8
     end if
+    if (present(r_val)) then
+      this%r_val = r_val
+    else
+      this%r_val = 1.12_r8
+    end if
   end function constructor
 
   function plume_melt(this) result(melt)
@@ -290,6 +320,8 @@ contains
     class(plume), intent(in)         :: this
     class(scalar_field), allocatable :: drag
       !! The melt rate at the base of the ice sheet.
+    allocate(uniform_scalar_field :: drag)
+    drag = uniform_scalar_field(0.0_r8)
   end function plume_drag_parameter
 
   function plume_water_density(this) result(density)
@@ -323,7 +355,7 @@ contains
     ! The residual takes the form of a 1D array, with each element 
     ! respresenting the residual for one of the equations in the system.
     !
-    class(plume), intent(in)            :: this
+    class(plume), intent(inout)         :: this
     class(scalar_field), intent(in)     :: ice_thickness
       !! Thickness of the ice above the plume.
     real(r8), intent(in)                :: ice_density
@@ -332,6 +364,60 @@ contains
       !! The temperature of the ice above the plume, assumed uniform.
     real(r8), dimension(:), allocatable :: residual
       !! The residual of the system of equations describing the plume.
+    type(cheb1d_scalar_field) :: scalar_tmp
+    integer :: start, end
+    allocate(residual(this%data_size()))
+    call this%melt_formulation%solve_for_melt(this%velocity, ice_thickness/this%r_val, &
+                                              this%temperature, this%salinity,        &
+                                              this%thickness, this%time)
+    start = 0
+    ! Use same or similar notation for variables as used in equations
+    associate(D => this%thickness, Uvec => this%velocity, &
+              U => this%velocity%component(1), S => this%salinity, &
+              T => this%temperature, m => this%melt_formulation%melt_rate(), &
+              mf => this%melt_formulation, h => ice_thickness, &
+              rho => this%eos%water_density(this%temperature, this%salinity), &
+              delta => this%delta, nu => this%nu, mu => this%mu, &
+              epsilon => this%epsilon, r => this%r_val)
+      associate(e => this%entrainment_formulation%entrainment_rate(this%velocity, &
+                                                     this%thickness,h/r,this%time), &
+                S_a => this%ambient_conds%ambient_salinity(h/r,this%time), &
+                T_a => this%ambient_conds%ambient_temperature(h/r,this%time))
+        associate(rho_a => this%eos%water_density(T_a, S_a))
+          ! Continuity equation
+          scalar_tmp = e + epsilon*m - .div.(D*Uvec)
+          ! ASSIGN TO RESIDUAL
+          ! Momentum equation, x-component
+          scalar_tmp = .div.(D*.grad.U) ! Needed due to stupid
+                                        ! compiler issue. Works when
+                                        ! tested with trunk.
+          scalar_tmp = scalar_tmp*nu + &
+                       D*(rho_a - rho)*(h%d_dx(1)/r + this%delta*D%d_dx(1)) &
+                       - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
+                       - .div.(D*Uvec*U)
+          ! ASSIGN TO RESIDUAL
+          ! Salinity equation
+          scalar_tmp = .div.(D*.grad.S)
+          if (mf%has_salt_terms()) then
+            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*T)
+          else
+            scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
+                       - .div.(D*Uvec*T)
+          end if
+          ! ASSIGN TO RESIDUAL
+          ! Temperature equation
+          scalar_tmp = .div.(D*.grad.T)
+          if (mf%has_heat_terms()) then
+            scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
+          else
+            scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &
+                       - .div.(D*Uvec*T)
+          end if
+          ! ASSIGN TO RESIDUAL
+          ! GET BOUNDARY TERMS AND ASSIGN TO RESIDUAL
+        end associate
+      end associate
+    end associate
   end function plume_residual
 
   subroutine plume_update(this, state_vector)
@@ -346,6 +432,15 @@ contains
     real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! plume.
+    integer :: i
+    !TODO: Add some assertion-like checks that the state vector is the right size
+    call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
+    i = 1 + this%thickness_size
+    call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
+    i = i + this%velocity_size
+    call this%temperature%set_from_raw(state_vector(i:i + this%temperature_size - 1))
+    i = i + this%temperature_size
+    call this%salinity%set_from_raw(state_vector(i:i + this%temperature_size - 1))
   end subroutine plume_update
 
   subroutine plume_set_time(this, time)
@@ -373,6 +468,8 @@ contains
     class(plume), intent(in) :: this
     integer                  :: plume_data_size
       !! The number of elements in the plume's state vector.
+    plume_data_size = this%thickness%raw_size() + this%velocity%raw_size() + &
+                      this%temperature%raw_size() + this%salinity%raw_size()
   end function plume_data_size
 
   pure function plume_state_vector(this) result(state_vector) 
@@ -385,8 +482,8 @@ contains
     class(plume), intent(in)            :: this
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the plume.
-    integer :: count, thick_count, vel_count, salt_count, temp_count
-    
+    state_vector = [this%thickness%raw(), this%velocity%raw(), &
+                    this%temperature%raw(), this%salinity%raw()]
   end function plume_state_vector
 
 end module plume_mod

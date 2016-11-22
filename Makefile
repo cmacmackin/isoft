@@ -50,7 +50,7 @@ ifeq ($(VENDOR_),intel)
   COVFLAGS := 
 else
   F90      := gfortran
-  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -J$(MDIR)
+  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR)
   LDFLAGS  := -O0 -g 
   COVFLAGS := -fprofile-arcs -ftest-coverage
 endif

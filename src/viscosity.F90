@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module viscosity_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016

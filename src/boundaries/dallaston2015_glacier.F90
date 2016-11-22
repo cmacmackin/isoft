@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module dallaston2015_glacier_boundary_mod
   !* Author: Christopher MacMackin
   !  Date: November 2016

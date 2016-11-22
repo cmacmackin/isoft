@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module linear_eos_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016

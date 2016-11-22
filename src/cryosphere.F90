@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module cryosphere_mod
   !* Author: Christopher MacMackin
   !  Date: April 2016
@@ -115,8 +120,10 @@ contains
     ! Be wary of passing the ice object as an argument to its own
     ! routine. Given that it is within an array constructor, a copy
     ! should be passed. That relies on the compiler not trying to be
-    ! too smart with its optimisations, though.
-    call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), time)
+    ! too smart for its own good with its optimisations, though.
+    call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), &
+                            this%sub_ice%basal_drag_parameter(),  &
+                            this%sub_ice%water_density(), time)
     this%time = time
   end subroutine integrate
     

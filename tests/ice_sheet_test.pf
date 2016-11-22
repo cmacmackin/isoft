@@ -138,14 +138,12 @@ contains
     ! FIXME: Will have to provide a new test here that works for ice sheets
     class(test_sheet), intent(inout)    :: this
     real(r8), dimension(:), allocatable :: actual, expected
-    type(cheb1d_scalar_field) :: water, melt, drag
-    water = cheb1d_scalar_field(this%nodes, water_density, this%lower1, &
-                                this%upper1)
+    type(cheb1d_scalar_field) :: melt, drag
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    actual = this%sheet1%residual([this%sheet1],melt,drag,water)
+    actual = this%sheet1%residual([this%sheet1],melt,drag,1.0_r8)
     @assertEqual(this%sheet1%data_size(),size(actual),message='Residual array of wronge size')
     allocate(expected(size(actual)))
     expected = 0.0_r8

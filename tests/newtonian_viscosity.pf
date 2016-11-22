@@ -24,11 +24,14 @@ module newtonian_viscosity_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field
+                         cheb1d_vector_field, uniform_scalar_field
   use newtonian_viscosity_mod, only: newtonian_viscosity
+  use test_utils, only: test_field
   implicit none
 
   integer, parameter :: resolution = 50
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
 
   @TestCase
   type, extends(testcase), public :: viscosity_test
@@ -39,7 +42,7 @@ module newtonian_viscosity_test
     integer :: numpoints = resolution
   contains
     procedure :: setup
- end type viscosity_test
+  end type viscosity_test
 
 contains
   
@@ -71,9 +74,19 @@ contains
   end subroutine setup
 
   @Test
-  subroutine test_entrainment_values(this)
+  subroutine test_viscosity_values(this)
     class(viscosity_test), intent(inout) :: this
-
-  end subroutine test_entrainment_values
+    type(uniform_scalar_field) :: expected1, expected2, actual1, actual2
+    expected1 = uniform_scalar_field(this%viscval1)
+    expected2 = uniform_scalar_field(this%viscval2)
+    actual1 = this%visc1%ice_viscosity(this%velocity1,this%temp1,this%time1)
+    call test_field(expected1, actual1)
+    actual1 = this%visc1%ice_viscosity(this%velocity2,this%temp1,this%time2)
+    call test_field(expected1, actual1)
+    actual2 = this%visc2%ice_viscosity(this%velocity2,this%temp2,this%time2)
+    call test_field(expected2, actual2)
+    actual2 = this%visc2%ice_viscosity(this%velocity1,this%temp2,this%time1)
+    call test_field(expected2, actual2)
+  end subroutine test_viscosity_values
 
 end module newtonian_viscosity_test

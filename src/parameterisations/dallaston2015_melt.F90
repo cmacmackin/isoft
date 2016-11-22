@@ -20,6 +20,11 @@
 !  MA 02110-1301, USA.
 !  
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+
 module dallaston2015_melt_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
@@ -51,9 +56,14 @@ module dallaston2015_melt_mod
     ! 
     class(scalar_field), allocatable :: melt_values
       !! Stores the resulting melt rate
-    real(r8) :: coefficient = 1449.29936_r8
-      !! The coefficient by which the melt rate gets multiplied to
-      !! calculate the contribution to the heat equation.
+    real(r8) :: coef = 1449.29936
+      !! The coefficient by which the melt rate is multiplied in order
+      !! to determine the contribution to the heat equation.
+    real(r8) :: melt_conversion = 6.9e-4_r8
+      !! The factor to convert between the scale for melt used by
+      !! Dallaston et al. (2015) and that used in ISOFT, $$
+      !! \frac{m_0x_0}{D_0U_0}, $$ where \(m_0\) is the melt scale
+      !! used by Dalalston et al.
   contains
     procedure :: solve_for_melt => dallaston2015_solve
     procedure :: heat_equation_terms => dallaston2015_heat
@@ -82,17 +92,23 @@ module dallaston2015_melt_mod
 
 contains
 
-  pure function constructor(coefficient) result(this)
-    real(r8), intent(in) :: coefficient
-      !! The coefficient by which the melt rate gets multiplied to
-      !! calculate the contribution to the heat equation.
+  pure function constructor(beta, melt_conversion) result(this)
+    real(r8), intent(in) :: beta
+      !! The inverse stefan number, $$ \frac{c(T_a - T_m){L} $$
+    real(r8), intent(in) :: melt_conversion
+      !! The factor to convert between the scale for melt used by
+      !! Dallaston et al. (2015) and that used in ISOFT, $$
+      !! \frac{m_0x_0}{D_0U_0}, $$ where \(m_0\) is the melt scale
+      !! used by Dalalston et al.
     type(dallaston2015_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%coefficient = coefficient
+    this%coef = (beta + 1.0_r8)/melt_conversion
+    this%melt_conversion = melt_conversion
   end function constructor
 
   subroutine dallaston2015_solve(this, velocity, pressure, temperature, &
                                  salinity, plume_thickness, time)
+    use factual_mod
     class(dallaston2015_melt), intent(inout) :: this
     class(vector_field), intent(in)          :: velocity
       !! The velocity field of the plume into which fluid is melting.
@@ -107,11 +123,14 @@ contains
     real(r8), intent(in), optional           :: time
       !! The time at which the melting is being solved for. If not
       !! present then assumed to be same as previous value passed.
-    if (allocated(this%melt_values)) then
-      this%melt_values = velocity%norm()
-    else
+    if (.not. allocated(this%melt_values)) then
       allocate(this%melt_values, source=velocity%norm())
+    else
+      this%melt_values = velocity%norm()
     end if
+    this%melt_values = this%melt_conversion * this%melt_values 
+    ! Should be able to do this in one step (with better performance)
+    ! but that seems to confuse the compiler.
   end subroutine dallaston2015_solve
 
   pure function dallaston2015_heat(this) result(heat)
@@ -119,9 +138,9 @@ contains
     class(scalar_field), allocatable      :: heat
       !! The value of the contribution made by melting/thermal
       !! transfer to the heat equation for a [[plume]]
-    if (.not. allocated(this%melt_values)) error stop('Melt values not allocated')
+    if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(heat)
-    heat = this%coefficient * this%melt_values
+    heat = this%coef * this%melt_values
   end function dallaston2015_heat
 
   pure function dallaston2015_salt(this) result(salt)
@@ -135,7 +154,7 @@ contains
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: melt
       !! The melt rate from the ice into the plume water.
-    if (.not. allocated(this%melt_values)) error stop('Melt values not allocated')
+    if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     allocate(melt, source=this%melt_values)
   end function dallaston2015_melt_rate
 
