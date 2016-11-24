@@ -31,9 +31,9 @@ module dallaston2015_plume_boundary_mod
   !  License: GPLv3
   !
   ! Provides a derived type which specifies the boundary conditions
-  ! for the plume model used by Dallaston et al. (2015). As this is a
-  ! 1-D model, only west (incoming) and east (outgoing) boundaries are
-  ! specified.
+  ! for the plume model used by Dallaston et al. (2015). This
+  ! corresponds to Dirichlet conditions at the lower bound of the
+  ! first dimension.
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field
@@ -47,8 +47,8 @@ module dallaston2015_plume_boundary_mod
     !
     ! A type with procedures for getting the boundary conditions of
     ! the plume model used by Dallaston et al. (2015). These are
-    ! Dirichlet conditions at the west (incoming) boundary and free
-    ! conditions at the east (outgoing) boundary.
+    ! Dirichlet conditions at lower bound of the first dimension and
+    ! free conditions at the upper bound.
     !
     private
     real(r8) :: thickness = 0.0_r8
@@ -60,30 +60,30 @@ module dallaston2015_plume_boundary_mod
     real(r8) :: salinity = 0.0_r8
       !! The salinity of the plume at the inflowing boundary
   contains
-    procedure :: thickness_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for thickness
-    procedure :: velocity_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for velocity
-    procedure :: temperature_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for temperature
-    procedure :: salinity_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for salinity
-    procedure :: thickness_west => dallaston2015_thickness
-      !! Returns the value of the Dirichlet boundary condition for thickness
-      !! at the west boundary.
-    procedure :: velocity_west => dallaston2015_velocity
-      !! Returns the value of the Dirichlet boundary condition for velocity
-      !! at the west boundary.
-    procedure :: temperature_west => dallaston2015_temperature
-      !! Returns the value of the Dirichlet boundary condition for temperature
-      !! at the west boundary.
-    procedure :: salinity_west => dallaston2015_salinity
-      !! Returns the value of the Dirichlet boundary condition for salinity
-      !! at the west boundary.
+    procedure :: thickness_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the thickness
+      !! field.
+    procedure :: velocity_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the velocity
+      !! field.
+    procedure :: temperature_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the temperature
+      !! field.
+    procedure :: salinity_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the salinity
+      !! field.
+    procedure :: boundary_residuals => dallaston2015_residuals
+      !! Returns an array consisting of the difference between the required
+      !! boundary values and those which actually exist. This can then be
+      !! appended to a plume's state vector
   end type dallaston2015_plume_boundary
 
   interface dallaston2015_plume_boundary
@@ -113,76 +113,56 @@ contains
     this%temperature = temperature
     this%salinity = salinity
   end function constructor
- 
-  function dallaston2015_is_dirichlet(this)
+
+  pure function dallaston2015_lower_bound(this) result(bound_array)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: November 2016
     !
-    ! Specifies Dirichlet inflow (west) boundaries for plume
-    ! thickness, velocity, temperature, and salinity.
+    ! Indicates that one layer of cells at the lower boundary in the
+    ! first dimension should be omitted. This is appropriate for
+    ! Dirichlet boundary conditions.
     !
     class(dallaston2015_plume_boundary), intent(in) :: this
-    logical :: dallaston2015_is_dirichlet
-      !! Returns `.true.`
-    dallaston2015_is_dirichlet = .true.
-    return
-  end function dallaston2015_is_dirichlet
+    integer, dimension(2) :: bound_array
+    bound_array = [1,0]
+  end function dallaston2015_lower_bound
 
-  function dallaston2015_thickness(this, t) result(boundary_value)
+  function dallaston2015_residuals(this, thickness, velocity, temperature, &
+                                   salinity, t) result(residuals)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: November 2016
     !
-    ! Specifies the boundary value for thickness at the west boundary.
+    ! Returns the difference between the boundary conditions of the
+    ! plume and the Dirichlet conditions prescribed in the model of
+    ! Dallaston et al. (2015)
     !
     class(dallaston2015_plume_boundary), intent(in)   :: this
+    class(scalar_field), intent(in)     :: thickness
+      !! A field containing the thickness of the plume
+    class(vector_field), intent(in)     :: velocity
+      !! A field containing the flow velocity of the plume
+    class(scalar_field), intent(in)     :: temperature
+      !! The field containing the temperature of the plume
+    class(scalar_field), intent(in)     :: salinity
+      !! The field containing the salinity of the plume
     real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8) :: boundary_value
-      !! The value of the boundary conditions
-    boundary_value = this%thickness
-  end function dallaston2015_thickness
-
-  function dallaston2015_velocity(this,t) result(boundary_value)
-    !* Author: Chris MacMackin
-    !  Date: September 2016
-    !
-    ! Specifies the boundary value for the velocity at the west boundary.
-    !
-    class(dallaston2015_plume_boundary), intent(in) :: this
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8), allocatable, dimension(:) :: boundary_value
-      !! The value of the boundary conditions
-    allocate(boundary_value(1))
-    boundary_value = this%velocity
-  end function dallaston2015_velocity
-
-  function dallaston2015_salinity(this, t) result(boundary_value)
-    !* Author: Chris MacMackin
-    !  Date: September 2016
-    !
-    ! Specifies the boundary value for salinity at the west boundary.
-    !
-    class(dallaston2015_plume_boundary), intent(in)   :: this
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8) :: boundary_value
-      !! The value of the boundary conditions
-    boundary_value = this%salinity
-  end function dallaston2015_salinity
-
-  function dallaston2015_temperature(this, t) result(boundary_value)
-    !* Author: Chris MacMackin
-    !  Date: September 2016
-    !
-    ! Specifies the boundary value for salinity at the west boundary.
-    !
-    class(dallaston2015_plume_boundary), intent(in)   :: this
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8) :: boundary_value
-      !! The value of the boundary conditions
-    boundary_value = this%temperature !FIXME: This is supposed to be equal to the freezing point, but I'm not certain how to get that for Dallaston2015, as they only provide the forcing.
-  end function dallaston2015_temperature
+      !! The time at which the boundary conditions are to be calculated.
+    real(r8), allocatable, dimension(:) :: residuals
+      !! An array containing the difference between the required boundary
+      !! values and those which are actually present.
+    class(scalar_field), allocatable :: thickness_bound, temperature_bound, &
+                                        salinity_bound
+    class(vector_field), allocatable :: velocity_bound
+    allocate(thickness_bound,   &
+             source=(thickness%get_boundary(-1,1) - this%thickness))
+    allocate(velocity_bound,    &
+             source=(velocity%get_boundary(-1,1) - [this%velocity]))
+    allocate(temperature_bound, &
+             source=(temperature%get_boundary(-1,1) - this%temperature))
+    allocate(salinity_bound,    &
+             source=(salinity%get_boundary(-1,1) - this%salinity))
+    residuals = [thickness_bound%raw(), velocity_bound%raw(), &
+                 temperature_bound%raw(), salinity_bound%raw()]
+  end function dallaston2015_residuals
 
 end module dallaston2015_plume_boundary_mod

@@ -39,6 +39,7 @@ module ice_shelf_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use viscosity_mod, only: abstract_viscosity
+  use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
   implicit none
   private
@@ -63,7 +64,7 @@ module ice_shelf_mod
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
-    class(glacier_boundary), allocatable   :: boudnaries
+    class(glacier_boundary), allocatable   :: boundaries
       !! An object specifying the boundary conditions for the ice
       !! shelf.
     real(r8)                  :: time
@@ -108,39 +109,64 @@ contains
     ! by the arguments. At present only a 1D model is supported. If
     ! information is provided for higher dimensions then it will be ignored.
     !
-    real(r8), dimension(:,:), intent(in)            :: domain
+    real(r8), dimension(:,:), intent(in) :: domain
       !! An array containing the upper and lower limits of the domain for
       !! the ice shelf. The first index represents the dimension for which
       !! the boundaries apply. If the second index is 1 then it corresponds
       !! to the lower bound. If the second index is 2 then it corresponds to
       !! the upper bound.
-    integer, dimension(:), intent(in)               :: resolution
+    integer, dimension(:), intent(in)    :: resolution
       !! The number of data points in each dimension.
-    procedure(thickness_func)                       :: thickness
+    procedure(thickness_func)            :: thickness
       !! A function which calculates the initial value of the thickness of 
       !! the ice shelf at a given location.
-    procedure(velocity_func)                        :: velocity
+    procedure(velocity_func)             :: velocity
       !! A function which calculates the initial value of the velocity 
       !! (vector) of the ice at a given location in an ice shelf.
-    real(r8), intent(in), optional                  :: temperature
+    real(r8), intent(in), optional       :: temperature
       !! The temperature of the ice in the ice shelf.
-    class(abstract_viscosity), intent(in), optional :: viscosity_law
+    class(abstract_viscosity), allocatable, optional, &
+                           intent(inout) :: viscosity_law
       !! An object which calculates the viscosity of the ice. If not
       !! specified, then Glen's law will be used with $n=3$.
-    class(glacier_boundary), intent(in), optional   :: boundaries
+    class(glacier_boundary), allocatable, optional, &
+                         intent(inout)   :: boundaries
       !! An object specifying the boundary conditions for the ice shelf.
-    real(r8), intent(in), optional                  :: lambda
+    real(r8), intent(in), optional       :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH_0u_0}$.
-    real(r8), intent(in), optional                  :: chi
+    real(r8), intent(in), optional       :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}\left(1 -
       !! \frac{\rho_i}{\rho_0}\right)$.
-    type(ice_shelf)                                 :: this
+    type(ice_shelf)                      :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
+    this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
     this%thickness_size = this%thickness%raw_size()
     this%velocity_size = this%velocity%raw_size()
+    if (present(temperature)) then
+      continue ! This doesn't do anything at the moment
+    else
+      continue ! Again, doesn't do anything at the moment
+    end if
+    if (present(viscosity_law)) then
+      call move_alloc(viscosity_law, this%viscosity_law)
+    else
+      allocate(newtonian_viscosity:: this%viscosity_law)
+    end if
+    if (present(lambda)) then
+      this%lambda = lambda
+    else
+      this%lambda = 0.37_r8
+    end if
+    if (present(chi)) then
+      this%chi = chi
+    else
+      this%chi = 4.0_r8
+    end if
+    this%time = 0.0_r8
   end function constructor
 
 !$  function shelf_dt(self,t)
@@ -351,6 +377,51 @@ contains
       !! The density of the water below the glacier.
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
+    type(cheb1d_scalar_field) :: scalar_tmp
+    real(r8) :: t_old
+    integer :: start, finish
+    integer, dimension(:), allocatable :: lower, upper
+    class(scalar_field), allocatable :: eta
+
+    allocate(residual(this%data_size()))
+    start = 1
+
+    ! Use same or similar notation for variables as in equations
+    select type(previous_states)
+    class is(ice_shelf)
+      associate(h => this%thickness, h_old => previous_states(1)%thickness, &
+                uvec => this%velocity, u => this%velocity%component(1), &
+                eta => this%viscosity_law%ice_viscosity(this%velocity, &
+                                   this%ice_temperature(), this%time), &
+                m => melt_rate, lambda => this%lambda, chi => this%chi, &
+                t_old => previous_states(1)%time)
+
+        ! Continuity equation
+        scalar_tmp = (h - h_old)/(this%time - t_old) + .div.(h*uvec) + lambda*m
+        
+        lower = this%boundaries%thickness_lower_bound()
+        upper = this%boundaries%thickness_upper_bound()
+        finish = start + scalar_tmp%raw_size(lower,upper) - 1
+        residual(start:finish) = scalar_tmp%raw(lower,upper)
+        start = finish + 1
+  
+        ! Momentum equation, x-component
+        scalar_tmp = 2.0_r8*eta*h*(2.0_r8*u%d_dx(1))
+        scalar_tmp = scalar_tmp%d_dx(1) - 2.0_r8*chi*h*h%d_dx(1)
+        
+        lower = this%boundaries%velocity_lower_bound()
+        upper = this%boundaries%velocity_upper_bound()
+        finish = start + scalar_tmp%raw_size(lower,upper) - 1
+        residual(start:finish) = scalar_tmp%raw(lower,upper)
+        start = finish + 1
+
+        ! Boundary conditions
+        residual(finish+1:) = this%boundaries%boundary_residuals(h, uvec, this%time)
+      end associate   
+    class default
+      error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
+                  'object as a previous state.')
+    end select
   end function shelf_residual
 
   subroutine shelf_update(this, state_vector)

@@ -129,6 +129,8 @@ contains
     class(ambient_conditions), allocatable :: amb
     class(equation_of_state), allocatable :: eos
     class(plume_boundary), allocatable :: bound
+    type(cheb1d_vector_field) :: vel
+    type(cheb1d_scalar_field) :: tmp
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
@@ -136,6 +138,8 @@ contains
     allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),beta/eps_m,salinity1([0.0_r8])))
     domain1(1,:) = [this%lower1, this%upper1]
     domain2(1,:) = [this%lower2, this%upper2]
+    vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
+    call mel%solve_for_melt(vel,tmp,tmp,tmp,tmp,0.0_r8)
     this%plume1 = constructor(domain1, [this%nodes], thickness1, velocity,  &
                         salinity1, temp1, ent, mel, amb, eos, bound, &
                         this%delta, this%nu, this%mu, this%epsilon)
@@ -151,9 +155,6 @@ contains
     type(cheb1d_scalar_field) :: actual_melt
     type(cheb1d_scalar_field) :: expected_melt
     actual_melt = this%plume1%basal_melt()
-    expected_melt = cheb1d_scalar_field(this%nodes, m1, this%lower1, this%upper1)
-    call test_field(expected_melt, actual_melt)
-    actual_melt = this%plume2%basal_melt()
     expected_melt = cheb1d_scalar_field(this%nodes, m1, this%lower1, this%upper1)
     call test_field(expected_melt, actual_melt)
   contains
@@ -191,7 +192,7 @@ contains
     real(r8), dimension(:), allocatable :: actual, expected
     type(cheb1d_scalar_field) :: thickness
     real(r8) :: density, temperature
-    thickness = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%lower2)
+    thickness = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
     density = 1.0_r8 / r
     temperature = 0.0_r8
     actual = this%plume1%residual(thickness, density, temperature)

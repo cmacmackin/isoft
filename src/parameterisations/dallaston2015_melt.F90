@@ -94,7 +94,7 @@ contains
 
   pure function constructor(beta, melt_conversion) result(this)
     real(r8), intent(in) :: beta
-      !! The inverse stefan number, $$ \frac{c(T_a - T_m){L} $$
+      !! The inverse stefan number, $$ \frac{c(T_a - T_m)}{L} $$
     real(r8), intent(in) :: melt_conversion
       !! The factor to convert between the scale for melt used by
       !! Dallaston et al. (2015) and that used in ISOFT, $$

@@ -31,9 +31,9 @@ module dallaston2015_glacier_boundary_mod
   !  License: GPLv3
   !
   ! Provides a derived type which specifies the boundary conditions
-  ! for the ice shelf model used by Dallaston et al. (2015). As this
-  ! is a 1-D model, only west (incoming) and east (outgoing)
-  ! boundaries are specified.
+  ! for the ice shelf model used by Dallaston et al. (2015).  These
+  ! are Dirichlet conditions at the lower bound of the first condition
+  ! as well as, for thickness, the upper bound.
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field
@@ -47,9 +47,8 @@ module dallaston2015_glacier_boundary_mod
     !
     ! A type with procedures for getting the boundary conditions of
     ! the ice shelf model used by Dallaston et al. (2015). These are
-    ! Dirichlet conditions at the west (incoming) boundary, a
-    ! thickness of 0 at the east (outgoing) boundary, and a free
-    ! velocity at the east boundary.
+    ! Dirichlet conditions at the lower bound of the first condition
+    ! as well as, for thickness, the upper bound.
     !
     ! @TODO Consider testing the consistency conditions at the outgoing boundary?
     !
@@ -59,24 +58,25 @@ module dallaston2015_glacier_boundary_mod
     real(r8) :: velocity = 1.0_r8
       !! The velocity of the glacier at the inflowing boundary
   contains
-    procedure :: thickness_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for thickness
-    procedure :: velocity_west_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "west" boundary for velocity
-    procedure :: thickness_east_is_dirichlet => dallaston2015_is_dirichlet
-      !! Returns `.true.` if constant Dirichlet conditions are used at the
-      !! "east" boundary for thickness
-    procedure :: thickness_west => dallaston2015_thickness_west
-      !! Returns the value of the Dirichlet boundary condition for thickness
-      !! at the west boundary.
-    procedure :: velocity_west => dallaston2015_velocity
-      !! Returns the value of the Dirichlet boundary condition for velocity
-      !! at the west boundary.
-    procedure :: thickness_east => dallaston2015_thickness_east
-      !! Returns the value of the Dirichlet boundary condition for thickness
-      !! at the east boundary.
+    procedure :: thickness_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the thickness
+      !! field.
+    procedure :: thickness_upper_bound => dallaston2015_upper_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_upper_bound`/`provide_upper_bound` argument when
+      !! getting or setting the raw representation of the thickness
+      !! field.
+    procedure :: velocity_lower_bound => dallaston2015_lower_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_lower_bound`/`provide_lower_bound` argument when
+      !! getting or setting the raw representation of the velocity
+      !! field.
+    procedure :: boundary_residuals => dallaston2015_residuals
+      !! Returns an array consisting of the difference between the required
+      !! boundary values and those which actually exist. This can then be
+      !! appended to a glacier's state vector
   end type dallaston2015_glacier_boundary
 
   interface dallaston2015_glacier_boundary
@@ -100,62 +100,63 @@ contains
     this%thickness = thickness
     this%velocity = velocity
   end function constructor
- 
-  function dallaston2015_is_dirichlet(this)
+
+  pure function dallaston2015_lower_bound(this) result(bound_array)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: November 2016
     !
-    ! Specifies Dirichlet inflow (west) boundaries for ice shelf
-    ! thickness, velocity, temperature, and salinity.
+    ! Indicates that one layer of cells at the lower boundary in the
+    ! first dimension should be omitted. This is appropriate for
+    ! Dirichlet boundary conditions.
     !
     class(dallaston2015_glacier_boundary), intent(in) :: this
-    logical :: dallaston2015_is_dirichlet
-      !! Returns `.true.`
-    dallaston2015_is_dirichlet = .true.
-    return
-  end function dallaston2015_is_dirichlet
+    integer, dimension(2) :: bound_array
+    bound_array = [1,0]
+  end function dallaston2015_lower_bound
 
-  function dallaston2015_thickness_west(this, t) result(boundary_value)
+  pure function dallaston2015_upper_bound(this) result(bound_array)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: November 2016
     !
-    ! Specifies the boundary value for thickness at the west boundary.
-    !
-    class(dallaston2015_glacier_boundary), intent(in)   :: this
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8) :: boundary_value
-      !! The value of the boundary conditions
-    boundary_value = this%thickness
-  end function dallaston2015_thickness_west
-
-  function dallaston2015_thickness_east(this, t) result(boundary_value)
-    !* Author: Chris MacMackin
-    !  Date: September 2016
-    !
-    ! Specifies the boundary value for thickness at the west boundary.
-    !
-    class(dallaston2015_glacier_boundary), intent(in)   :: this
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8) :: boundary_value
-      !! The value of the boundary conditions
-    boundary_value = 0.0_r8
-  end function dallaston2015_thickness_east
-
-  function dallaston2015_velocity(this,t) result(boundary_value)
-    !* Author: Chris MacMackin
-    !  Date: September 2016
-    !
-    ! Specifies the boundary value for velocity at the west boundary
+    ! Indicates that one layer of cells at the upper boundary in the
+    ! first dimension should be omitted for thickness. This is
+    ! appropriate for Dirichlet boundary conditions.
     !
     class(dallaston2015_glacier_boundary), intent(in) :: this
+    integer, dimension(2) :: bound_array
+    bound_array = [1,0]
+  end function dallaston2015_upper_bound
+
+  function dallaston2015_residuals(this, thickness, velocity, t) &
+                                   result(residuals)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Returns the difference between the glacier conditions of the
+    ! plume and the Dirichlet conditions prescribed in the model of
+    ! Dallaston et al. (2015)
+    !
+    class(dallaston2015_glacier_boundary), intent(in) :: this
+    class(scalar_field), intent(in)     :: thickness
+      !! A field containing the thickness of the glacier
+    class(vector_field), intent(in)     :: velocity
+      !! A field containing the flow velocity of the glacier
     real(r8), intent(in)                :: t
-      !! The time at which the boundary condition is to be calculated.
-    real(r8), allocatable, dimension(:) :: boundary_value
-      !! The value of the boundary conditions
-    allocate(boundary_value(1))
-    boundary_value = this%velocity
-  end function dallaston2015_velocity
+      !! The time at which the boundary conditions are to be calculated.
+    real(r8), allocatable, dimension(:) :: residuals
+      !! An array containing the difference between the required boundary
+      !! values and those which are actually present.
+    class(scalar_field), allocatable :: thickness_bound_lower, &
+                                        thickness_bound_upper
+    class(vector_field), allocatable :: velocity_bound
+    allocate(thickness_bound_lower, &
+             source=(thickness%get_boundary(-1,1) - this%thickness))
+    allocate(thickness_bound_upper, &
+             source=thickness%get_boundary(1,1))
+    allocate(velocity_bound, &
+             source=(velocity%get_boundary(-1,1) - [this%velocity]))
+    residuals = [thickness_bound_lower%raw(), thickness_bound_upper%raw(), &
+                 velocity_bound%raw()]
+  end function dallaston2015_residuals
 
 end module dallaston2015_glacier_boundary_mod

@@ -240,8 +240,12 @@ contains
       !! to the arguments of the constructor function.
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
     this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
-    this%thickness = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
-    this%thickness = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
+    this%temperature = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
+    this%salinity = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
+    this%thickness_size = this%thickness%raw_size()
+    this%velocity_size = this%velocity%raw_size()
+    this%temperature_size = this%temperature%raw_size()
+    this%salinity_size = this%salinity%raw_size()
     if (present(entrainment_formulation)) then
       call move_alloc(entrainment_formulation, this%entrainment_formulation)
     else
@@ -292,6 +296,7 @@ contains
     else
       this%r_val = 1.12_r8
     end if
+    this%time = 0.0_r8
   end function constructor
 
   function plume_melt(this) result(melt)
@@ -365,12 +370,15 @@ contains
     real(r8), dimension(:), allocatable :: residual
       !! The residual of the system of equations describing the plume.
     type(cheb1d_scalar_field) :: scalar_tmp
-    integer :: start, end
+    integer :: start, finish
+    integer, dimension(:), allocatable :: lower, upper
+
     allocate(residual(this%data_size()))
     call this%melt_formulation%solve_for_melt(this%velocity, ice_thickness/this%r_val, &
                                               this%temperature, this%salinity,        &
                                               this%thickness, this%time)
-    start = 0
+    start = 1
+
     ! Use same or similar notation for variables as used in equations
     associate(D => this%thickness, Uvec => this%velocity, &
               U => this%velocity%component(1), S => this%salinity, &
@@ -384,9 +392,16 @@ contains
                 S_a => this%ambient_conds%ambient_salinity(h/r,this%time), &
                 T_a => this%ambient_conds%ambient_temperature(h/r,this%time))
         associate(rho_a => this%eos%water_density(T_a, S_a))
+
           ! Continuity equation
           scalar_tmp = e + epsilon*m - .div.(D*Uvec)
-          ! ASSIGN TO RESIDUAL
+
+          lower = this%boundaries%thickness_lower_bound()
+          upper = this%boundaries%thickness_upper_bound()
+          finish = start + scalar_tmp%raw_size(lower,upper) - 1
+          residual(start:finish) = scalar_tmp%raw(lower,upper)
+          start = finish + 1
+
           ! Momentum equation, x-component
           scalar_tmp = .div.(D*.grad.U) ! Needed due to stupid
                                         ! compiler issue. Works when
@@ -395,26 +410,45 @@ contains
                        D*(rho_a - rho)*(h%d_dx(1)/r + this%delta*D%d_dx(1)) &
                        - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
                        - .div.(D*Uvec*U)
-          ! ASSIGN TO RESIDUAL
+
+          lower = this%boundaries%velocity_lower_bound()
+          upper = this%boundaries%velocity_upper_bound()
+          finish = start + scalar_tmp%raw_size(lower,upper) - 1
+          residual(start:finish) = scalar_tmp%raw(lower,upper)
+          start = finish + 1
+
           ! Salinity equation
           scalar_tmp = .div.(D*.grad.S)
           if (mf%has_salt_terms()) then
-            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*T)
-          else
             scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
                        - .div.(D*Uvec*T)
+          else
+            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*T)
           end if
-          ! ASSIGN TO RESIDUAL
+
+          lower = this%boundaries%salinity_lower_bound()
+          upper = this%boundaries%salinity_upper_bound()
+          finish = start + scalar_tmp%raw_size(lower,upper) - 1
+          residual(start:finish) = scalar_tmp%raw(lower,upper)
+          start = finish + 1
+
           ! Temperature equation
           scalar_tmp = .div.(D*.grad.T)
           if (mf%has_heat_terms()) then
-            scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
-          else
             scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &
                        - .div.(D*Uvec*T)
+          else
+            scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
           end if
-          ! ASSIGN TO RESIDUAL
-          ! GET BOUNDARY TERMS AND ASSIGN TO RESIDUAL
+
+          lower = this%boundaries%temperature_lower_bound()
+          upper = this%boundaries%temperature_upper_bound()
+          finish = start + scalar_tmp%raw_size(lower,upper) - 1
+          residual(start:finish) = scalar_tmp%raw(lower,upper)
+
+          ! Boundary conditions
+          print*,this%thickness%resolution()
+          residual(finish+1:) = this%boundaries%boundary_residuals(D,Uvec,T,S,this%time)
         end associate
       end associate
     end associate

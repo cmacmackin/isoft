@@ -27,7 +27,9 @@ module ice_shelf_test
   use ice_shelf_mod, only: ice_shelf
   use factual_mod, only: abstract_field, scalar_field, vector_field, &
                          cheb1d_scalar_field, cheb1d_vector_field
+  use viscosity_mod, only: abstract_viscosity
   use newtonian_viscosity_mod, only: newtonian_viscosity
+  use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
   implicit none
 
@@ -39,7 +41,7 @@ module ice_shelf_test
 
   @TestCase
   type, extends(testcase) :: test_shelf
-    type(ice_shelf) :: shelf1, shelf2
+    type(ice_shelf) :: shelf1, shelf2, shelf3
     integer         :: nodes = resolution
     real(r8)        :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
@@ -82,15 +84,18 @@ contains
   subroutine setup(this)
     class(test_shelf), intent(inout) :: this
     real(r8), dimension(1,2) :: domain1, domain2
+    class(abstract_viscosity), allocatable :: visc
+    class(glacier_boundary), allocatable :: bound
+    allocate(visc, source=newtonian_viscosity(1.0_r8))
+    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8))
     domain1(1,1) = this%lower1
     domain1(1,2) = this%upper1
     domain2(1,1) = this%lower2
     domain2(1,2) = this%upper2
     this%shelf1 = ice_shelf(domain1, [this%nodes], thickness1, velocity1, &
-                            this%temperature, newtonian_viscosity(1.0_r8), &
-                            dallaston2015_glacier_boundary(1.0_r8,1.0_r8), &
-                            this%lambda, this%chi)
+                            this%temperature, visc, bound, this%lambda, this%chi)
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
+    this%shelf3 = this%shelf1
   end subroutine setup
 
   @Test
@@ -154,7 +159,7 @@ contains
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    actual = this%shelf1%residual([this%shelf2],melt,drag,1.0_r8)
+    actual = this%shelf1%residual([this%shelf3],melt,drag,1.0_r8)
     @assertEqual(this%shelf1%data_size(),size(actual),message='Residual array of wronge size')
     allocate(expected(size(actual)))
     expected = 0.0_r8
