@@ -370,6 +370,7 @@ contains
     real(r8), dimension(:), allocatable :: residual
       !! The residual of the system of equations describing the plume.
     type(cheb1d_scalar_field) :: scalar_tmp
+    type(cheb1d_vector_field) :: vector_tmp
     integer :: start, finish
     integer, dimension(:), allocatable :: lower, upper
 
@@ -388,9 +389,9 @@ contains
               delta => this%delta, nu => this%nu, mu => this%mu, &
               epsilon => this%epsilon, r => this%r_val)
       associate(e => this%entrainment_formulation%entrainment_rate(this%velocity, &
-                                                     this%thickness,h/r,this%time), &
-                S_a => this%ambient_conds%ambient_salinity(h/r,this%time), &
-                T_a => this%ambient_conds%ambient_temperature(h/r,this%time))
+                                                     this%thickness,-h/r,this%time), &
+                S_a => this%ambient_conds%ambient_salinity(-h/r,this%time), &
+                T_a => this%ambient_conds%ambient_temperature(-h/r,this%time))
         associate(rho_a => this%eos%water_density(T_a, S_a))
 
           ! Continuity equation
@@ -407,7 +408,7 @@ contains
                                         ! compiler issue. Works when
                                         ! tested with trunk.
           scalar_tmp = scalar_tmp*nu + &
-                       D*(rho_a - rho)*(h%d_dx(1)/r + this%delta*D%d_dx(1)) &
+                       D*(rho_a - rho)*(this%delta*D%d_dx(1) - h%d_dx(1)/r) &
                        - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
                        - .div.(D*Uvec*U)
 
@@ -421,9 +422,9 @@ contains
           scalar_tmp = .div.(D*.grad.S)
           if (mf%has_salt_terms()) then
             scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
-                       - .div.(D*Uvec*T)
+                       - .div.(D*Uvec*S)
           else
-            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*T)
+            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*S)
           end if
 
           lower = this%boundaries%salinity_lower_bound()

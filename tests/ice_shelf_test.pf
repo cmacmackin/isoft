@@ -34,9 +34,7 @@ module ice_shelf_test
   implicit none
 
   integer, parameter :: resolution = 50
-  real(r8), parameter :: eps_g = 6.9e-4_r8
   real(r8), parameter :: lambda_d = 0.37_r8
-  real(r8), parameter :: lambd = lambda_d/eps_g
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
 
   @TestCase
@@ -45,7 +43,7 @@ module ice_shelf_test
     integer         :: nodes = resolution
     real(r8)        :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
-    real(r8)        :: temperature = -15._r8, lambda = lambd, &
+    real(r8)        :: temperature = -15._r8, lambda = lambda_d, &
                        chi = 4._r8
   contains
     procedure :: setup

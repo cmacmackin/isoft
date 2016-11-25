@@ -109,8 +109,11 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), allocatable           :: entrainment
       !! The value of the entrainment
+    class(vector_field), allocatable           :: tmp
     call depth%allocate_scalar_field(entrainment)
-    entrainment = abs(depth%d_dx(1)) ! Needed due to ICE when try to put aqll on one line. TODO: Create minimal example and submit bug report.
+    call depth%allocate_vector_field(tmp)
+    tmp = .grad. depth
+    entrainment = tmp%norm() ! Needed due to ICE when try to put aqll on one line. TODO: Create minimal example and submit bug report.
     entrainment = this%coefficient * entrainment * velocity%norm()
   end function jenkins1991_rate
 

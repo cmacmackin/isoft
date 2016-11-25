@@ -78,13 +78,13 @@ contains
   pure function thickness1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness1
-    thickness1 = depth1([0.0_r8]) - depth1(location)
+    thickness1 = depth1([0.0_r8]) - depth1(location) + 1.e-16_r8
   end function thickness1
 
   pure function thickness2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness2
-    thickness2 = depth2([-1.0_r8]) - depth2(location)
+    thickness2 = depth2([-1.0_r8]) - depth2(location) + 1e-9_r8
   end function thickness2
 
   pure function velocity(location)
@@ -96,13 +96,13 @@ contains
   pure function salinity1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity1
-    salinity1 = q_g**(2.0/3.0)/(thickness1(location)+1e-9_r8)
+    salinity1 = q_g**(2.0/3.0)/thickness1(location)
   end function salinity1
 
   pure function salinity2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity2
-    salinity2 = q_g**(2.0/3.0)/(thickness2(location)+1e-9_r8)
+    salinity2 = q_g**(2.0/3.0)/thickness2(location)
   end function salinity2
 
   pure function temp1(location)
@@ -138,17 +138,17 @@ contains
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
-    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, 1.0_r8))
+    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
     allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),beta/eps_m,salinity1([0.0_r8])))
     domain1(1,:) = [this%lower1, this%upper1]
     domain2(1,:) = [this%lower2, this%upper2]
     vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
     call mel%solve_for_melt(vel,tmp,tmp,tmp,tmp,0.0_r8)
     this%plume1 = plume(domain1, [this%nodes], thickness1, velocity,  &
-                        salinity1, temp1, ent, mel, amb, eos, bound, &
+                        temp1, salinity1, ent, mel, amb, eos, bound, &
                         this%delta, this%nu, this%mu, this%epsilon)
     this%plume2 = plume(domain2, [this%nodes], thickness2, velocity, &
-                        salinity2, temp2, epsilon=this%epsilon)
+                        temp2, salinity2, epsilon=this%epsilon)
   end subroutine setup
 
   @Test
@@ -196,7 +196,7 @@ contains
     real(r8), dimension(:), allocatable :: actual, expected
     type(cheb1d_scalar_field) :: thickness
     real(r8) :: density, temperature
-    thickness = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
+    thickness = r * cheb1d_scalar_field(this%nodes, depth1, this%lower1, this%upper1)
     density = 1.0_r8 / r
     temperature = 0.0_r8
     actual = this%plume1%residual(thickness, density, temperature)
