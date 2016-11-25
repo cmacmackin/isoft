@@ -31,7 +31,7 @@ module ice_sheet_test
 
   integer, parameter :: resolution = 50
   real(r8), parameter :: big_x = 2.702702703_r8
-  real(r8), parameter :: ice_density = 0.889320388_r8
+  real(r8), parameter :: ice_density = 1.0_r8/1.12_r8
 
   @TestCase
   type, extends(testcase) :: test_sheet
@@ -127,8 +127,8 @@ contains
   subroutine test_temperature(this)
     !! Tests that a sheet returns the temperature for which it was initialized.
     class(test_sheet), intent(inout) :: this
-    @assertEqual(-10._r8,this%sheet1%ice_temperature(),message='Ice density incorrect')
-    @assertEqual(this%temperature,this%sheet2%ice_temperature(),message='Ice density incorrect')
+    @assertEqual(-15._r8,this%sheet1%ice_temperature(),message='Ice temperature incorrect')
+    @assertEqual(this%temperature,this%sheet2%ice_temperature(),message='Ice temperature incorrect')
   end subroutine test_temperature
 
   @Test

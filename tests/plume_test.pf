@@ -24,7 +24,7 @@ module plume_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
   use test_utils, only: test_field
-  use plume_mod, only: plume, constructor
+  use plume_mod, only: plume
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use entrainment_mod, only: abstract_entrainment
@@ -66,13 +66,13 @@ contains
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth1
     depth1 = (1._r8 - location(1)/big_x) / &
-             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)) / r
+             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2) / r
   end function depth1
 
   pure function depth2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth2
-    depth2 = 1.0_r8 / (location(1)**2 + 1.0_r8) / r
+    depth2 = 1.0_r8 / (location(1) + 2.0_r8)**2 / r
   end function depth2
 
   pure function thickness1(location)
@@ -96,13 +96,13 @@ contains
   pure function salinity1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity1
-    salinity1 = q_g**(2.0/3.0)/thickness1(location)
+    salinity1 = q_g**(2.0/3.0)/(thickness1(location)+1e-9_r8)
   end function salinity1
 
   pure function salinity2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity2
-    salinity2 = q_g**(2.0/3.0)/thickness2(location)
+    salinity2 = q_g**(2.0/3.0)/(thickness2(location)+1e-9_r8)
   end function salinity2
 
   pure function temp1(location)
@@ -118,7 +118,11 @@ contains
   pure function temp2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: temp2
-    temp2 = (beta + 1.0_r8) * location(1) / thickness2(location)
+    if (location(1) == -1.0_r8) then
+      temp2 = beta/eps_m
+    else
+      temp2 = (beta + 1.0_r8) * location(1) / thickness2(location)
+    end if
   end function temp2
 
   subroutine setup(this)
@@ -140,10 +144,10 @@ contains
     domain2(1,:) = [this%lower2, this%upper2]
     vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
     call mel%solve_for_melt(vel,tmp,tmp,tmp,tmp,0.0_r8)
-    this%plume1 = constructor(domain1, [this%nodes], thickness1, velocity,  &
+    this%plume1 = plume(domain1, [this%nodes], thickness1, velocity,  &
                         salinity1, temp1, ent, mel, amb, eos, bound, &
                         this%delta, this%nu, this%mu, this%epsilon)
-    this%plume2 = constructor(domain2, [this%nodes], thickness2, velocity, &
+    this%plume2 = plume(domain2, [this%nodes], thickness2, velocity, &
                         salinity2, temp2, epsilon=this%epsilon)
   end subroutine setup
 

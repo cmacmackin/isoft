@@ -56,7 +56,7 @@ contains
   pure function temperature(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    thickness = 1.0_r8/abs(location(1))
+    thickness = 1.0_r8/abs(location(1)+0.1_r8)
   end function temperature
 
   pure function salinity(location) result(thickness)
@@ -64,13 +64,13 @@ contains
     real(r8) :: thickness
     real(r8), dimension(2) :: vel
     vel = velocity2(location)
-    thickness = (1._r8 - location(1)/big_x)/vel(1)
+    thickness = (1._r8 - location(1)/big_x)/(vel(1)+0.1_r8)
   end function salinity
   
   pure function plume_thickness(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    thickness = 1.0_r8/abs(location(1))**2
+    thickness = 1.0_r8/abs(location(1)+0.1_r8)**2
   end function plume_thickness
 
   pure function velocity1(location) result(velocity)
@@ -90,12 +90,12 @@ contains
 
   subroutine setup(this)
     class(test_melt), intent(inout) :: this
-    this%pressure = cheb1d_scalar_field(this%numpoints,pressure)
-    this%temperature =  cheb1d_scalar_field(this%numpoints,temperature)
-    this%salinity = cheb1d_scalar_field(this%numpoints,salinity)
-    this%plume_thickness = cheb1d_scalar_field(this%numpoints,plume_thickness)
-    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1)
-    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,extra_dims=1)
+    this%pressure = cheb1d_scalar_field(this%numpoints,pressure,0._r8,big_x)
+    this%temperature =  cheb1d_scalar_field(this%numpoints,temperature,0._r8,big_x)
+    this%salinity = cheb1d_scalar_field(this%numpoints,salinity,0._r8,big_x)
+    this%plume_thickness = cheb1d_scalar_field(this%numpoints,plume_thickness,0._r8,big_x)
+    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1,0._r8,big_x)
+    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,0._r8,big_x,extra_dims=1)
     this%time1 = 1.0d5
     this%time2 = -5.7_r8
     this%beta1 = 1.0_r8

@@ -447,7 +447,6 @@ contains
           residual(start:finish) = scalar_tmp%raw(lower,upper)
 
           ! Boundary conditions
-          print*,this%thickness%resolution()
           residual(finish+1:) = this%boundaries%boundary_residuals(D,Uvec,T,S,this%time)
         end associate
       end associate

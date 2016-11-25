@@ -79,7 +79,7 @@ contains
   pure function velocity1_norm(location) result(velocity)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: velocity
-    velocity = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+    velocity = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2)
   end function velocity1_norm
 
   pure function velocity2(location) result(velocity)
@@ -98,10 +98,10 @@ contains
 
   subroutine setup(this)
     class(test_entrain), intent(inout) :: this
-    this%thickness = cheb1d_scalar_field(this%numpoints,thickness)
-    this%depth = cheb1d_scalar_field(this%numpoints,depth)
-    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1)
-    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,extra_dims=1)
+    this%thickness = cheb1d_scalar_field(this%numpoints,thickness,0._r8,big_x)
+    this%depth = cheb1d_scalar_field(this%numpoints,depth,0._r8,big_x)
+    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1,0._r8,big_x)
+    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,0._r8,big_x,extra_dims=1)
     this%time1 = 1.0d5
     this%time2 = -5.7_r8
     this%coef1 = 1.0_r8
@@ -115,10 +115,10 @@ contains
     class(test_entrain), intent(inout) :: this
     type(cheb1d_scalar_field) :: actual, expected
     actual = this%melt1%entrainment_rate(this%velocity1,this%thickness,this%depth,this%time1)
-    expected = cheb1d_scalar_field(this%numpoints,ent1)
+    expected = cheb1d_scalar_field(this%numpoints,ent1,0._r8,big_x)
     @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
     actual = this%melt2%entrainment_rate(this%velocity2,this%depth,this%thickness,this%time2)
-    expected = cheb1d_scalar_field(this%numpoints,ent2)
+    expected = cheb1d_scalar_field(this%numpoints,ent2,0._r8,big_x)
     @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
   contains
     pure function ent1(location)

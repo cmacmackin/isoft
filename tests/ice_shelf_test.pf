@@ -71,7 +71,7 @@ contains
     real(r8), dimension(:), intent(in) :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
-    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2)
   end function velocity1
 
   pure function velocity2(location) result(velocity)
@@ -96,6 +96,7 @@ contains
                             this%temperature, visc, bound, this%lambda, this%chi)
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
     this%shelf3 = this%shelf1
+    call this%shelf3%set_time(1.0_r8)
   end subroutine setup
 
   @Test
@@ -136,7 +137,7 @@ contains
   subroutine test_density(this)
     !! Tests that a shelf returns the density for which it was initialized.
     class(test_shelf), intent(inout) :: this
-    @assertEqual(0.889320388_r8,this%shelf1%ice_density(),message='Ice density incorrect')
+    @assertEqual(1._r8/1.12_r8,this%shelf1%ice_density(),message='Ice density incorrect')
     !@assertEqual(this%density,this%shelf2%ice_density(),message='Ice density incorrect')
   end subroutine test_density
 
@@ -144,8 +145,8 @@ contains
   subroutine test_temperature(this)
     !! Tests that a shelf returns the temperature for which it was initialized.
     class(test_shelf), intent(inout) :: this
-    @assertEqual(-10._r8,this%shelf1%ice_temperature(),message='Ice density incorrect')
-    @assertEqual(this%temperature,this%shelf2%ice_temperature(),message='Ice density incorrect')
+    @assertEqual(-15._r8,this%shelf1%ice_temperature(),message='Ice temperature incorrect')
+    @assertEqual(this%temperature,this%shelf2%ice_temperature(),message='Ice temperature incorrect')
   end subroutine test_temperature
 
   @Test

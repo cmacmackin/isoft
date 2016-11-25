@@ -50,7 +50,7 @@ contains
     real(r8), dimension(:), intent(in) :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
-    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x))
+    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2)
   end function velocity1
 
   pure function velocity2(location) result(velocity)
@@ -63,12 +63,14 @@ contains
 
   subroutine setup(this)
     class(viscosity_test), intent(inout) :: this
-    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1)
-    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,extra_dims=1)
+    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1,0._r8,1._r8)
+    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,0._r8,1._r8,extra_dims=1)
     this%time1 = 1.0d5
     this%time2 = -5.7_r8
     this%temp1 = 1.0_r8
     this%temp2 = -3.5_r8
+    this%viscval1 = 5.0_r8
+    this%viscval2 = 1.1e4_r8
     this%visc1 = newtonian_viscosity(this%viscval1)
     this%visc2 = newtonian_viscosity(this%viscval2)
   end subroutine setup
