@@ -64,11 +64,17 @@ module basal_surface_mod
     procedure(time_setter), deferred  :: set_time
       !! Sets the time record for this basal surface.
     procedure(get_i), deferred        :: data_size
-      !! Returns the number of elements in the glacier's state vector
+      !! Returns the number of elements in the basal surface's state
+      !! vector
     procedure(get_r81d), deferred     :: state_vector
-      !! Returns the glacier's state vector, a 1D array with all necessary 
-      !! data to describe its state.
+      !! Returns the basal surface's state vector, a 1D array with all
+      !! necessary data to describe its state.
+    procedure(write_dat), deferred    :: write_data
+      !! Writes the data describing the basal surface to the disc as
+      !! an HDF5 file.
     procedure                         :: solve => basal_solve
+      !! Iteratively solves for the state of the plume given a
+      !! particular ice shelf geometry.
   end type basal_surface
 
   abstract interface
@@ -139,6 +145,20 @@ module basal_surface_mod
         !! The value of whatever property of the basal surface is being
         !! returned.
     end function get_i
+
+    subroutine write_dat(this,file_id,group_name,error)
+      import :: basal_surface
+      class(basal_surface), intent(in) :: this
+      integer, intent(in)              :: file_id
+        !! The identifier for the HDF5 file/group in which this data is
+        !! meant to be written.
+      character(len=*), intent(in)     :: group_name
+        !! The name to give the group in the HDF5 file storing the
+        !! basal surface's data.
+      integer, intent(out)             :: error
+        !! Flag indicating whether routine ran without error. If no
+        !! error occurs then has value 0.
+    end subroutine write_dat
   end interface
 
 contains

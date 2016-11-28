@@ -38,8 +38,14 @@ module cryosphere_mod
   !use foodie, only: integrand
   use basal_surface_mod, only: basal_surface
   use glacier_mod, only: glacier
+  use hdf5
   implicit none
   private
+
+  character(len=18), parameter :: hdf_type_id = 'default_cryosphere'
+  character(len=12), parameter :: hdf_glacier_id = 'glacier_data'
+  character(len=18), parameter :: hdf_basal_id = 'basal_surface_data'
+  
 
   type, public :: cryosphere
     !* Author: Christopher MacMackin
@@ -126,17 +132,42 @@ contains
                             this%sub_ice%water_density(), time)
     this%time = time
   end subroutine integrate
+
     
   subroutine write_data(this,outfile)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
-    ! Writes the data describing the cryosphere to the disc.
+    ! Writes the data describing the cryosphere to the disc as an HDF5
+    ! file. `h5open_f` must have been once called prior to using this
+    ! method. After the method has been used, `h5close_f` must be
+    ! called once before the end of the program.
     !
     class(cryosphere), intent(in) :: this
     character(len=*), intent(in) :: outfile
       !! The file to which to write the data describing the state of the 
       !! cryosphere
+    integer :: file_id, error_code
+    call h5fopen_f(outfile,H5F_ACC_TRUNC_F, file_id, error_code)
+    if (error_code /= 0) then
+      write(*,*) 'WARNING: Error code',error_code,' returned when creating '// &
+                 'HDF5 file ', outfile
+      write(*,*) '         Data IO not performed.'
+      return
+    end if
+
+    ! Write any whole-system data...
+
+    ! Call for subobjects
+    
+
+    call h5fclose_f(file_id, error_code)
+    if (error_code /= 0) then
+      write(*,*) 'WARNING: Error code',error_code,' returned when closing '// &
+                 'HDF5 file ', outfile
+      write(*,*) '         Possible bad IO.'
+      return
+    end if
   end subroutine write_data
   
   

@@ -66,6 +66,8 @@ module glacier_mod
     procedure(get_r81d), deferred     :: state_vector
       !! Returns the glacier's state vector, a 1D array with all necessary 
       !! data to describe its state.
+    procedure(write_dat), deferred    :: write_data
+      !! Writes the data describing the glacier to the disc as an HDF5 file.
     procedure                         :: integrate => glacier_integrate
       !! Performs a time-step of the integration, taking the state of
       !! the glacier to the specified time using the provided
@@ -152,6 +154,20 @@ module glacier_mod
       integer                    :: property
         !! The value of whatever property of the glacier is being returned.
     end function get_i
+
+    subroutine write_dat(this,file_id,group_name,error)
+      import :: glacier
+      class(glacier), intent(in)   :: this
+      integer, intent(in)          :: file_id
+        !! The identifier for the HDF5 file/group in which this data is
+        !! meant to be written.
+      character(len=*), intent(in) :: group_name
+        !! The name to give the group in the HDF5 file storing the
+        !! glacier's data.
+      integer, intent(out)         :: error
+        !! Flag indicating whether routine ran without error. If no
+        !! error occurs then has value 0.
+    end subroutine write_dat
   end interface
 
   abstract interface
