@@ -37,8 +37,11 @@ module glacier_mod
   !use foodie, only: integrand
   use factual_mod, only: scalar_field, vector_field
   use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2
+  use hdf5, only: hid_t
   implicit none
   private
+
+  character(len=12), parameter, public :: hdf_type_attr = 'glacier_type'
 
   type, abstract, public :: glacier
     !* Author: Christopehr MacMackin
@@ -157,8 +160,9 @@ module glacier_mod
 
     subroutine write_dat(this,file_id,group_name,error)
       import :: glacier
+      import :: hid_t
       class(glacier), intent(in)   :: this
-      integer, intent(in)          :: file_id
+      integer(hid_t), intent(in)   :: file_id
         !! The identifier for the HDF5 file/group in which this data is
         !! meant to be written.
       character(len=*), intent(in) :: group_name

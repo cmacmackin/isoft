@@ -42,9 +42,8 @@ module cryosphere_mod
   implicit none
   private
 
-  character(len=18), parameter :: hdf_type_id = 'default_cryosphere'
-  character(len=12), parameter :: hdf_glacier_id = 'glacier_data'
-  character(len=18), parameter :: hdf_basal_id = 'basal_surface_data'
+  character(len=12), parameter, public :: hdf_glacier = 'glacier_data'
+  character(len=18), parameter, public :: hdf_basal = 'basal_surface_data'
   
 
   type, public :: cryosphere
@@ -114,15 +113,23 @@ contains
     ! reached.
     !
     class(cryosphere), intent(inout) :: this
-    real(r8), intent(in) :: time
+    real(r8), intent(in)             :: time
       !! The time to which to integrate the cryosphere
+    logical, save :: first_call = .true.
+
+    ! Normally the plume should be solved at the end of the previous
+    ! iteration, but in the first iteration obviously there hasn't
+    ! been a chance for this to happen yet.
+    if (first_call) then
+      ! As I am integrating only semi-implicitly and solving the plume
+      ! for the current (rather than future) state, I think I should
+      ! pass the current time. I only *think* that this is correct,
+      ! however.
+      call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
+                              this%ice%ice_temperature(), this%time)
+      first_call = .false.
+    end if
     
-    ! As I am integrating only semi-implicitly and solving the plume
-    ! for the current (rather than future) state, I think I should
-    ! pass the current time. I only *think* that this is correct,
-    ! however.
-    call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
-                            this%ice%ice_temperature(), this%time)
     ! Be wary of passing the ice object as an argument to its own
     ! routine. Given that it is within an array constructor, a copy
     ! should be passed. That relies on the compiler not trying to be
@@ -130,6 +137,11 @@ contains
     call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), &
                             this%sub_ice%basal_drag_parameter(),  &
                             this%sub_ice%water_density(), time)
+
+    ! Solve the plume so that it is ready for use in the next step of
+    ! the time integration.
+    call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
+                            this%ice%ice_temperature(), time)
     this%time = time
   end subroutine integrate
 
@@ -147,26 +159,27 @@ contains
     character(len=*), intent(in) :: outfile
       !! The file to which to write the data describing the state of the 
       !! cryosphere
-    integer :: file_id, error_code
-    call h5fopen_f(outfile,H5F_ACC_TRUNC_F, file_id, error_code)
+    integer(hid_t) :: file_id, error_code
+    call h5fopen_f(outfile, H5F_ACC_TRUNC_F, file_id, error_code)
     if (error_code /= 0) then
       write(*,*) 'WARNING: Error code',error_code,' returned when creating '// &
                  'HDF5 file ', outfile
-      write(*,*) '         Data IO not performed.'
+      write(*,*) '         Data IO not performed'
       return
     end if
 
     ! Write any whole-system data...
+    
 
     ! Call for subobjects
-    
+    call this%ice%write_data(file_id, hdf_glacier, error_code)
+    call this%sub_ice%write_data(file_id, hdf_basal, error_code)
 
     call h5fclose_f(file_id, error_code)
     if (error_code /= 0) then
       write(*,*) 'WARNING: Error code',error_code,' returned when closing '// &
                  'HDF5 file ', outfile
-      write(*,*) '         Possible bad IO.'
-      return
+      write(*,*) '         Possible bad IO'
     end if
   end subroutine write_data
   

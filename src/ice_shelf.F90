@@ -35,14 +35,20 @@ module ice_shelf_mod
   !
   use iso_fortran_env, only: r8 => real64
   !use foodie, only: integrand
-  use glacier_mod, only: glacier, thickness_func, velocity_func
+  use glacier_mod, only: glacier, thickness_func, velocity_func, hdf_type_attr
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use viscosity_mod, only: abstract_viscosity
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
+  use hdf5
+  use h5lt
   implicit none
   private
+
+  character(len=9), parameter, public :: hdf_type_name = 'ice_shelf'
+  character(len=9), parameter, public :: hdf_thickness = 'thickness'
+  character(len=8), parameter, public :: hdf_velocity = 'velocity'
 
   type, extends(glacier), public :: ice_shelf
     !* Author: Chris MacMackin
@@ -91,6 +97,7 @@ module ice_shelf_mod
     procedure :: set_time => shelf_set_time
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
+    procedure :: write_data => shelf_write_data
   end type ice_shelf
 
   interface ice_shelf
@@ -311,6 +318,7 @@ contains
     allocate(thickness, source=this%thickness)
   end function shelf_thickness
 
+
   pure function shelf_velocity(this) result(velocity)
     !* Author: Christopher MacMackin
     !  Date: July 2016
@@ -321,6 +329,7 @@ contains
     class(vector_field), allocatable :: velocity !! The ice velocity.
     allocate(velocity, source=this%velocity)
   end function shelf_velocity
+
 
   pure function shelf_density(this) result(density)
     !* Author: Christopher MacMackin
@@ -338,6 +347,7 @@ contains
     density = 1.0_r8/1.12_r8 !TODO: Will probably want to change this at some point
   end function shelf_density
 
+
   pure function shelf_temperature(this) result(temperature)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -349,6 +359,7 @@ contains
     real(r8)                     :: temperature !! The ice density.
     temperature = -15.0_r8 !TODO: Will probably want to change this at some point.
   end function shelf_temperature
+
 
   function shelf_residual(this, previous_states, melt_rate, &
                           basal_drag_parameter, water_density) result(residual) 
@@ -424,6 +435,7 @@ contains
     end select
   end function shelf_residual
 
+
   subroutine shelf_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -443,6 +455,7 @@ contains
     call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
   end subroutine shelf_update
 
+
   subroutine shelf_set_time(this, time)
     !* Author: Christopher MacMackin
     !  Date: November 2016
@@ -455,6 +468,7 @@ contains
       !! The time at which the glacier is in the present state.
     this%time = time
   end subroutine shelf_set_time
+
 
   pure function shelf_data_size(this)
     !* Author: Christopher MacMackin
@@ -471,6 +485,7 @@ contains
     shelf_data_size = this%thickness%raw_size() + this%velocity%raw_size()
   end function shelf_data_size
 
+
   pure function shelf_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -483,5 +498,71 @@ contains
       !! The state vector describing the ice shelf.
     state_vector = [this%thickness%raw(),this%velocity%raw()]
   end function shelf_state_vector
+
+
+  subroutine shelf_write_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Writes the state of the ice shelf object to an HDF file in the
+    ! specified group. This will consist of a thickness and a velocity
+    ! dataset.
+    !
+    class(ice_shelf), intent(in) :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in) :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    integer :: ret_err
+
+    ret_err = 0
+    call h5gcreate_f(file_id, group_name, group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when creating HDF '// &
+                 'group', group_name
+      write(*,*) '         Data IO not performed for ice shelf'
+      return
+    end if
+
+    call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
+                                    hdf_type_name, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code', error,' returned when writing '// &
+                 'attribute to HDF group', group_name
+      write(*,*) '         Output file will have missing information'
+      ret_err = error
+    end if
+
+    call this%thickness%write_hdf(group_id, hdf_thickness, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing ice '// &
+                 'shelf thickness field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%velocity%write_hdf(group_id, hdf_velocity, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing ice '// &
+                 'shelf velocity field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call h5gclose_f(group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when closing HDF '// &
+                 'group', group_name
+      write(*,*) '         Possible bad IO'
+      if (ret_err == 0) ret_err = error
+    end if
+    error = ret_err
+  end subroutine shelf_write_data
 
 end module ice_shelf_mod

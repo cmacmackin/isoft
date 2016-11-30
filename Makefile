@@ -33,7 +33,7 @@ FMDIR := $(FDIR)/mod
 FMOD := $(FMDIR)/factual_mod.mod
 PREFIX := $(HOME)/.local
 LIBDIR := $(PREFIX)/lib
-INCDIR := $(PREFIX)/include
+INCDIR := $(PREFIX)/include 
 BINDIR := $(PREFIX)/bin
 
 # Include paths internal to project
@@ -50,21 +50,21 @@ ifeq ($(VENDOR_),intel)
   COVFLAGS := 
 else
   F90      := gfortran
-  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR)
-  LDFLAGS  := -O0 -g 
-  COVFLAGS := -fprofile-arcs -ftest-coverage
+  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR)# -ffpe-trap=invalid,zero,overflow,underflow,denormal
+  LDFLAGS  := -O0 -g
+  COVFLAGS := -fprofile-arcs -ftest-coverage 
 endif
 
 # Include paths
 FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
-LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -lblas -llapack
+LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -lblas -llapack -lhdf5_fortran -lhdf5hl_fortran
 LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
-EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod$$
+EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5$$
 
 # Extensions of Fortran files, case insensitive
 F_EXT := f for fpp f90 f95 f03 f08 f15

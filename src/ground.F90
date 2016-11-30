@@ -36,6 +36,7 @@ module ground_mod
   use iso_fortran_env, only: r8 => real64
   use basal_surface_mod, only: basal_surface
   use factual_mod, only: scalar_field
+  use hdf5
   implicit none
   private
 
@@ -56,6 +57,7 @@ module ground_mod
     procedure :: set_time => ground_set_time
     procedure :: data_size => ground_data_size
     procedure :: state_vector => ground_state_vector
+    procedure :: write_data => ground_write_data
   end type ground
 
   interface ground
@@ -188,5 +190,39 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ground.
   end function ground_state_vector
+
+  subroutine ground_write_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Writes the state of the ground object to an HDF file in the
+    ! specified group.
+    !
+    class(ground), intent(in) :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in) :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    call h5gcreate_f(file_id, group_name, group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when creating HDF '// &
+                 'group', group_name
+      write(*,*) '         Data IO not performed for ice shelf'
+      return
+    end if
+
+    call h5gclose_f(group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when closing HDF '// &
+                 'group', group_name
+      write(*,*) '         Possible bad IO'
+    end if
+  end subroutine ground_write_data
 
 end module ground_mod

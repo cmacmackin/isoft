@@ -34,7 +34,7 @@ module plume_mod
   ! representing a buoyant plume beneath an ice shelf.
   !
   use iso_fortran_env, only: r8 => real64
-  use basal_surface_mod, only: basal_surface
+  use basal_surface_mod, only: basal_surface, hdf_type_attr
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field, &
                          uniform_scalar_field
   use entrainment_mod, only: abstract_entrainment
@@ -47,8 +47,16 @@ module plume_mod
   use uniform_ambient_mod, only: uniform_ambient_conditions
   use dallaston2015_plume_boundary_mod, only: dallaston2015_plume_boundary
   use linear_eos_mod, only: linear_eos
+  use hdf5
+  use h5lt
   implicit none
   private
+
+  character(len=9),  parameter, public :: hdf_type_name = 'ice_shelf'
+  character(len=9),  parameter, public :: hdf_thickness = 'thickness'
+  character(len=8),  parameter, public :: hdf_velocity = 'velocity'
+  character(len=11), parameter, public :: hdf_temperature = 'temperature'
+  character(len=8),  parameter, public :: hdf_salinity = 'salinity'
 
   type, extends(basal_surface), public :: plume
     !* Author: Christopher MacMackin
@@ -114,6 +122,7 @@ module plume_mod
     procedure :: set_time => plume_set_time
     procedure :: data_size => plume_data_size
     procedure :: state_vector => plume_state_vector
+    procedure :: write_data => plume_write_data
   end type plume
 
   interface plume
@@ -299,6 +308,7 @@ contains
     this%time = 0.0_r8
   end function constructor
 
+
   function plume_melt(this) result(melt)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -311,6 +321,7 @@ contains
       !! The melt rate at the base of the ice shelf.
     allocate(melt, source=this%melt_formulation%melt_rate())
   end function plume_melt
+
 
   function plume_drag_parameter(this) result(drag)
     !* Author: Christopher MacMackin
@@ -328,6 +339,7 @@ contains
     allocate(uniform_scalar_field :: drag)
     drag = uniform_scalar_field(0.0_r8)
   end function plume_drag_parameter
+
 
   function plume_water_density(this) result(density)
     !* Author: Christopher MacMackin
@@ -349,6 +361,7 @@ contains
       !! The density of the water at the base of the ice sheet.
     density = 1.0_r8
   end function plume_water_density
+
    
   function plume_residual(this, ice_thickness, ice_density, ice_temperature) &
                                                             result(residual)
@@ -454,6 +467,7 @@ contains
     end associate
   end function plume_residual
 
+
   subroutine plume_update(this, state_vector)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -477,6 +491,7 @@ contains
     call this%salinity%set_from_raw(state_vector(i:i + this%temperature_size - 1))
   end subroutine plume_update
 
+
   subroutine plume_set_time(this, time)
     !* Author: Christopher MacMackin
     !  Date: November 2016
@@ -489,6 +504,7 @@ contains
       !! The time at which the plume is in the present state.
     this%time = time
   end subroutine plume_set_time
+
 
   pure function plume_data_size(this)
     !* Author: Christopher MacMackin
@@ -506,6 +522,7 @@ contains
                       this%temperature%raw_size() + this%salinity%raw_size()
   end function plume_data_size
 
+
   pure function plume_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -519,5 +536,87 @@ contains
     state_vector = [this%thickness%raw(), this%velocity%raw(), &
                     this%temperature%raw(), this%salinity%raw()]
   end function plume_state_vector
+
+
+  subroutine plume_write_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Writes the state of the plume object to an HDF file in the
+    ! specified group. This will consist of a thickness, a velocity, a
+    ! temperature, and a salinity dataset.
+    !
+    class(plume), intent(in) :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in) :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    integer :: ret_err
+
+    ret_err = 0
+    call h5gcreate_f(file_id, group_name, group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when creating HDF '// &
+                 'group', group_name
+      write(*,*) '         Data IO not performed for ice shelf'
+      return
+    end if
+
+    call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
+                                    hdf_type_name, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code', error,' returned when writing '// &
+                 'attribute to HDF group', group_name
+      write(*,*) '         Output file will have missing information'
+      ret_err = error
+    end if
+
+    call this%thickness%write_hdf(group_id, hdf_thickness, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
+                 'thickness field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%velocity%write_hdf(group_id, hdf_velocity, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
+                 'velocity field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%temperature%write_hdf(group_id, hdf_temperature, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
+                 'temperature field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%salinity%write_hdf(group_id, hdf_salinity, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
+                 'salinity field to HDF'
+      write(*,*) '         Data likely missing'
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call h5gclose_f(group_id, error)
+    if (error /= 0) then
+      write(*,*) 'WARNING: Error code',error,' returned when closing HDF '// &
+                 'group', group_name
+      write(*,*) '         Possible bad IO'
+      if (ret_err == 0) ret_err = error
+    end if
+    error = ret_err
+  end subroutine plume_write_data
 
 end module plume_mod

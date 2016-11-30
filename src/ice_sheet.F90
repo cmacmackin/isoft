@@ -39,6 +39,7 @@ module ice_sheet_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field
   use viscosity_mod, only: abstract_viscosity
+  use hdf5
   implicit none
   private
 
@@ -63,7 +64,7 @@ module ice_sheet_mod
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
     real(r8)                  :: time
-      !! The time at which the ice shelf is in this state
+      !! The time at which the ice sheet is in this state
   contains
 !$    procedure            :: t => sheet_dt
 !$    procedure            :: local_error => sheet_local_error
@@ -82,6 +83,7 @@ module ice_sheet_mod
     procedure :: set_time => sheet_set_time
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
+    procedure :: write_data => sheet_write_data
   end type ice_sheet
 
   interface ice_sheet
@@ -261,7 +263,7 @@ contains
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
-    ! Returns the thickness of the ice shelf across its domain.
+    ! Returns the thickness of the ice sheet across its domain.
     !
     class(ice_sheet), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
@@ -362,8 +364,8 @@ contains
     !
     ! Returns the number of elements in the ice sheet's state vector.
     ! This is the size of the vector returned by [[ice_sheet:residual]]
-    ! and [[ice_shelf:state_vector]] and taken as an argument by 
-    ! [[ice_shelf:update]].
+    ! and [[ice_sheet:state_vector]] and taken as an argument by 
+    ! [[ice_sheet:update]].
     !
     class(ice_sheet), intent(in) :: this
     integer :: sheet_data_size
@@ -381,5 +383,25 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice sheet.
   end function sheet_state_vector
+
+  subroutine sheet_write_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Writes the state of the ice sheet object to an HDF file in the
+    ! specified group. This will consist of a thickness and a velocity
+    ! dataset.
+    !
+    class(ice_sheet), intent(in) :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in) :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice sheet's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+  end subroutine sheet_write_data
 
 end module ice_sheet_mod

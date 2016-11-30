@@ -36,8 +36,11 @@ module basal_surface_mod
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field
   use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2
+  use hdf5
   implicit none
   private
+
+  character(len=10), parameter, public :: hdf_type_attr = 'basal_type'
 
   type, abstract, public :: basal_surface
     !* Author: Christopher MacMackin
@@ -148,8 +151,9 @@ module basal_surface_mod
 
     subroutine write_dat(this,file_id,group_name,error)
       import :: basal_surface
+      import :: hid_t
       class(basal_surface), intent(in) :: this
-      integer, intent(in)              :: file_id
+      integer(hid_t), intent(in)       :: file_id
         !! The identifier for the HDF5 file/group in which this data is
         !! meant to be written.
       character(len=*), intent(in)     :: group_name
