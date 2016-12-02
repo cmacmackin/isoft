@@ -77,8 +77,16 @@ EXT_PATTERN_GREP := '.*\.\($(subst $(space),\|,$(_F_EXT))\)'
 EXT_PATTERN_SED := 's/([^ ]*)\.($(subst $(space),|,$(_F_EXT)))/\1.o/g;'
 
 # Objects to compile
+SRCS := $(shell find $(SDIR) -iregex $(EXT_PATTERN_GREP))
 OBJS := $(shell find $(SDIR) -iregex $(EXT_PATTERN_GREP) | sed -r $(EXT_PATTERN_SED))
 TOBJS := $(patsubst %.pf,%.o,$(wildcard $(TDIR)/*.pf))
+
+META_FILE := $(SDIR)/meta_implementation.F90
+META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)
+
+#OBJS := $(filter-out $(META_OBJ), $(OBJS))
+
+#.PHONEY: $(META_FILE)
 
 # "make" builds all
 all: all_objects tests
@@ -101,9 +109,11 @@ $(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
 		$(FCFLAGS) $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
+	@echo $(META_OBJ)
+	@echo $(SRCS)
 
 $(LIB): $(OBJS)
-	$(AR) rcs $@ $^
+	$(AR) rcs $@ $(OBJS)
 
 install_lib: lib
 	cp $(LIB) $(LIBDIR)
@@ -137,6 +147,8 @@ $(foreach EXT,$(_F_EXT),$(eval $(call fortran_rule,$(EXT))))
 
 %.F90: %.pf
 	$(PFUNIT)/bin/pFUnitParser.py $<  $@
+
+$(META_OBJ): $(SRCS)
 
 $(MDIR):
 	@mkdir -p $@

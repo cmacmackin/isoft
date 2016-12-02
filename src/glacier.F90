@@ -36,7 +36,7 @@ module glacier_mod
   use iso_fortran_env, only: r8 => real64
   !use foodie, only: integrand
   use factual_mod, only: scalar_field, vector_field
-  use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2
+  use nitsol_mod!, only: nitsol, dummy_jacv, ddot, dnrm2
   use hdf5, only: hid_t
   implicit none
   private
@@ -252,6 +252,8 @@ contains
     call this%set_time(time)
     input = 0
     input(4) = kdmax
+    !input(10) = 3
+    !etafixed = 0.8_r8
 
     call nitsol(nval, state, nitsol_residual, dummy_jacv, 1.e-6_r8, &
                 1.e-6_r8, input, info, work, real_param, int_param, &
@@ -259,7 +261,7 @@ contains
 
     select case(flag)
     case(0)
-      write(*,*) 'Integrated glacier to time', time
+      !write(*,*) 'Integrated glacier to time', time
     case(1)
       write(*,*) 'Reached maximum number of iterations integrating glacier'
       error stop
@@ -286,7 +288,6 @@ contains
       integer, intent(out)                  :: itrmf
         !! Termination flag. 0 means normal termination, 1 means
         !! failure to produce f(xcur)
-
       ! If this is the first call of this routine then the
       ! basal_surface object will already be in the same state as
       ! reflected in xcur
@@ -296,7 +297,8 @@ contains
         call this%update(xcur(1:n))
       end if
       fcur(1:n) = this%residual(old_states,basal_melt,basal_drag,water_density)
-      itrmf = 1
+      print*, fcur(1:n)
+      itrmf = 0
     end subroutine nitsol_residual
 
   end subroutine glacier_integrate

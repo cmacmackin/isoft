@@ -31,20 +31,22 @@ module ice_shelf_test
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
+  use nitsol_mod
   implicit none
 
   integer, parameter :: resolution = 50
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
+  real(r8), parameter :: chi_val = 4._r8
 
   @TestCase
   type, extends(testcase) :: test_shelf
-    type(ice_shelf) :: shelf1, shelf2, shelf3
+    type(ice_shelf) :: shelf1, shelf2, shelf3, shelf4
     integer         :: nodes = resolution
-    real(r8)        :: lower1 = 0.0_r8, upper1 = 2.7_r8
+    real(r8)        :: lower1 = 0.0_r8, upper1 = big_x
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
     real(r8)        :: temperature = -15._r8, lambda = lambda_d, &
-                       chi = 4._r8
+                       chi = chi_val
   contains
     procedure :: setup
   end type test_shelf
@@ -65,11 +67,19 @@ contains
     thickness = 1.0_r8/abs(location(1))
   end function thickness2
 
+  pure function thickness3(location) result(thickness)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = (1._r8 + 0.001_r8*cos(2*location(1)/big_x)) &
+              * thickness1(location)
+  end function thickness3
+
   pure function velocity1(location) result(velocity)
     real(r8), dimension(:), intent(in) :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
-    velocity(1) = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2)
+    velocity(1) = sqrt(1._r8 + 0.25_r8*chi_val*big_x - &
+                       0.25_r8*chi_val*big_x*(1._r8 - location(1)/big_x)**2)
   end function velocity1
 
   pure function velocity2(location) result(velocity)
@@ -78,6 +88,14 @@ contains
     allocate(velocity(1))
     velocity(1) = 1.0_r8 - exp(location(1)/8.0_r8)
   end function velocity2
+
+  pure function velocity3(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity = (1._r8 + 0.001_r8*sin(2*location(1)/big_x)) &
+             * velocity1(location)
+  end function velocity3
 
   subroutine setup(this)
     class(test_shelf), intent(inout) :: this
@@ -94,6 +112,10 @@ contains
                             this%temperature, visc, bound, this%lambda, this%chi)
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
     this%shelf3 = this%shelf1
+    allocate(visc, source=newtonian_viscosity(1.0_r8))
+    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8))
+    this%shelf4 = ice_shelf(domain1, [this%nodes], thickness3, velocity3, &
+                            this%temperature, visc, bound, this%lambda, this%chi)
     call this%shelf3%set_time(1.0_r8)
   end subroutine setup
 
@@ -147,6 +169,24 @@ contains
     @assertEqual(this%temperature,this%shelf2%ice_temperature(),message='Ice temperature incorrect')
   end subroutine test_temperature
 
+  pure function water_density(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: water_density
+    water_density = 1.0_r8
+  end function water_density
+
+  pure function melt_rate(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: melt_rate
+    melt_rate = 1.0_r8 
+  end function melt_rate
+
+  pure function drag_coef(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: drag_coef
+    drag_coef = 0.0_r8
+  end function drag_coef
+
   @Test
   subroutine test_residual(this)
     !! Tests the residual for the steady state determined in Dallaston, Hewitt 
@@ -163,22 +203,6 @@ contains
     allocate(expected(size(actual)))
     expected = 0.0_r8
     @assertEqual(expected,actual,message='Incorrect residual returned.',tolerance=1.e-9_r8)
-  contains
-    pure function water_density(location)
-      real(r8), dimension(:), intent(in) :: location
-      real(r8) :: water_density
-      water_density = 1.0_r8
-    end function water_density
-    pure function melt_rate(location)
-      real(r8), dimension(:), intent(in) :: location
-      real(r8) :: melt_rate
-      melt_rate = 1.0_r8 
-    end function melt_rate
-    pure function drag_coef(location)
-      real(r8), dimension(:), intent(in) :: location
-      real(r8) :: drag_coef
-      drag_coef = 0.0_r8
-    end function drag_coef
   end subroutine test_residual
 
   @Test
@@ -192,5 +216,58 @@ contains
     call this%shelf2%update(this%shelf1%state_vector())
     @assertEqual(this%shelf1%state_vector(),this%shelf2%state_vector(),message='State vector not updated.')
   end subroutine test_update
+
+  @Test
+  subroutine test_integrate_steady(this)
+    !! Tests that an ice shelf at the steady state will remain there
+    class(test_shelf), intent(inout) :: this
+    real(r8) :: dt, time
+    real(r8), dimension(:), allocatable :: actual, expected
+    integer :: i, steps
+    type(cheb1d_scalar_field) :: melt, drag
+    time = 1._r8
+    dt = 0.5_r8 * (this%upper1 - this%lower1)/real(this%nodes,r8)
+    steps = int(time/dt) + 1
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
+    drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
+                               this%upper1)
+    time = 0._r8
+    do i=1,steps
+      time = time + dt
+      call this%shelf1%integrate([this%shelf1], melt, drag, 1._r8, time)
+    end do
+    expected = this%shelf3%state_vector()
+    actual = this%shelf1%state_vector()
+    @assertEqual(expected,actual,message='Shelf diverged from steady state.',tolerance=1.e-9_r8)
+  end subroutine test_integrate_steady
+
+  @Test
+  subroutine test_integrate(this)
+    !! Tests that an ice shelf perturbed from the steady state will
+    !! evolve back to it
+    class(test_shelf), intent(inout) :: this
+    real(r8) :: dt, time
+    real(r8), dimension(:), allocatable :: actual, expected
+    integer :: i, steps
+    type(cheb1d_scalar_field) :: melt, drag
+    time = 2._r8
+    dt = 0.005_r8 * (this%upper1 - this%lower1)/real(this%nodes,r8)
+    steps = int(time/dt) + 1
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
+    drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
+                               this%upper1)
+    time = 0._r8
+    !iplvl = 4
+    do i=1,steps
+      print*,i
+      time = time + dt
+      call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time)
+    end do
+    expected = this%shelf1%state_vector()
+    actual = this%shelf4%state_vector()
+    @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=1.e-9_r8)
+  end subroutine test_integrate
 
 end module ice_shelf_test

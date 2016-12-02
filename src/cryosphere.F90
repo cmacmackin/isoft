@@ -38,13 +38,18 @@ module cryosphere_mod
   !use foodie, only: integrand
   use basal_surface_mod, only: basal_surface
   use glacier_mod, only: glacier
+  use meta_mod
   use hdf5
+  use h5lt
   implicit none
   private
 
-  character(len=12), parameter, public :: hdf_glacier = 'glacier_data'
-  character(len=18), parameter, public :: hdf_basal = 'basal_surface_data'
-  
+  ! Names for objects and attributes in HDF output
+  character(len=12), parameter, public :: hdf_glacier = 'glacier'
+  character(len=18), parameter, public :: hdf_basal = 'basal_surface'
+  character(len=13), parameter, public :: hdf_version = 'isoft_version'
+  character(len=23), parameter, public :: hdf_comp_time = 'binary_compilation_time'
+  character(len=16), parameter, public :: hdf_write_time = 'data_output_time'
 
   type, public :: cryosphere
     !* Author: Christopher MacMackin
@@ -169,8 +174,17 @@ contains
     end if
 
     ! Write any whole-system data...
+    call h5ltset_attribute_string_f(file_id,'/',hdf_version,version(),error_code)
+    call h5ltset_attribute_string_f(file_id,'/',hdf_comp_time,compile_time(), &
+                                    error_code)
+    call h5ltset_attribute_string_f(file_id,'/',hdf_write_time,current_time(), &
+                                    error_code)
+    if (error_code /= 0) then
+      write(*,*) 'WARNING: Error code',error_code,' returned when writing '// &
+                 'attributes to HDF5 file ', outfile
+      write(*,*) '         Possible bad IO'
+    end if
     
-
     ! Call for subobjects
     call this%ice%write_data(file_id, hdf_glacier, error_code)
     call this%sub_ice%write_data(file_id, hdf_basal, error_code)

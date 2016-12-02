@@ -41,6 +41,7 @@ module ice_shelf_mod
   use viscosity_mod, only: abstract_viscosity
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
+  use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
   use hdf5
   use h5lt
   implicit none
@@ -135,10 +136,12 @@ contains
     class(abstract_viscosity), allocatable, optional, &
                            intent(inout) :: viscosity_law
       !! An object which calculates the viscosity of the ice. If not
-      !! specified, then Glen's law will be used with $n=3$.
+      !! specified, then Glen's law will be used with $n=3$. Will be
+      !! unallocated on return.
     class(glacier_boundary), allocatable, optional, &
                          intent(inout)   :: boundaries
-      !! An object specifying the boundary conditions for the ice shelf.
+      !! An object specifying the boundary conditions for the ice
+      !! shelf. Will be unallocated on return.
     real(r8), intent(in), optional       :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH_0u_0}$.
@@ -162,6 +165,11 @@ contains
       call move_alloc(viscosity_law, this%viscosity_law)
     else
       allocate(newtonian_viscosity:: this%viscosity_law)
+    end if
+    if (present(boundaries)) then
+      call move_alloc(boundaries, this%boundaries)
+    else
+      allocate(dallaston2015_glacier_boundary :: this%boundaries)
     end if
     if (present(lambda)) then
       this%lambda = lambda
