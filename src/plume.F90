@@ -447,6 +447,7 @@ contains
           start = finish + 1
 
           ! Temperature equation
+          scalar_tmp = D*T
           scalar_tmp = .div.(D*.grad.T)
           if (mf%has_heat_terms()) then
             scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &

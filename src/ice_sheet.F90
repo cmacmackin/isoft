@@ -37,7 +37,7 @@ module ice_sheet_mod
   !use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field
+                         cheb1d_vector_field, maxval
   use viscosity_mod, only: abstract_viscosity
   use hdf5
   implicit none
@@ -84,6 +84,7 @@ module ice_sheet_mod
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
     procedure :: write_data => sheet_write_data
+    procedure :: time_step => sheet_time_step
   end type ice_sheet
 
   interface ice_sheet
@@ -403,5 +404,17 @@ contains
       !! Flag indicating whether routine ran without error. If no
       !! error occurs then has value 0.
   end subroutine sheet_write_data
+
+  function sheet_time_step(this) result(dt)
+    !* Author: Chris MacMackin
+    !  Date: December 2016
+    !
+    ! Calculates the time step for integrating the ice sheet, using
+    ! the CFL condition.
+    !
+    class(ice_sheet), intent(in) :: this
+    real(r8) :: dt
+      !! The time-step to use
+  end function sheet_time_step
 
 end module ice_sheet_mod

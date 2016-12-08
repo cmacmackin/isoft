@@ -233,9 +233,9 @@ module nitsol_mod
           import :: r8
           integer, intent(in)                   :: n
             !! Dimension of the problem
-          real, dimension(*), intent(in)        :: xcur
+          real(r8), dimension(*), intent(in)    :: xcur
             !! Array of lenght `n` containing the current $x$ value
-          real, dimension(*), intent(in)        :: fcur
+          real(r8), dimension(*), intent(in)    :: fcur
             !! Array of lenght `n` containing the current \(f(x)\) value
           integer, intent(in)                   :: ijob
             !! Integer flat indicating which product is desired. 0
@@ -409,9 +409,9 @@ contains
     ! 
     integer, intent(in)                   :: n
       ! Dimension of the problem
-    real, dimension(*), intent(in)        :: xcur
+    real(r8), dimension(*), intent(in)    :: xcur
       ! Array of lenght `n` containing the current $x$ value
-    real, dimension(*), intent(in)        :: fcur
+    real(r8), dimension(*), intent(in)    :: fcur
       ! Array of lenght `n` containing the current \(f(x)\) value
     integer, intent(in)                   :: ijob
       ! Integer flat indicating which product is desired. 0
@@ -431,4 +431,20 @@ contains
       ! failure to produce \(P^{-1}\vec{v}\)
   end subroutine dummy_jacv
 
+!  function scaled_norm(n, x, sx)
+!    !* Author: Chris MacMackin
+!    !  Date: December 2016
+!    !
+!    ! A wraper to the BLAS routine for calculating Euclidean norm
+!    ! which then scales the norm by the size of the vector. This can
+!    ! be passed to [[nitsol]] for the argument `dnorm`.
+!    !
+!    implicit none
+!    integer, intent(in)                :: n
+!    real(r8), dimension(*), intent(in) :: x
+!    integer, intent(in)                :: sx
+!    real(r8)                           :: scaled_norm
+!    scaled_norm = dnrm2(n,x,sx)/real(n,r8)
+!  end function scaled_norm
+!
 end module nitsol_mod

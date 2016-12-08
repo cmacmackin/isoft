@@ -82,6 +82,7 @@ module cryosphere_mod
 !$    procedure :: assign_integrand => cryosphere_assign
     procedure :: integrate
     procedure :: write_data
+    procedure :: time_step
   end type cryosphere
 
   interface cryosphere
@@ -109,6 +110,18 @@ contains
     call move_alloc(sub_ice, this%sub_ice)
     this%time = 0.0_r8
   end function constructor
+
+  function time_step(this)
+    !* Author: Chris MacMackin
+    !  Date: December 2016
+    !
+    ! Calculates an appropriate time step with which to integrate the
+    ! cryosphere so as not to cause numerical instability.
+    !
+    class(cryosphere), intent(in) :: this
+    real(r8) :: time_step
+    time_step = this%ice%time_step()
+  end function time_step
 
   subroutine integrate(this,time)
     !* Author: Christopher MacMackin

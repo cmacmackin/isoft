@@ -71,6 +71,8 @@ module glacier_mod
       !! data to describe its state.
     procedure(write_dat), deferred    :: write_data
       !! Writes the data describing the glacier to the disc as an HDF5 file.
+    procedure(t_step), deferred       :: time_step
+      !! Calculates the appropriate time step for integration.
     procedure                         :: integrate => glacier_integrate
       !! Performs a time-step of the integration, taking the state of
       !! the glacier to the specified time using the provided
@@ -172,6 +174,15 @@ module glacier_mod
         !! Flag indicating whether routine ran without error. If no
         !! error occurs then has value 0.
     end subroutine write_dat
+
+    function t_step(this)
+      import :: r8
+      import :: glacier
+      class(glacier), intent(in) :: this
+      real(r8) :: t_step
+        !! A time step which will allow integration of the ice shelf
+        !! without causing numerical instability.
+    end function t_step
   end interface
 
   abstract interface
@@ -297,7 +308,7 @@ contains
         call this%update(xcur(1:n))
       end if
       fcur(1:n) = this%residual(old_states,basal_melt,basal_drag,water_density)
-      print*, fcur(1:n)
+      !print*, fcur(1:n)
       itrmf = 0
     end subroutine nitsol_residual
 

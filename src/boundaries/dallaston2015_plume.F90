@@ -48,15 +48,15 @@ module dallaston2015_plume_boundary_mod
     ! A type with procedures for getting the boundary conditions of
     ! the plume model used by Dallaston et al. (2015). These are
     ! Dirichlet conditions at lower bound of the first dimension and
-    ! free conditions at the upper bound.
+    ! free conditions at the upper bound. Temperature has a free lower
+    ! boundary condition as well, due to the singular nature of that
+    ! boundary.
     !
     private
     real(r8) :: thickness = 0.0_r8
       !! The thickness of the plume at the inflowing boundary
     real(r8) :: velocity = 1.0_r8
       !! The velocity of the plume at the inflowing boundary
-    real(r8) :: temperature = 0.0_r8
-      !! The temperature of the plume at the inflowing boundary
     real(r8) :: salinity = 0.0_r8
       !! The salinity of the plume at the inflowing boundary
   contains
@@ -69,11 +69,6 @@ module dallaston2015_plume_boundary_mod
       !! Returns a 1D array which should be passed as the
       !! `exclude_lower_bound`/`provide_lower_bound` argument when
       !! getting or setting the raw representation of the velocity
-      !! field.
-    procedure :: temperature_lower_bound => dallaston2015_lower_bound
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the temperature
       !! field.
     procedure :: salinity_lower_bound => dallaston2015_lower_bound
       !! Returns a 1D array which should be passed as the
@@ -92,7 +87,7 @@ module dallaston2015_plume_boundary_mod
 
 contains
 
-  pure function constructor(thickness, velocity, temperature, salinity) result(this)
+  pure function constructor(thickness, velocity, salinity) result(this)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -103,14 +98,11 @@ contains
       !! The water thickness at the inflowing plume boundary
     real(r8), intent(in) :: velocity
       !! The longitudinal water velocity at the inflowing plume boundary
-    real(r8), intent(in) :: temperature
-      !! The water temperature at the inflowing plume boundary
     real(r8), intent(in) :: salinity
       !! The water salinity at the inflowing plume boundary
     type(dallaston2015_plume_boundary) :: this
     this%thickness = thickness
     this%velocity = velocity
-    this%temperature = temperature
     this%salinity = salinity
   end function constructor
 
@@ -150,19 +142,16 @@ contains
     real(r8), allocatable, dimension(:) :: residuals
       !! An array containing the difference between the required boundary
       !! values and those which are actually present.
-    class(scalar_field), allocatable :: thickness_bound, temperature_bound, &
-                                        salinity_bound
+    class(scalar_field), allocatable :: thickness_bound, salinity_bound
     class(vector_field), allocatable :: velocity_bound
     allocate(thickness_bound,   &
              source=(thickness%get_boundary(-1,1) - this%thickness))
     allocate(velocity_bound,    &
              source=(velocity%get_boundary(-1,1) - [this%velocity]))
-    allocate(temperature_bound, &
-             source=(temperature%get_boundary(-1,1) - this%temperature))
     allocate(salinity_bound,    &
              source=(salinity%get_boundary(-1,1) - this%salinity))
     residuals = [thickness_bound%raw(), velocity_bound%raw(), &
-                 temperature_bound%raw(), salinity_bound%raw()]
+                 salinity_bound%raw()]
   end function dallaston2015_residuals
 
 end module dallaston2015_plume_boundary_mod

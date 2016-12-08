@@ -37,7 +37,7 @@ module ice_shelf_mod
   !use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func, hdf_type_attr
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field
+                         cheb1d_vector_field, maxval
   use viscosity_mod, only: abstract_viscosity
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
@@ -99,6 +99,7 @@ module ice_shelf_mod
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
     procedure :: write_data => shelf_write_data
+    procedure :: time_step => shelf_time_step
   end type ice_shelf
 
   interface ice_shelf
@@ -572,5 +573,23 @@ contains
     end if
     error = ret_err
   end subroutine shelf_write_data
+
+  function shelf_time_step(this) result(dt)
+    !* Author: Chris MacMackin
+    !  Date: December 2016
+    !
+    ! Calculates the time step for integrating the ice shelf, using
+    ! the CFL condition.
+    !
+    class(ice_shelf), intent(in) :: this
+    real(r8) :: dt
+      !! The time-step to use
+    associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
+              C => 1.0_r8)
+      associate(dx1 => dx%component(1))
+        dt = maxval(C*dx1/u)
+      end associate
+    end associate
+  end function shelf_time_step
 
 end module ice_shelf_mod

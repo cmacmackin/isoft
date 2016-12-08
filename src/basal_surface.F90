@@ -35,7 +35,7 @@ module basal_surface_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field
-  use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2
+  use nitsol_mod, only: nitsol, dummy_jacv, ddot, dnrm2, iplvl, dnrm2
   use hdf5
   implicit none
   private
@@ -204,9 +204,9 @@ contains
     call this%set_time(time)
     input = 0
     input(4) = kdmax
-
-    call nitsol(nval, state, nitsol_residual, dummy_jacv, 1.e-6_r8, &
-                1.e-6_r8, input, info, work, real_param, int_param, &
+    iplvl = 2
+    call nitsol(nval, state, nitsol_residual, dummy_jacv, 1.e-8_r8, &
+                1.e-8_r8, input, info, work, real_param, int_param, &
                 flag, ddot, dnrm2)
 
     select case(flag)
@@ -248,7 +248,7 @@ contains
         call this%update(xcur(1:n))
       end if
       fcur(1:n) = this%residual(ice_thickness,ice_density,ice_temperature)
-      itrmf = 1
+      itrmf = 0
     end subroutine nitsol_residual
   end subroutine basal_solve
 

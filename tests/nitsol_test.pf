@@ -27,7 +27,7 @@ module nitsol_test
   use nitsol_mod
   implicit none
 
-  integer, parameter  :: points = 10
+  integer, parameter  :: points = 30
   integer, parameter  :: n_tot = 3*points
   integer, parameter  :: kdmax = 20, nnimax = 200
   real(r8), parameter :: lower_bound = -1.0_r8, upper_bound = 0.0_r8
@@ -40,7 +40,7 @@ contains
 
   @Test
   subroutine test_solve_dallaston2015()
-    real(r8), dimension(n_tot) :: x_guess
+    real(r8), dimension(n_tot) :: x_guess, prev_guess
     real(r8), dimension(n_tot) :: expected
     real(r8), dimension(n_tot) :: residual
     real(r8), dimension(:), allocatable :: worker
@@ -48,32 +48,69 @@ contains
     integer, dimension(1) :: int_param
     integer, dimension(10) :: input
     integer, dimension(6) :: output
-    integer :: flag
+    integer :: flag, i
 
     input = 0
     input(1) = nnimax
     input(4) = kdmax
+    input(5) = 1
+!    input(7) = 1
+!    input(8) = 1
+!    input(10) = 3
     xvals = collocation_points(points-1,lower_bound,upper_bound)
+    
+    residual(1:points) = integrate(xvals,xvals)
+    @assertEqual(0.5_r8*xvals**2,residual(1:points),tolerance=tol,message='Incorrect result of integration.')
+    residual(1:points) = integrate(xvals,xvals,1._r8)
+    @assertEqual(0.5_r8*xvals**2+0.5_r8,residual(1:points),tolerance=tol,message='Incorrect result of integration.')
+    
     expected(1:points)            = xvals - lower_bound
     expected(points+1:2*points)   = q_g**(1.0_r8/3.0_r8)
     expected(2*points+1:3*points) = q_g**(2.0_r8/3.0_r8)
     call test_f(n_tot,expected,residual,real_param,int_param,flag)
-    
+
     @assertEqual(flag,0,message='Failed to calculate residual of expected solution')
     @assertEqual(expected*0.0_r8,residual,tolerance=tol,message='Expected solution did not have zero residual')
-    
+
+    ! Check that the preconditioner will return the expected result
+    ! when given a residual of zero and when the previous guess is
+    ! approximately correct.
+    prev_guess = expected
+    call preconditioner(n_tot, prev_guess, residual, 1, expected*0.0_r8, x_guess, &
+                        real_param, int_param, flag)
+    @assertEqual(expected,x_guess,tolerance=tol,message='Preconditioner not providing inverse to F.')
+
     ! Note that as the resolution increases, the problem becomes
     ! increasingly difficult to solve with even fairly small
     ! perturbations from the known solution.
-    x_guess = expected + [sin(xvals*3.141592_r8*2), &
-                          cos(xvals*3.141592_r8),   &
-                          sin(xvals*3.141592_r8/2)]
+    x_guess = expected + 0.00001_r8*[sin(xvals*3.141592_r8*2), &
+                                 cos(xvals*3.141592_r8),   &
+                                 sin(xvals*3.141592_r8/2)]
+    
+    ! Testing the preconditioner to see if it can be used on its own
+    ! to iteratively converge on a solution
+    prev_guess = 1.0_r8
+    i = 0
+!!$    do while(any(abs(x_guess-prev_guess) > tol/10.0))
+!!$      i = i + 1
+!!$      !print*,prev_guess
+!!$      prev_guess = x_guess
+!!$      call preconditioner(n_tot, prev_guess, residual, 1, expected*0.0_r8, x_guess, &
+!!$                          real_param, int_param, flag)
+!!$      if (flag /= 0) error stop
+!!$    end do
+!!$    print*,i
+!!$    print*,x_guess
+!!$    @assertEqual(expected,x_guess,tolerance=tol,message='NITSOL did not find correct solution.')
+
     !x_guess(1:points)            = xvals - lower_bound
     !x_guess(points+1:2*points)   = 2.1_r8
     !x_guess(2*points+1:3*points) = 4.0_r8
     allocate( worker(n_tot*(kdmax+5) + kdmax*(kdmax+3)) )
-    call nitsol(n_tot, x_guess, test_f, dummy_jacv, tol, tol, input, &
+    iplvl = 4
+    call nitsol(n_tot, x_guess, test_f, preconditioner, tol, tol, input, &
                 output, worker, real_param, int_param, flag, ddot, dnrm2)
+    iplvl = 0
     @assertEqual(0,flag,message='NITSOL failed to find solution')
     @assertEqual(expected,x_guess,tolerance=tol,message='NITSOL did not find correct solution.')
   end subroutine test_solve_dallaston2015
@@ -102,7 +139,7 @@ contains
       return
     end if
     nodes = n / 3
-    
+
     fcur(1:nodes) = xcur(1:nodes) * xcur(nodes+1:2*nodes)
     call differentiate_1d(fcur(1:nodes),xvals,1)
     fcur(1:nodes) = fcur(1:nodes) - xcur(nodes+1:2*nodes)
@@ -120,5 +157,76 @@ contains
 
     itrmf = 0
   end subroutine test_f
+
+  subroutine preconditioner(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+    integer, intent(in)                   :: n
+      !! Dimension of the problem
+    real(r8), dimension(*), intent(in)    :: xcur
+      !! Array of lenght `n` containing the current $x$ value
+    real(r8), dimension(*), intent(in)    :: fcur
+      !! Array of lenght `n` containing the current \(f(x)\) value
+    integer, intent(in)                   :: ijob
+      !! Integer flat indicating which product is desired. 0
+      !! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+    real(r8), dimension(*), intent(in)    :: v
+      !! An array of length `n` to be multiplied
+    real(r8), dimension(*), intent(out)   :: z
+      !! An array of length n containing the desired product on
+      !! output.
+    real(r8), dimension(*), intent(inout) :: rpar
+      !! Parameter/work array 
+    integer, dimension(*), intent(inout)  :: ipar
+      !! Parameter/work array
+    integer, intent(out)                  :: itrmjv
+      !! Termination flag. 0 indcates normal termination, 1
+      !! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
+      !! failure to produce \(P^{-1}\vec{v}\)
+    integer  :: nodes
+    real(r8) :: xs
+
+    if (mod(n,3) /= 0) then
+      itrmjv = 2
+      return
+    end if
+    nodes = n / 3
+    xs = xvals(nodes-1) - lower_bound
+
+    if (ijob == 0) then
+      itrmjv = 0
+      return
+    end if
+
+    associate(q => v(1:nodes-1), r => v(nodes+1:2*nodes-1), s => v(2*nodes+1:3*nodes-1), &
+              D => xcur(1:nodes-1), U => xcur(nodes+1:2*nodes-1),                      &
+              B => xcur(2*nodes+1:3*nodes-1), x => xvals(:-1))
+      !print*,U
+      !print*,D
+      !print*,B
+      !print*,'-----------------------------------------------------------------------------'
+      z(1:nodes-1)           = (integrate(q,x,0._r8) + integrate(U,x,u_g*xs))/U
+      z(nodes+1:2*nodes-1)   = (integrate(r,x,0._r8) + integrate(B,x,q_g/u_g*xs))/(D*U)
+      z(2*nodes+1:3*nodes-1) = integrate(s,x,q_g)/U
+      z(nodes)   = v(nodes)/xcur(2*nodes)
+      z(2*nodes) = v(2*nodes) + u_g
+      z(3*nodes) = v(3*nodes) + q_g/u_g
+    end associate
+    itrmjv = 0
+  end subroutine preconditioner
+
+  function integrate(array, x_grid, boundary)
+    real(r8), dimension(:), intent(in)           :: array
+    real(r8), dimension(size(array)), intent(in) :: x_grid
+    real(r8), optional, intent(in)               :: boundary
+    real(r8), dimension(size(array))             :: integrate
+    integer :: i
+    integrate(1) = 0.0_r8
+    do i=2,size(array)
+      integrate(i) = integrate(i-1) &
+                   + 0.5_r8*(x_grid(i) - x_grid(i-1))*(array(i-1) + array(i))
+    end do
+    if (present(boundary)) then
+       integrate = integrate + (boundary - integrate(size(array)))
+    end if
+  end function integrate
 
 end module nitsol_test
