@@ -25,9 +25,10 @@ module nitsol_test
   use pfunit_mod
   use chebyshev_mod
   use nitsol_mod
+  use f95_lapack
   implicit none
 
-  integer, parameter  :: points = 30
+  integer, parameter  :: points = 20
   integer, parameter  :: n_tot = 3*points
   integer, parameter  :: kdmax = 20, nnimax = 200
   real(r8), parameter :: lower_bound = -1.0_r8, upper_bound = 0.0_r8
@@ -40,7 +41,7 @@ contains
 
   @Test
   subroutine test_solve_dallaston2015()
-    real(r8), dimension(n_tot) :: x_guess, prev_guess
+    real(r8), dimension(n_tot) :: x_guess, f_guess, jacob, dx, dxprime
     real(r8), dimension(n_tot) :: expected
     real(r8), dimension(n_tot) :: residual
     real(r8), dimension(:), allocatable :: worker
@@ -49,11 +50,12 @@ contains
     integer, dimension(10) :: input
     integer, dimension(6) :: output
     integer :: flag, i
+    real(r8), parameter :: delta = 0.00001_r8
 
     input = 0
     input(1) = nnimax
     input(4) = kdmax
-    input(5) = 1
+    input(5) = 0
 !    input(7) = 1
 !    input(8) = 1
 !    input(10) = 3
@@ -72,42 +74,29 @@ contains
     @assertEqual(flag,0,message='Failed to calculate residual of expected solution')
     @assertEqual(expected*0.0_r8,residual,tolerance=tol,message='Expected solution did not have zero residual')
 
-    ! Check that the preconditioner will return the expected result
-    ! when given a residual of zero and when the previous guess is
-    ! approximately correct.
-    prev_guess = expected
-    call preconditioner(n_tot, prev_guess, residual, 1, expected*0.0_r8, x_guess, &
-                        real_param, int_param, flag)
-    @assertEqual(expected,x_guess,tolerance=tol,message='Preconditioner not providing inverse to F.')
-
     ! Note that as the resolution increases, the problem becomes
     ! increasingly difficult to solve with even fairly small
     ! perturbations from the known solution.
-    x_guess = expected + 0.00001_r8*[sin(xvals*3.141592_r8*2), &
+    x_guess = expected + 0.1_r8*[sin(xvals*3.141592_r8*2), &
                                  cos(xvals*3.141592_r8),   &
                                  sin(xvals*3.141592_r8/2)]
-    
-    ! Testing the preconditioner to see if it can be used on its own
-    ! to iteratively converge on a solution
-    prev_guess = 1.0_r8
-    i = 0
-!!$    do while(any(abs(x_guess-prev_guess) > tol/10.0))
-!!$      i = i + 1
-!!$      !print*,prev_guess
-!!$      prev_guess = x_guess
-!!$      call preconditioner(n_tot, prev_guess, residual, 1, expected*0.0_r8, x_guess, &
-!!$                          real_param, int_param, flag)
-!!$      if (flag /= 0) error stop
-!!$    end do
-!!$    print*,i
-!!$    print*,x_guess
-!!$    @assertEqual(expected,x_guess,tolerance=tol,message='NITSOL did not find correct solution.')
 
-    !x_guess(1:points)            = xvals - lower_bound
-    !x_guess(points+1:2*points)   = 2.1_r8
-    !x_guess(2*points+1:3*points) = 4.0_r8
+    ! Check that the preconditioner will return the expected result
+    ! when given a residual of zero and when the previous guess is
+    ! approximately correct.
+    dx = 0.1_r8
+    call test_f(n_tot,x_guess,f_guess,real_param,int_param,flag)
+    call test_f(n_tot,x_guess + delta*dx,jacob,real_param,int_param,flag)
+    jacob = (jacob-f_guess)/delta
+    call preconditioner(n_tot, x_guess, f_guess, 1, jacob, dxprime, real_param, int_param, flag)
+    !do i=1,n_tot
+    !  print*, dx(i), dxprime(i)
+    !end do
+    
+    !@assertEqual(expected,x_guess,tolerance=tol,message='Preconditioner not providing inverse to F.')
+    
     allocate( worker(n_tot*(kdmax+5) + kdmax*(kdmax+3)) )
-    iplvl = 4
+    iplvl = 0
     call nitsol(n_tot, x_guess, test_f, preconditioner, tol, tol, input, &
                 output, worker, real_param, int_param, flag, ddot, dnrm2)
     iplvl = 0
@@ -183,6 +172,8 @@ contains
       !! failure to produce \(P^{-1}\vec{v}\)
     integer  :: nodes
     real(r8) :: xs
+    real(r8), dimension(n/3-2) :: upper, diag_l, diag_u
+    real(r8), dimension(n/3-1)   :: diag, d_u
 
     if (mod(n,3) /= 0) then
       itrmjv = 2
@@ -196,19 +187,39 @@ contains
       return
     end if
 
-    associate(q => v(1:nodes-1), r => v(nodes+1:2*nodes-1), s => v(2*nodes+1:3*nodes-1), &
-              D => xcur(1:nodes-1), U => xcur(nodes+1:2*nodes-1),                      &
-              B => xcur(2*nodes+1:3*nodes-1), x => xvals(:-1))
-      !print*,U
-      !print*,D
-      !print*,B
-      !print*,'-----------------------------------------------------------------------------'
-      z(1:nodes-1)           = (integrate(q,x,0._r8) + integrate(U,x,u_g*xs))/U
-      z(nodes+1:2*nodes-1)   = (integrate(r,x,0._r8) + integrate(B,x,q_g/u_g*xs))/(D*U)
-      z(2*nodes+1:3*nodes-1) = integrate(s,x,q_g)/U
-      z(nodes)   = v(nodes)/xcur(2*nodes)
-      z(2*nodes) = v(2*nodes) + u_g
-      z(3*nodes) = v(3*nodes) + q_g/u_g
+    associate(q => v(1:nodes), r => v(nodes+1:2*nodes), s => v(2*nodes+1:3*nodes), &
+              D => xcur(1:nodes), U => xcur(nodes+1:2*nodes),                      &
+              B => xcur(2*nodes+1:3*nodes), x => xvals(:))
+      z(nodes)   = (q(nodes) - D(nodes)*r(nodes))/U(nodes)
+      z(2*nodes) = r(nodes)
+      z(3*nodes) = s(nodes)
+
+      upper = -1._r8/(x(1:nodes-2) - x(2:nodes-1))
+      d_u = U(1:nodes-1)
+      call differentiate_1d(d_u,x,1)
+      d_u(1:nodes-2) = d_u(1:nodes-2) - upper
+      d_u(nodes-1)   = d_u(nodes-1) + 1._r8/(x(nodes) - x(nodes-1))
+
+      z(1:nodes-1) = q(1:nodes-1)
+      z(nodes-1)   = z(nodes-1) + q(nodes)/(x(nodes) - x(nodes-1))
+      diag_u       = upper
+      diag         = d_u
+      diag_l       = 0._r8
+      call la_gtsv(diag_l,diag,diag_u,z(1:nodes-1))
+      z(nodes+1:2*nodes-1) = r(1:nodes-1)
+      z(2*nodes) = z(2*nodes) + 2._r8*D(nodes)*r(nodes)/(x(nodes) - x(nodes-1))
+      diag_u             = 2._r8*D(1:nodes-2)*upper
+      diag               = D(1:nodes-1)
+      call differentiate_1d(diag,x,1)
+      diag               = 2._r8*D(1:nodes-1)*d_u + 2._r8*U(1:nodes-1)*diag
+      diag_l             = 0._r8
+      call la_gtsv(diag_l,diag,diag_u,z(nodes+1:2*nodes-1))
+      z(2*nodes+1:3*nodes-1) = s(1:nodes-1)
+      z(3*nodes-1)           = z(3*nodes-1) + s(nodes)/(x(nodes) - x(nodes-1))
+      diag_u                 = upper
+      diag                   = d_u
+      diag_l                 = 0._r8
+      call la_gtsv(diag_l,diag,diag_u,z(2*nodes+1:3*nodes-1))
     end associate
     itrmjv = 0
   end subroutine preconditioner
