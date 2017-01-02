@@ -1,0 +1,133 @@
+!
+!  jacobiab_block_test.pf
+!  This file is part of ISOFT.
+!  
+!  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
+!  
+!  This program is free software; you can redistribute it and/or modify
+!  it under the terms of the GNU General Public License as published by
+!  the Free Software Foundation; either version 2 of the License, or
+!  (at your option) any later version.
+!  
+!  This program is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!  GNU General Public License for more details.
+!  
+!  You should have received a copy of the GNU General Public License
+!  along with this program; if not, write to the Free Software
+!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+!  MA 02110-1301, USA.
+!  
+
+module jacobian_block_test
+  use iso_fortran_env, only: r8 => real64
+  use pfunit_mod
+  use factual_mod, only: scalar_field, cheb1d_scalar_field
+  use jacobian_block_mod, only: jacobian_block
+  implicit none
+
+  integer, parameter :: resolution = 50
+  
+  @TestCase
+  type, extends(testcase), public :: test_jacobian
+    type(jacobian_block) :: block1, block2, block3
+    type(cheb1d_scalar_field) :: contents, vector, rhs1, rhs2
+  contains
+    procedure :: setup
+  end type test_jacobian
+
+contains
+  
+  pure function f(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: f
+    f = location(1)**2 + 3._r8*location(1) - 5._r8
+  end function f
+
+  pure function f_dx(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: f_dx
+    f_dx = 2._r8*location(1) + 3._r8
+  end function f_dx
+
+  pure function f_d2x(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: f_d2x
+    f_d2x = 2._r8
+  end function f_d2x
+  
+  pure function g(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: g
+    g = 1._r8 - exp(location(1))
+  end function g
+  
+  pure function g_dx(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: g_dx
+    g_dx = -exp(location(1))
+  end function g_dx
+
+  pure function g_d2x(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: g_d2x
+    g_d2x = -exp(location(1))
+  end function g_d2x
+
+  pure function zeros(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: zeros
+    zeros = 0._r8
+  end function zeros
+
+  subroutine setup(this)
+    class(test_jacobian), intent(inout) :: this
+    type(cheb1d_scalar_field) :: field
+    this%contents = cheb1d_scalar_field(resolution, f)
+    this%block1 = jacobian_block(field, 1)
+    this%block2 = jacobian_block(field, 1, 1)
+    this%block3 = jacobian_block(field, 2)
+    this%vector = cheb1d_scalar_field(resolution, g)
+    this%rhs1 = cheb1d_scalar_field(resolution, prod1)
+    this%rhs2 = cheb1d_scalar_field(resolution, prod2)
+  contains
+    pure function prod1(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: prod1
+      prod1 = f_dx(location)*g(location) + f(location)*g_dx(location)
+    end function prod1
+    
+    pure function prod2(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: prod2
+      prod2 = f_dx(location)*g_dx(location) + f(location)*g_d2x(location)
+    end function prod2
+  end subroutine setup
+
+  @Test
+  subroutine test_jacobian_multiply(this)
+    class(test_jacobian), intent(inout) :: this
+    type(cheb1d_scalar_field) :: actual
+    real(r8), dimension(:), allocatable :: zero_array
+    actual = this%block1 * this%vector
+    @assertEqual(this%rhs1%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+    actual = this%block2 * this%vector
+    @assertEqual(this%rhs2%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+    actual = this%block3 * this%vector
+    allocate(zero_array(actual%raw_size()))
+    zero_array = 0.0_r8
+    @assertTrue(zero_array,actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+  end subroutine test_jacobian_multiply
+
+  @Test
+  subroutine test_jacobian_solve(this)
+    class(test_jacobian), intent(inout) :: this
+    type(cheb1d_scalar_field) :: actual
+    actual = this%block1%solve_for(this%rhs1)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-5_r8,message='Failed to solve Jacobian block system.')
+    actual = this%block2%solve_for(this%rhs2)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-5_r8,message='Failed to solve Jacobian block system.')
+  end subroutine test_jacobian_solve
+
+end module jacobian_block_test

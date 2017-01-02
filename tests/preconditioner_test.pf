@@ -1,0 +1,158 @@
+!
+!  preconditioner_test.pf
+!  This file is part of ISOFT.
+!  
+!  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
+!  
+!  This program is free software; you can redistribute it and/or modify
+!  it under the terms of the GNU General Public License as published by
+!  the Free Software Foundation; either version 2 of the License, or
+!  (at your option) any later version.
+!  
+!  This program is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!  GNU General Public License for more details.
+!  
+!  You should have received a copy of the GNU General Public License
+!  along with this program; if not, write to the Free Software
+!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+!  MA 02110-1301, USA.
+!  
+
+module preconditioner_test
+  use iso_fortran_env, only: r8 => real64
+  use pfunit_mod
+  use factual_mod, only: scalar_field, cheb1d_scalar_field
+  use jacobian_block_mod, only: jacobian_block
+  use preconditioner_mod, only: preconditioner
+  implicit none
+
+  integer, parameter :: resolution = 50
+
+  @TestCase
+  type, extends(testcase), public :: test_preconditioner
+     type(preconditioner) :: prec1, prec2
+     type(jacobian_block), dimension(3,3) :: jacobian
+     type(cheb1d_scalar_field), dimension(3) :: vector, rhs
+  contains
+    procedure :: setup
+  end type test_preconditioner
+
+contains
+
+  pure function j11(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j11
+    j11 = exp(location(1))
+  end function j11
+  
+  pure function j12(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j12
+    j12 = cos(location(1))
+  end function j12
+  
+  pure function j13(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j13
+    j13 = sin(location(1))**2
+  end function j13
+  
+  pure function j21(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j21
+    j21 = sin(location(1)**2)
+  end function j21
+  
+  pure function j22(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j22
+    j22 = location(1)**5 - location(1)**3
+  end function j22
+  
+  pure function j23(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j23
+    j23 = location(1)
+  end function j23
+  
+  pure function j31(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j31
+    j31 = location(1) * exp(location(1)) + 1._r8
+  end function j31
+  
+  pure function j32(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j32
+    j32 = 2._r8
+  end function j32
+  
+  pure function j33(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: j33
+    j33 = location(1)**2 - location(1) + 1.4_r8
+  end function j33
+
+  pure function v1(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: v1
+    v1 = 2._r8 + sin(location(1))
+  end function v1
+  
+  pure function v2(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: v2
+    v2 = location(1)**2
+  end function v2
+  
+  pure function v3(location)
+    real(r8), dimension(:) :: location
+    real(r8) :: v3
+    v3 = (location(1)-5._r8)**2 + 3._r8*(location(1)-0.1_r8)**2
+  end function v3
+  
+  subroutine setup(this)
+    class(test_preconditioner), intent(inout) :: this
+    this%prec1 = preconditioner()
+    this%prec2 = preconditioner(1e-5,50)
+    this%jacobian(1,1) = jacobian_block(cheb1d_scalar_field(resolution,j11),1)
+    this%jacobian(1,2) = jacobian_block(cheb1d_scalar_field(resolution,j12),1)
+    this%jacobian(1,3) = jacobian_block(cheb1d_scalar_field(resolution,j13),1,1)
+    this%jacobian(2,1) = jacobian_block(cheb1d_scalar_field(resolution,j21),1)
+    this%jacobian(2,2) = jacobian_block(cheb1d_scalar_field(resolution,j22),1,1)
+    this%jacobian(2,3) = jacobian_block(cheb1d_scalar_field(resolution,j23),1)
+    this%jacobian(3,1) = jacobian_block(cheb1d_scalar_field(resolution,j31),1)
+    this%jacobian(3,2) = jacobian_block(cheb1d_scalar_field(resolution,j32),1)
+    this%jacobian(3,3) = jacobian_block(cheb1d_scalar_field(resolution,j33),1)
+    this%vector(1) = cheb1d_scalar_field(resolution,v1)
+    this%vector(2) = cheb1d_scalar_field(resolution,v2)
+    this%vector(3) = cheb1d_scalar_field(resolution,v3)
+    this%rhs1(1) = this%jacobian(1,1) * this%vector(1) &
+                 + this%jacobian(1,2) * this%vector(2) &
+                 + this%jacobian(1,3) * this%vector(3)
+    this%rhs1(2) = this%jacobian(2,1) * this%vector(1) &
+                 + this%jacobian(2,2) * this%vector(2) &
+                 + this%jacobian(2,3) * this%vector(3)
+    this%rhs1(3) = this%jacobian(3,1) * this%vector(1) &
+                 + this%jacobian(3,2) * this%vector(2) &
+                 + this%jacobian(3,3) * this%vector(3)
+  end subroutine setup
+
+  @Test
+  subroutine test_apply(this)
+    class(test_preconditioenr), intent(inout) :: this
+    type(cheb1d_scalar_field), dimension(3) :: res
+    real(r8), dimension(:), allocatable :: expected, actual
+    integer :: i
+    expected = [(this%vector(i)%raw(), i = 1, 3)]
+    res = this%prec1%apply(this%jacobian,this%rhs)
+    actual = [(res(i)%raw(), i = 1, 3)]
+    @assertEqual(expcted,actual,tolerance=5.e-3_r8,message='Preconditioner did not converge on correcct result.')
+    res = this%prec2%apply(this%jacobian,this%rhs)
+    actual = [(res(i)%raw(), i = 1, 3)]
+    @assertEqual(expcted,actual,tolerance=5.e-5_r8,message='Preconditioner did not converge on correcct result.')
+  end subroutine test_apply
+
+end module preconditioner_test
