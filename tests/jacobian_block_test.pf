@@ -31,8 +31,9 @@ module jacobian_block_test
   
   @TestCase
   type, extends(testcase), public :: test_jacobian
-    type(jacobian_block) :: block1, block2, block3
-    type(cheb1d_scalar_field) :: contents, vector, rhs1, rhs2
+    type(jacobian_block) :: block1, block2, block3, block4, block5
+    type(cheb1d_scalar_field) :: ones, contents, vector, rhs1, &
+                                 rhs2, dvector, d2vector
   contains
     procedure :: setup
   end type test_jacobian
@@ -60,13 +61,13 @@ contains
   pure function g(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: g
-    g = 1._r8 - exp(location(1))
+    g = 1._r8 - location(1) - exp(location(1))
   end function g
   
   pure function g_dx(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: g_dx
-    g_dx = -exp(location(1))
+    g_dx = -1._r8 - exp(location(1))
   end function g_dx
 
   pure function g_d2x(location)
@@ -80,29 +81,71 @@ contains
     real(r8) :: zeros
     zeros = 0._r8
   end function zeros
+  
+  pure function ones(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: ones
+    ones = 1._r8
+  end function ones
+
+  pure function prod1(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: prod1
+    prod1 = f_dx(location)*g(location) + f(location)*g_dx(location)
+  end function prod1
+
+  pure function prod2(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: prod2
+    prod2 = f_dx(location)*g_dx(location) + f(location)*g_d2x(location)
+  end function prod2
+
+  subroutine bounds1(rhs,boundary_values,boundary_locations)
+    class(scalar_field), intent(in)                  :: rhs
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+    boundary_values = [g([-1._r8]) - prod1([-1._r8])]
+    boundary_locations = [rhs%raw_size()]
+  end subroutine bounds1
+
+  subroutine bounds2(rhs,boundary_values,boundary_locations)
+    class(scalar_field), intent(in)                  :: rhs
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+    boundary_values = [g([1._r8]) - prod2([1._r8]), g([-1._r8]) - prod2([-1._r8])]
+    boundary_locations = [1,rhs%raw_size()]
+  end subroutine bounds2
+  
+  subroutine bounds4(rhs,boundary_values,boundary_locations)
+    class(scalar_field), intent(in)                  :: rhs
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+    boundary_values = [g([1._r8]) - g_dx([1._r8])]
+    boundary_locations = [1]
+  end subroutine bounds4
+  
+  subroutine bounds5(rhs,boundary_values,boundary_locations)
+    class(scalar_field), intent(in)                  :: rhs
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+    boundary_values = [g([1._r8]) - g_d2x([1._r8]), g([-1._r8]) - g_d2x([-1._r8])]
+    boundary_locations = [1,rhs%raw_size()]
+  end subroutine bounds5
 
   subroutine setup(this)
     class(test_jacobian), intent(inout) :: this
-    type(cheb1d_scalar_field) :: field
     this%contents = cheb1d_scalar_field(resolution, f)
-    this%block1 = jacobian_block(field, 1)
-    this%block2 = jacobian_block(field, 1, 1)
-    this%block3 = jacobian_block(field, 2)
+    this%ones = cheb1d_scalar_field(resolution, ones)
+    this%block1 = jacobian_block(this%contents, 1, boundaries=bounds1)
+    this%block2 = jacobian_block(this%contents, 1, 1, boundaries=bounds2)
+    this%block3 = jacobian_block(this%contents, 2)
+    this%block4 = jacobian_block(this%ones, 1, boundaries=bounds4)
+    this%block5 = jacobian_block(this%ones, 1, 1, boundaries=bounds5)
     this%vector = cheb1d_scalar_field(resolution, g)
+    this%dvector = cheb1d_scalar_field(resolution, g_dx)
+    this%d2vector = cheb1d_scalar_field(resolution, g_d2x)
     this%rhs1 = cheb1d_scalar_field(resolution, prod1)
     this%rhs2 = cheb1d_scalar_field(resolution, prod2)
-  contains
-    pure function prod1(location)
-      real(r8), dimension(:), intent(in) :: location
-      real(r8) :: prod1
-      prod1 = f_dx(location)*g(location) + f(location)*g_dx(location)
-    end function prod1
-    
-    pure function prod2(location)
-      real(r8), dimension(:), intent(in) :: location
-      real(r8) :: prod2
-      prod2 = f_dx(location)*g_dx(location) + f(location)*g_d2x(location)
-    end function prod2
   end subroutine setup
 
   @Test
@@ -117,17 +160,35 @@ contains
     actual = this%block3 * this%vector
     allocate(zero_array(actual%raw_size()))
     zero_array = 0.0_r8
-    @assertTrue(zero_array,actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+    @assertEqual(zero_array,actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
   end subroutine test_jacobian_multiply
 
   @Test
   subroutine test_jacobian_solve(this)
     class(test_jacobian), intent(inout) :: this
     type(cheb1d_scalar_field) :: actual
+    actual = this%block4%solve_for(this%dvector)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
     actual = this%block1%solve_for(this%rhs1)
-    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-5_r8,message='Failed to solve Jacobian block system.')
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
+    actual = this%block1%solve_for(this%rhs1)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
     actual = this%block2%solve_for(this%rhs2)
-    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-5_r8,message='Failed to solve Jacobian block system.')
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
+  contains
+    pure function prod(location)
+      real(r8), intent(in), dimension(:) :: location
+      real(r8) :: prod
+      prod = f_dx(location)*g_dx(location)
+    end function prod
+    subroutine bounds(rhs,boundary_values,boundary_locations)
+      class(scalar_field), intent(in)                  :: rhs
+      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+      integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+      boundary_values = [g([-1._r8]) - prod([-1._r8])]
+      boundary_locations = [rhs%raw_size()]
+    end subroutine bounds
   end subroutine test_jacobian_solve
 
 end module jacobian_block_test
