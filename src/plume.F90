@@ -20,10 +20,10 @@
 !  MA 02110-1301, USA.
 !  
 
-!#ifdef DEBUG
-!#define pure 
-!#define elemental 
-!#endif
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
 
 module plume_mod
   !* Author: Christopher MacMackin
@@ -131,7 +131,13 @@ module plume_mod
 public :: constructor
 
   abstract interface
-    pure function scalar_func(location) result(scalar)
+     
+#ifdef DEBUG
+#undef pure
+#undef elemental 
+#endif
+
+     pure function scalar_func(location) result(scalar)
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
@@ -159,6 +165,12 @@ public :: constructor
       real(r8), dimension(:), allocatable :: vector
         !! The velocity vector of the water in the plume at `location`
     end function velocity_func
+    
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+    
   end interface
 
 contains
