@@ -175,7 +175,8 @@ contains
       !! block.
     procedure(jacobian_block_bounds),  optional :: boundaries
       !! A subroutine which specifies boundary values for the solution
-      !! to Jacobian system.
+      !! to Jacobian system. This is only needed if you will be using
+      !! the `solve_for` method.
     type(jacobian_block)            :: this
       !! A new Jacobian block
     allocate(this%contents, source=source_field)
@@ -273,12 +274,12 @@ contains
           deallocate(cached_dx2_ud)
         end if
         allocate(cached_field_type, mold=this%contents)
-        call this%contents%allocate_vector_field(grid)
-        grid = this%contents%grid_spacing()
         allocate(cached_dx_c(n))
         allocate(cached_dx2_uc(n-1))
         allocate(cached_dx2_dc(n-1))
         allocate(cached_dx2_ud(n))
+        call this%contents%allocate_vector_field(grid)
+        grid = this%contents%grid_spacing()
         ! Use this array to temporarily hold the grid spacings
         cached_dx_c = grid%raw()
         ! Work out the upwinded grid spacings
@@ -362,7 +363,7 @@ contains
     rhs_raw = rhs%raw()
     do i = 1, size(this%boundary_locs)
       pos = this%boundary_locs(i)
-      rhs_raw(pos) = rhs_raw(pos) + this%boundary_vals(i)
+      rhs_raw(pos) = this%boundary_vals(i)
     end do
     call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
                   rhs_raw, sol_vector, this%l_multipliers, this%u_diagonal, &

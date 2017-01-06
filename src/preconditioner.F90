@@ -111,16 +111,17 @@ contains
     class(scalar_field), dimension(:), allocatable       :: estimate
 
     character(len=76), parameter :: success_format = '("Picard solver '// &
-         'converged with error of ",es8.5," after ",i0," iterations.")'
+         'converged with error of ",es8.5," after ",i3," iterations.")'
     character(len=76), parameter :: failure_format = '("Picard solver '// &
-         'reached maximum (",i0,") iterations, with error ",es8.5,".")'
+         'reached maximum (",i3,") iterations, with error ",es8.5,".")'
+    integer, parameter                             :: msg_len = 68
     class(scalar_field), dimension(:), allocatable :: prev_estimate
     integer                                        :: i, j, k, m, n
     real(r8), dimension(:), allocatable            :: tmp
     real(r8)                                       :: max_err
     class(scalar_field), allocatable               :: tmp_field
     logical                                        :: first
-    character(len=:), allocatable                  :: msg
+    character(len=msg_len)                         :: msg
     
     call logger%debug('preconditioner_apply','Entering function `precondition`.')
     allocate(prev_estimate(size(vector)), mold=vector)
@@ -163,25 +164,27 @@ contains
           if (k == j) cycle
           if (first) then
             first = .false.
-            tmp_field = jacobian(j,k) * vector(k)
+            tmp_field = jacobian(j,k) * prev_estimate(k)
           else
-            tmp_field = tmp_field + jacobian(j,k) * vector(k)
+            tmp_field = tmp_field + jacobian(j,k) * prev_estimate(k)
           end if
         end do
-        estimate(j) = jacobian(j,j)%solve_for(vector(j) - tmp_field)
+        estimate(j) = jacobian(j,j)%solve_for((1._r8-0.9_r8**i) * vector(j) - tmp_field)
         max_err = max(max_err, &
                       maxval(abs( (estimate(j)-prev_estimate(j))/(estimate(j)+1e-10_r8) )))
+        print*,i,j,estimate(j)%raw()
       end do
+      print*,i,max_err
       ! If difference between result and previous guess is less than
       ! the tolerance, stop iterations
       if (max_err < this%tolerance) then
-        write(msg,success_format) max_err, this%max_iterations
+        write(msg,success_format) max_err, i
         call logger%debug('preconditioner_apply',msg)
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
         return
       end if
       deallocate(prev_estimate)
-      call move_alloc(estimate, prev_estimate)
+      if (i /= this%max_iterations) call move_alloc(estimate, prev_estimate)
     end do
     write(msg,failure_format) this%max_iterations, max_err
     call logger%warning('preconditioner_apply',msg)

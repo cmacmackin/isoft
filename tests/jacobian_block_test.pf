@@ -104,7 +104,7 @@ contains
     class(scalar_field), intent(in)                  :: rhs
     real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-    boundary_values = [g([-1._r8]) - prod1([-1._r8])]
+    boundary_values = [g([-1._r8])]
     boundary_locations = [rhs%raw_size()]
   end subroutine bounds1
 
@@ -112,7 +112,7 @@ contains
     class(scalar_field), intent(in)                  :: rhs
     real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-    boundary_values = [g([1._r8]) - prod2([1._r8]), g([-1._r8]) - prod2([-1._r8])]
+    boundary_values = [g([1._r8]), g([-1._r8])]
     boundary_locations = [1,rhs%raw_size()]
   end subroutine bounds2
   
@@ -120,7 +120,7 @@ contains
     class(scalar_field), intent(in)                  :: rhs
     real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-    boundary_values = [g([1._r8]) - g_dx([1._r8])]
+    boundary_values = [g([1._r8])]
     boundary_locations = [1]
   end subroutine bounds4
   
@@ -128,7 +128,7 @@ contains
     class(scalar_field), intent(in)                  :: rhs
     real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-    boundary_values = [g([1._r8]) - g_d2x([1._r8]), g([-1._r8]) - g_d2x([-1._r8])]
+    boundary_values = [g([1._r8]), g([-1._r8])]
     boundary_locations = [1,rhs%raw_size()]
   end subroutine bounds5
 
