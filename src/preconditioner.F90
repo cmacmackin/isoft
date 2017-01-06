@@ -97,7 +97,7 @@ contains
     if (present(max_iterations)) this%max_iterations = max_iterations
   end function constructor
 
-  function preconditioner_apply(this, jacobian, vector) result(estimate)
+  subroutine preconditioner_apply(this, jacobian, vector, estimate)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
@@ -107,8 +107,14 @@ contains
     !
     class(preconditioner), intent(in)                    :: this
     class(jacobian_block), dimension(:,:), intent(inout) :: jacobian
+      !! An \(n\timesn\) matrix approximating the Jacobian for which
+      !! the preconditioner is used.
     class(scalar_field), dimension(:), intent(in)        :: vector
-    class(scalar_field), dimension(:), allocatable       :: estimate
+      !! A vector of size \(n\) which is to be preconditioned.
+    class(scalar_field), dimension(:), intent(inout)     :: estimate
+      !! On entry, an initial guess for the preconditioned vector. On
+      !! exit, the iteratively determined value of the preconditioned
+      !! vector.
 
     character(len=76), parameter :: success_format = '("Picard solver '// &
          'converged with error of ",es8.5," after ",i3," iterations.")'
@@ -116,15 +122,15 @@ contains
          'reached maximum (",i3,") iterations, with error ",es8.5,".")'
     integer, parameter                             :: msg_len = 68
     class(scalar_field), dimension(:), allocatable :: prev_estimate
-    integer                                        :: i, j, k, m, n
-    real(r8), dimension(:), allocatable            :: tmp
-    real(r8)                                       :: max_err
+    integer                                        :: i, j, k, n
+    real(r8)                                       :: max_err, old_max_err
     class(scalar_field), allocatable               :: tmp_field
     logical                                        :: first
     character(len=msg_len)                         :: msg
     
     call logger%debug('preconditioner_apply','Entering function `precondition`.')
-    allocate(prev_estimate(size(vector)), mold=vector)
+    n = size(vector)
+    allocate(prev_estimate(n), mold=estimate)
     allocate(tmp_field, mold=vector(1))
 #ifdef DEBUG
     if (size(jacobian,1) /= size(jacobian,2)) then
@@ -133,45 +139,32 @@ contains
     if (size(jacobian,1) /= size(vector)) then
       error stop('Vector is of different size than Jacobian.')
     end if
+    if (size(estimate) /= size(vector)) then
+      error stop('Estimate is of different size than vector.')
+    end if
 #endif
-    n = size(vector)
-    ! Initialise prev_guess to 0
-    do concurrent (i=1:n)
-      call prev_estimate(i)%assign_meta_data(vector(i))
-      m = prev_estimate(i)%raw_size()
-      if (allocated(tmp)) then
-        if (size(tmp) /= m) then
-          deallocate(tmp)
-          allocate(tmp(m))
-          tmp = 0._r8
-        end if
-      else
-        allocate(tmp(m))
-        tmp = 0._r8
-      end if
-      call prev_estimate(i)%set_from_raw(tmp)
-    end do
     ! Until reached maximum number of iterations...
     do i = 1, this%max_iterations
       ! For each row of the Jacobian, solve for the diagonal block,
       ! with off-diagonal blocks applied to the previous guess and
       ! subtracted from the right-hand-side.
       max_err = 0._r8
-      allocate(estimate(size(vector)), mold=vector)
+      prev_estimate = estimate
+      print*,'----------------------------------------------'
       do j = 1, n
         first = .true.
         do k = 1, n
           if (k == j) cycle
           if (first) then
             first = .false.
-            tmp_field = jacobian(j,k) * prev_estimate(k)
+            tmp_field = jacobian(j,k) * estimate(k)
           else
-            tmp_field = tmp_field + jacobian(j,k) * prev_estimate(k)
+            tmp_field = tmp_field + jacobian(j,k) * estimate(k)
           end if
         end do
-        estimate(j) = jacobian(j,j)%solve_for((1._r8-0.9_r8**i) * vector(j) - tmp_field)
+        estimate(j) = jacobian(j,j)%solve_for(vector(j) - tmp_field)
         max_err = max(max_err, &
-                      maxval(abs( (estimate(j)-prev_estimate(j))/(estimate(j)+1e-10_r8) )))
+                      maxval(abs( (estimate(j)-prev_estimate(j))/(prev_estimate(j)+1e-10_r8) )))
         print*,i,j,estimate(j)%raw()
       end do
       print*,i,max_err
@@ -183,12 +176,19 @@ contains
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
         return
       end if
-      deallocate(prev_estimate)
-      if (i /= this%max_iterations) call move_alloc(estimate, prev_estimate)
+      print*,i,old_max_err,max_err,old_max_err<=max_err
+      if (i > 1 .and. old_max_err <= max_err) then
+        call logger%error('preconditioner_apply', &
+                         'Iterations diverging. Exiting and returning previous iterate.')
+        call logger%debug('preconditioner_apply','Exiting function `precondition`.')
+        estimate = prev_estimate
+        return
+      end if
+      old_max_err = max_err
     end do
     write(msg,failure_format) this%max_iterations, max_err
-    call logger%warning('preconditioner_apply',msg)
+    call logger%error('preconditioner_apply',msg)
     call logger%debug('preconditioner_apply','Exiting function `precondition`.')
-  end function preconditioner_apply
+  end subroutine preconditioner_apply
   
 end module preconditioner_mod

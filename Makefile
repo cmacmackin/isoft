@@ -62,7 +62,7 @@ FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
 LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -llapack95 -lhdf5_fortran -lhdf5hl_fortran -lflogging \
-        -l$(BLAS)
+        -l$(BLAS) -llapack
 LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries

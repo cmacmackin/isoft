@@ -44,7 +44,7 @@ contains
   pure function j11(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: j11
-    j11 = exp(location(1))
+    j11 = 2._r8 + exp(location(1))
   end function j11
   
   pure function j12(location)
@@ -68,7 +68,7 @@ contains
   pure function j22(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: j22
-    j22 = location(1)**5 - location(1)**3
+    j22 = location(1)**5 - location(1)**3 - 10._r8
   end function j22
   
   pure function j23(location)
@@ -92,7 +92,7 @@ contains
   pure function j33(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: j33
-    j33 = location(1)**2 - location(1) + 1.4_r8
+    j33 = location(1)**2 - location(1) + 1.4e2_r8
   end function j33
   
   pure function j11_dx(location)
@@ -270,13 +270,24 @@ contains
     real(r8), dimension(:), allocatable :: expected, actual
     integer :: i
     expected = [(this%vector(i)%raw(), i = 1, 3)]
-    print*,expected
-    allocate(res, source=this%prec1%apply(this%jacobian,this%rhs))
+    print*,'================================='
+    print*,0,1,this%vector(1)%raw()
+    print*,0,2,this%vector(2)%raw()
+    print*,0,3,this%vector(3)%raw()
+    call this%prec1%apply(this%jacobian,this%rhs,this%vector)
+    actual = [(this%vector(i)%raw(), i = 1, 3)]
+    @assertEqual(expected,actual,tolerance=1.e-2_r8,message='Preconditioner did not converge on correcct result.')
+    !print*,expected
+    allocate(cheb1d_scalar_field :: res(3))
+    do i = 1,3
+      res(i) = 0.0_r8 * this%vector(i)
+    end do
+    call this%prec1%apply(this%jacobian,this%rhs,res)
     actual = [(res(i)%raw(), i = 1, 3)]
-    @assertEqual(expected,actual,tolerance=5.e-3_r8,message='Preconditioner did not converge on correcct result.')
-    allocate(res, source=this%prec2%apply(this%jacobian,this%rhs))
+    @assertEqual(expected,actual,tolerance=1.e-2_r8,message='Preconditioner did not converge on correcct result.')
+    call this%prec2%apply(this%jacobian,this%rhs,res)
     actual = [(res(i)%raw(), i = 1, 3)]
-    @assertEqual(expected,actual,tolerance=5.e-5_r8,message='Preconditioner did not converge on correcct result.')
+    @assertEqual(expected,actual,tolerance=1.e-6_r8,message='Preconditioner did not converge on correcct result.')
   end subroutine test_apply
 
 end module preconditioner_test
