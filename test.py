@@ -20,6 +20,13 @@ expected[0:points]          = xvals - lower_bound
 expected[points:2*points]   = q_g**(1./3.)
 expected[2*points:3*points] = q_g**(2./3.)
 
+def grad(arr, delta):
+    # Computes upwinded gradient
+    g = np.empty_like(arr)
+    g[1:] = (arr[1:] - arr[:-1])/delta
+    g[0] = 0.0
+    return g
+
 def residual(guess):
     assert guess.size%3 == 0
     n = guess.size/3
@@ -30,7 +37,20 @@ def residual(guess):
     resid[0]   = guess[0]*guess[2*n]
     resid[n]   = guess[n] - u_g
     resid[2*n] = guess[2*n] - q_g/u_g
-    print resid
+    #print resid
+    return resid
+
+def residual_upwind(guess):
+    assert guess.size%3 == 0
+    n = guess.size/3
+    resid = np.empty_like(guess)
+    resid[0:n]     = grad(guess[0:n]*guess[n:2*n],dx) - guess[n:2*n]
+    resid[n:2*n]   = grad(guess[0:n]*guess[n:2*n]**2,dx) - guess[2*n:3*n]
+    resid[2*n:3*n] = grad(guess[n:2*n]*guess[2*n:3*n], dx)
+    resid[0]   = guess[0]*guess[2*n]
+    resid[n]   = guess[n] - u_g
+    resid[2*n] = guess[2*n] - q_g/u_g
+    #print resid
     return resid
 
 assert np.all(np.abs(residual(expected)) < tol)
@@ -54,7 +74,7 @@ pre = scipy.sparse.linalg.LinearOperator((n_tot,n_tot), precond)
 #                                                  np.cos(np.pi*2*xvals)))
 initial = expected + perturbation#np.random.normal(scale=perturbation,size=n_tot)
 result = scipy.optimize.newton_krylov(residual, initial, verbose=True, 
-                                      f_tol=tol, inner_M=pre)
+                                      f_tol=tol, method='gmres')#, inner_M=pre)
 
 try:
     assert np.all(np.abs(result - expected) < tol)
