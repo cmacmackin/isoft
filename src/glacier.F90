@@ -184,9 +184,14 @@ module glacier_mod
         !! without causing numerical instability.
     end function t_step
   end interface
-
+ 
+#ifdef DEBUG
+#undef pure
+#undef elemental
+#endif
+  
   abstract interface
-    function thickness_func(location) result(thickness)
+    pure function thickness_func(location) result(thickness)
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
@@ -200,7 +205,7 @@ module glacier_mod
         !! The thickness of the glacier at `location`
     end function thickness_func
       
-    function velocity_func(location) result(velocity)
+    pure function velocity_func(location) result(velocity)
       !* Author: Chris MacMackin
       !  Date: July 2016
       !
@@ -215,6 +220,11 @@ module glacier_mod
     end function velocity_func
   end interface
 
+#ifdef DEBUG
+#define pure 
+#define elemental 
+#endif
+  
   public :: thickness_func, velocity_func
 
 contains

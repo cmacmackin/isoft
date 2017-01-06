@@ -101,6 +101,12 @@ module jacobian_block_mod
     class(scalar_field), allocatable    :: contents
       !!The value, \(A\), to which the Jacobian block operation is
       !!beiing applied.
+    procedure(jacobian_block_bounds), pointer, nopass  :: &
+                                           get_boundaries => jacobian_block_bounds
+      !! A subroutine which determines the expected boundary value
+      !! (and their location in the raw array) for the solution of the
+      !! Jacobian block. It effectively inverts the process by which
+      !! residuals are determined for boundary values.
     class(scalar_field), allocatable    :: derivative
       !! The cached derivative of `contents`
     real(r8), dimension(:), allocatable :: diagonal
@@ -129,6 +135,12 @@ module jacobian_block_mod
     integer, dimension(:), allocatable  :: pivots
       !! Pivot indicies from the LU factorisation of the tridiagonal
       !! matrix representation of this block.
+    real(r8), dimension(:), allocatable :: boundary_vals
+      !! Expected boundary values for the solution to the Jacobian
+      !! block.
+    integer, dimension(:), allocatable  :: boundary_locs
+      !! Locations in the raw arrays which are used to specify
+      !! boundary conditions.
   contains
     private
     procedure :: jacobian_block_multiply
@@ -142,7 +154,8 @@ module jacobian_block_mod
 
 contains
 
-  function constructor(source_field, direction, extra_derivative) result(this)
+  function constructor(source_field, direction, extra_derivative, &
+                       boundaries) result(this)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
@@ -152,21 +165,26 @@ contains
     ! in the \(i\)-direction. Additionally, a further differentiation
     ! operator may be added to the right hand side of this matrix block.
     !
-    class(scalar_field), intent(in) :: source_field
+    class(scalar_field), intent(in)             :: source_field
       !! A scalar field (\(F\)) making up this block of the Jacobian
-    integer, intent(in)             :: direction
+    integer, intent(in)                         :: direction
       !! The direction in which field derivatives are taken.
-    integer, intent(in), optional   :: extra_derivative
+    integer, intent(in), optional               :: extra_derivative
       !! If present, specifies the direction of a differentiation
       !! operator to be added to the right hand side of this matrix
       !! block.
+    procedure(jacobian_block_bounds),  optional :: boundaries
+      !! A subroutine which specifies boundary values for the solution
+      !! to Jacobian system. This is only needed if you will be using
+      !! the `solve_for` method.
     type(jacobian_block)            :: this
       !! A new Jacobian block
     allocate(this%contents, source=source_field)
     allocate(this%derivative, mold=this%contents)
-    this%derivative = this%contents%d_dx(this%direction)
     this%direction = direction
+    this%derivative = this%contents%d_dx(this%direction)
     if (present(extra_derivative)) this%extra_derivative = extra_derivative
+    if (present(boundaries)) this%get_boundaries => boundaries
   end function constructor
 
   function jacobian_block_multiply(this, rhs) result(product)
@@ -185,7 +203,7 @@ contains
     allocate(product, mold=this%contents)
     if (this%extra_derivative==no_extra_derivative) then
       product = this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
-    else
+   else
       allocate(tmp, mold=rhs)
       tmp = rhs%d_dx(this%extra_derivative)
       product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
@@ -210,10 +228,12 @@ contains
     class(scalar_field), allocatable     :: solution
     real(r8), dimension(:), allocatable  :: sol_vector
 
-    character(len=51), parameter :: error_format = '("Tridiagonal matrix '// &
-         'solver returned with flag",i0)'
+    character(len=52), parameter :: error_format = '("Tridiagonal matrix '// &
+         'solver returned with flag ",i5)'
     character(len=77), parameter :: success_format = '("Tridiagonal matrix '// &
          'solver returned with estimated condition number ",es8.5)'
+    integer, parameter                        :: error_len = 50, &
+                                                 success_len = 75
     integer                                   :: flag, n
     real(r8)                                  :: forward_err, &
                                                  backward_err, &
@@ -223,8 +243,12 @@ contains
     class(vector_field), allocatable          :: grid
     logical                                   :: use_cached
     class(scalar_field), allocatable, save    :: cached_field_type
-    real(r8), dimension(:), allocatable, save :: cached_grid_spacing
-    real(r8), dimension(:), allocatable       :: cont, deriv
+    real(r8), dimension(:), allocatable, save :: cached_dx_c,   &
+                                                 cached_dx2_uc, &
+                                                 cached_dx2_ud, &
+                                                 cached_dx2_dc
+    real(r8), dimension(:), allocatable       :: cont, deriv, rhs_raw
+    integer                                   :: i, pos
     
     allocate(sol_vector(rhs%raw_size()))
     ! Construct tridiagonal matrix for this operation, if necessary
@@ -235,44 +259,97 @@ contains
       ! Try to use cached copy of inverse grid spacing, if available and suitable 
       if (allocated(cached_field_type)) then
         use_cached = same_type_as(this%contents, cached_field_type) .and. &
-                     n==size(cached_grid_spacing)
+                     n==size(cached_dx_c)
       else
         use_cached = .false.
       end if
       ! Construct an array containing the distance between grid
       ! points, if necessary
       if (.not. use_cached) then
-        deallocate(cached_field_type)
+        if (allocated(cached_field_type)) then   
+          deallocate(cached_field_type)
+          deallocate(cached_dx_c)
+          deallocate(cached_dx2_uc)
+          deallocate(cached_dx2_dc)
+          deallocate(cached_dx2_ud)
+        end if
         allocate(cached_field_type, mold=this%contents)
+        allocate(cached_dx_c(n))
+        allocate(cached_dx2_uc(n-1))
+        allocate(cached_dx2_dc(n-1))
+        allocate(cached_dx2_ud(n))
         call this%contents%allocate_vector_field(grid)
         grid = this%contents%grid_spacing()
-        cached_grid_spacing = 0.5_r8/grid%raw()
-        cached_grid_spacing(1) = 2 * cached_grid_spacing(1)
-        cached_grid_spacing(n) = 2 * cached_grid_spacing(n)        
+        ! Use this array to temporarily hold the grid spacings
+        cached_dx_c = grid%raw()
+        ! Work out the upwinded grid spacings
+        cached_dx2_uc(1) = cached_dx_c(1)
+        do i = 2, n-1
+          cached_dx2_uc(i) = 2*cached_dx_c(i) - cached_dx2_uc(i-1)
+        end do
+        ! Work out the inverse of the downwinded grid spacings
+        cached_dx2_dc(1:n-2) = 1._r8/cached_dx2_uc(1:n-2)
+        cached_dx2_dc(n-1) = 1._r8/cached_dx_c(n)
+        ! Work out the -2 times product of the inverse up- and
+        ! down-winded grid spacings
+        cached_dx2_ud(1) = cached_dx2_uc(1)**(-2)
+        cached_dx2_ud(2:n-1) = -2 * cached_dx2_dc(2:n-1)/cached_dx2_uc(1:n-2)
+        cached_dx2_ud(n) = cached_dx2_dc(n-1)**2
+        ! Work out the inverse of product of the up-winded and
+        ! centred grid spacings
+        cached_dx2_uc(1) = -cached_dx2_uc(1)**(-2)
+        cached_dx2_uc(2:n-1) = 1._r8/(cached_dx2_uc(2:n-1) * cached_dx_c(2:n-1))
+        ! Work out the inverse of the product of the down-winded and
+        ! centred grid spacings
+        cached_dx2_dc(1:n-2) = cached_dx2_dc(1:n-2) / cached_dx_c(2:n-1)
+        cached_dx2_dc(n-1) = -cached_dx2_dc(n-1)**2
+        ! Work out half the inverse of the grid spacing
+        cached_dx_c(2:n-1) = 0.5_r8/cached_dx_c(2:n-1)
+        cached_dx_c(1) = 1._r8/cached_dx_c(1)
+        cached_dx_c(n) = 1._r8/cached_dx_c(n)
       end if
       cont = this%contents%raw()
       if (this%extra_derivative == no_extra_derivative) then
         ! Create the tridiagonal matrix when there is no additional
         ! differentiation operator on the RHS
         this%diagonal = this%derivative%raw()
-        this%diagonal(1) = this%diagonal(1) - cached_grid_spacing(1)
-        this%diagonal(n) = this%diagonal(n) + cached_grid_spacing(n)
-        this%super_diagonal = cont(1:n-1) * cached_grid_spacing(1:n-1)
-        this%sub_diagonal = -cont(2:n) * cached_grid_spacing(2:n)
+        this%diagonal(1) = this%diagonal(1) - cont(1)*cached_dx_c(1)
+        this%diagonal(n) = this%diagonal(n) + cont(n)*cached_dx_c(n)
+        this%super_diagonal = cont(1:n-1) * cached_dx_c(1:n-1)
+        this%sub_diagonal = -cont(2:n) * cached_dx_c(2:n)
       else if (this%extra_derivative == this%direction) then
         ! Create the tridiagonal matrix when the additional
         ! differentiation operator on the RHS operates in the same
         ! direction as the derivative of the contents.
         deriv = this%derivative%raw()
-        this%diagonal = -2 * deriv * cached_grid_spacing
-        this%diagonal(1) = this%diagonal(1) - deriv(1) * cached_grid_spacing(1)
-        this%diagonal(n) = this%diagonal(n) + deriv(n) * cached_grid_spacing(n)
-        this%super_diagonal = (cont(1:n-1) + deriv(1:n-1)) * cached_grid_spacing(1:n-1)
-        this%sub_diagonal = (cont(2:n) - deriv(2:n)) * cached_grid_spacing(2:n)
+        allocate(this%diagonal(n))
+        this%diagonal(2:n-1) = cont(2:n-1) * cached_dx2_ud(2:n-1)
+        this%diagonal(1) = cont(1) * cached_dx2_ud(1) &
+                         - deriv(1) * cached_dx_c(1)
+        this%diagonal(n) = cont(n) * cached_dx2_ud(n) &
+                         + deriv(n) * cached_dx_c(n)
+        allocate(this%super_diagonal(n-1))
+        this%super_diagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &
+                                   + deriv(2:n-1) * cached_dx_c(2:n-1)
+        this%super_diagonal(1) = -2 * cont(1) * cached_dx2_uc(1) &
+                               + deriv(1) * cached_dx_c(1)
+        allocate(this%sub_diagonal(n-1))
+        this%sub_diagonal(1:n-2) = cont(2:n-1) * cached_dx2_dc(1:n-2) &
+                                 - deriv(2:n-1) * cached_dx_c(2:n-1)
+        this%sub_diagonal(n-1) = -2 * cont(n) * cached_dx2_dc(n-1) &
+                               - deriv(n) * cached_dx_c(n)
       else
         error stop('Currently no support for extra derivatives other than '// &
                    'in the 1-direction')
       end if
+      ! Figure out the boundary conditions for this problem
+      call this%get_boundaries(rhs, this%boundary_vals, this%boundary_locs)
+      do i = 1, size(this%boundary_locs)
+        pos = this%boundary_locs(i)
+        this%diagonal(pos) = 1._r8
+        if (pos < n) this%super_diagonal(pos) = 0._r8
+        if (pos > 1) this%sub_diagonal(pos-1) = 0._r8
+      end do
       ! Allocate the arrays used to hold the factorisation of the
       ! tridiagonal matrix
       allocate(this%l_multipliers(n-1))
@@ -283,15 +360,22 @@ contains
     else
       factor = 'F'
     end if
+    rhs_raw = rhs%raw()
+    do i = 1, size(this%boundary_locs)
+      pos = this%boundary_locs(i)
+      rhs_raw(pos) = this%boundary_vals(i)
+    end do
     call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
-                  rhs%raw(), sol_vector, this%l_multipliers, this%u_diagonal, &
+                  rhs_raw, sol_vector, this%l_multipliers, this%u_diagonal, &
                   this%u_superdiagonal1, this%u_superdiagonal2, this%pivots,  &
                   factor, 'N', forward_err, backward_err, condition_num,      &
                   flag)
     if (flag/=0) then
+      allocate(character(len=error_len) :: msg)
       write(msg,error_format) flag
       call logger%error('jacobian_block_solve',msg)
     else
+      allocate(character(len=success_len) :: msg)
       write(msg,success_format) condition_num
       call logger%debug('jacobian_block_solve',msg)
     end if
@@ -300,4 +384,25 @@ contains
     call solution%set_from_raw(sol_vector)
   end function jacobian_block_solve
 
+  subroutine jacobian_block_bounds(rhs, boundary_values, boundary_locations)
+    !* Author: Chris MacMackin
+    !  Date: January 2016
+    !
+    ! A default implementation of the `get_boundaries` procedure
+    ! pointer for the `jacobian_block` type. It corresponds to free
+    ! boundaries.
+    !
+    class(scalar_field), intent(in)                  :: rhs
+      !! The scalar field representing the vector being multiplied
+      !! by the inverse Jacobian (i.e. the right hand side of the
+      !! Jacobian system being solved).
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+      !! The values specifying the boundary conditions.
+    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+      !! The locations in the raw representation of `rhs` with which
+      !! each of the elements of `boundary_values` is associated.
+    allocate(boundary_values(0))
+    allocate(boundary_locations(0))
+  end subroutine jacobian_block_bounds
+  
 end module jacobian_block_mod

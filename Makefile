@@ -51,8 +51,8 @@ ifeq ($(VENDOR_),intel)
   LDFLAGS  := -O0 -g -traceback
   COVFLAGS := 
 else
-  F90      := gfortran
-  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=invalid,zero,overflow,underflow,denormal
+  F90      := gfortran-6
+  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR)# -ffpe-trap=invalid,zero,overflow,underflow,denormal
   LDFLAGS  := -O0 -g
   COVFLAGS := -fprofile-arcs -ftest-coverage 
 endif
@@ -61,13 +61,13 @@ endif
 FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
-LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -lhdf5_fortran -lhdf5hl_fortran -llapack95 \
-        -llapack -l$(BLAS)
+LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -llapack95 -lhdf5_fortran -lhdf5hl_fortran -lflogging \
+        -l$(BLAS)
 LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
-EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5|f95_lapack$$
+EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5|f95_lapack|logger_mod$$
 
 # Extensions of Fortran files, case insensitive
 F_EXT := f for fpp f90 f95 f03 f08 f15
