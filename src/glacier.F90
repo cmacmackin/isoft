@@ -60,6 +60,8 @@ module glacier_mod
     procedure(get_residual), deferred :: residual
       !! Computes the residual of the system of equations describing the
       !! glacier.
+    procedure(precond), deferred      :: precondition
+      !! Applies a preconditioner to the passed state vector.
     procedure(setter), deferred       :: update
       !! Sets the state of the glacier.
     procedure(time_setter), deferred  :: set_time
@@ -128,6 +130,16 @@ module glacier_mod
         !! The residual of the system of equations describing the glacier
     end function get_residual
 
+    function precond(this, delta_state) result(preconditioned)
+      import :: glacier
+      import :: r8
+      class(glacier), intent(inout)       :: this
+      real(r8), dimension(:), intent(in)  :: delta_state
+        !! The change to the state vector which is being preconditioned.
+      real(r8), dimension(:), allocatable :: preconditioned
+        !! The result of applying the preconditioner to `delta_state`.
+    end function precond
+    
     pure function get_r81d(this) result(state_vector)
       import :: glacier
       import :: r8
@@ -276,9 +288,9 @@ contains
     !input(10) = 3
     !etafixed = 0.8_r8
 
-    call nitsol(nval, state, nitsol_residual, dummy_jacv, 1.e-6_r8, &
-                1.e-6_r8, input, info, work, real_param, int_param, &
-                flag, ddot, dnrm2)
+    call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
+                1.e-6_r8, 1.e-6_r8, input, info, work, real_param, &
+                int_param, flag, ddot, dnrm2)
 
     select case(flag)
     case(0)
@@ -321,6 +333,36 @@ contains
       !print*, fcur(1:n)
       itrmf = 0
     end subroutine nitsol_residual
+
+    subroutine nitsol_precondition(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! A subroutine matching the interface expected by NITSOL, which
+      !! acts as a preconditioner.
+      integer, intent(in)                   :: n
+        ! Dimension of the problem
+      real(r8), dimension(*), intent(in)    :: xcur
+        ! Array of lenght `n` containing the current $x$ value
+      real(r8), dimension(*), intent(in)    :: fcur
+        ! Array of lenght `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        ! Integer flat indicating which product is desired. 0
+        ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(*), intent(in)    :: v
+        ! An array of length `n` to be multiplied
+      real(r8), dimension(*), intent(out)   :: z
+        ! An array of length n containing the desired product on
+        ! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        ! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        ! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        ! Termination flag. 0 indcates normal termination, 1
+        ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
+        ! failure to produce \(P^{-1}\vec{v}\)
+      if (ijob /= 1) return
+      z(1:n) = this%precondition(v(1:n))
+      itrmjv = 0
+    end subroutine nitsol_precondition
 
   end subroutine glacier_integrate
 

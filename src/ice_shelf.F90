@@ -42,6 +42,7 @@ module ice_shelf_mod
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
+  use jacobian_block_mod, only: jacobian_block
   use hdf5
   use h5lt
   implicit none
@@ -76,10 +77,15 @@ module ice_shelf_mod
       !! shelf.
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
-    integer :: thickness_size
+    integer                   :: thickness_size
       !! The number of data values in the thickness field
-    integer :: velocity_size
+    integer                   :: velocity_size
       !! The number of data values in the velocity field
+    real(r8)                  :: jacobi_time
+      !! The time at which the jacobi was last updated.
+    type(jacobian_block), dimension(2) :: jacobi
+      !! A representation of the tridiagonal data in the Jacobian for
+      !! this ice shelf.
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -95,6 +101,7 @@ module ice_shelf_mod
     procedure :: ice_temperature => shelf_temperature
     procedure :: residual => shelf_residual
     procedure :: update => shelf_update
+    procedure :: precondition =>  shelf_precondition
     procedure :: set_time => shelf_set_time
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
@@ -183,6 +190,7 @@ contains
       this%chi = 4.0_r8
     end if
     this%time = 0.0_r8
+    this%jacobi_time = -1._r8
   end function constructor
 
 !$  function shelf_dt(self,t)
@@ -197,7 +205,7 @@ contains
 !$    class(ice_shelf), intent(in)   :: self
 !$    real(r8), intent(in), optional :: t
 !$      !! Time at which to evaluate the derivative
-!$    class(integrand), allocatable  :: shelf_dt
+  !$    class(integrand), allocatable  :: shelf_dt
 !$      !! The time rate of change of the ice shelf. Has dynamic type
 !$      !! [[ice_shelf]].
 !$  end function shelf_dt
@@ -401,7 +409,6 @@ contains
     real(r8) :: t_old
     integer :: start, finish
     integer, dimension(:), allocatable :: lower, upper
-    class(scalar_field), allocatable :: eta
 
     allocate(residual(this%data_size()))
     start = 1
@@ -464,6 +471,36 @@ contains
     call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
   end subroutine shelf_update
 
+  function shelf_precondition(this, delta_state) result(preconditioned)
+    class(ice_shelf), intent(inout)       :: this
+    real(r8), dimension(:), intent(in)  :: delta_state
+      !! The change to the state vector which is being preconditioned.
+    real(r8), dimension(:), allocatable :: preconditioned
+      !! The result of applying the preconditioner to `delta_state`.
+    type(ice_shelf) :: delta_shelf
+    class(scalar_field), allocatable :: tmp
+    integer :: n1, n2
+    allocate(preconditioned(size(delta_state)))
+    call delta_shelf%update(delta_state)
+    associate(h => this%thickness, u => this%velocity%component(1), &
+              v => this%velocity%component(2), dh => delta_shelf%thickness, &
+              du => delta_shelf%velocity%component(1), &
+              dv => delta_shelf%velocity%component(2), &
+              eta => this%viscosity_law%ice_viscosity(this%velocity, &
+                                   this%ice_temperature(), this%time))
+      allocate(tmp, mold=dh)
+      if (this%jacobi_time < this%time) then
+        !this%jacobi(1) =
+        !this%jacobi(2) = 
+      end if
+      tmp = this%jacobi(1)%solve_for(dh)
+      n1 = tmp%raw_size()
+      preconditioned(:n1) = tmp%raw()
+      tmp = this%jacobi(2)%solve_for(du)
+      n2 = tmp%raw_size()
+      preconditioned(n1+1:n1+n2) = tmp%raw()
+    end associate
+  end function shelf_precondition
 
   subroutine shelf_set_time(this, time)
     !* Author: Christopher MacMackin

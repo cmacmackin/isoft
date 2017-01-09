@@ -46,7 +46,7 @@ module jacobian_block_mod
     !
     ! A data type representing a submatrix of a
     ! Jacobian. Specifically, it represents the commonly occurring
-    ! operation $$ \frac{\partial F}{\partial x_i} + F\Delta_i $$,
+    ! operation $$ \frac{\partial F}{\partial x_i} + F\Delta_i, $$
     ! where \( \Delta_i \) is the differentiation operator in the
     ! \(i\)-direction. Optionally, there can be an additional
     ! differentiation operator on the right-hand-side of this.
@@ -57,18 +57,18 @@ module jacobian_block_mod
     ! inverse Jacobian, it is more efficient to approximate it. If
     ! \(d\) is the vector being preconditioned, and \(z\) is the
     ! result of applying the preconditioner, then $$ z = J^{-1}d
-    ! \Rightarrow Jz = d$$. Thus, the preconditioner can be applied
+    ! \Rightarrow Jz = d.$$ Thus, the preconditioner can be applied
     ! by approximately solving this system for \(z\). Linearising
     ! \(J\), this system can be solved efficiently using Picard
     ! iteration.
     !
     ! Say that the Jacobian is an \(n\times n\) system of these blocks
-    ! (each labeled as \(J_{j,k}) and that the vector being
+    ! (each labeled as \(J_{j,k}\)) and that the vector being
     ! preconditioned constists of \(n\) scalar fields (\(d_j\)). Then
-    ! \(m^{th}\) estimate of the solution for the \(j^{th}\)
-    ! field in the preconditioned vector (\(z^m_j\)) is the solution
-    ! to $$ J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n
-    ! J{j,k}z^{m-1}_k. $$ Depending on the type of fields being used
+    ! the \(m^{th}\) estimate of the solution for the \(j^{th}\) field
+    ! in the preconditioned vector (\(z^m_j\)) is the solution to $$
+    ! J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n
+    ! J_{j,k}z^{m-1}_k. $$ Depending on the type of fields being used
     ! and the direction in which derivatives are being taken,
     ! \(J_{j,j}\) may be tridiaganol, meaning it can be solved
     ! efficiently. <!--Otherwise, it can be approximated that $$
@@ -160,7 +160,7 @@ contains
     !  Date: December 2016
     !
     ! Build a block in a Jacobian matrix, with the form
-    ! $$\frac{\partial F}{\partial x_i} + F\Delta_i$$, where \(F\) is
+    ! $$\frac{\partial F}{\partial x_i} + F\Delta_i,$$ where \(F\) is
     ! a scalar field and \(\Delta_i\) is the differentiation operator
     ! in the \(i\)-direction. Additionally, a further differentiation
     ! operator may be added to the right hand side of this matrix block.

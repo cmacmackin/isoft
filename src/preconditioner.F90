@@ -44,17 +44,18 @@ module preconditioner_mod
     ! inverse Jacobian, it is more efficient to approximate it. If
     ! \(d\) is the vector being preconditioned, and \(z\) is the
     ! result of applying the preconditioner, then $$ z = J^{-1}d
-    ! \Rightarrow Jz = d$$. Thus, the preconditioner can be applied by
+    ! \Rightarrow Jz = d.$$ Thus, the preconditioner can be applied by
     ! approximately solving this system for \(z\). Linearising \(J\),
     ! this system can be solved efficiently using Picard iteration.
     !
-    ! Say that the Jacobian is an \(n\times n\) system of these blocks
-    ! (each labeled as \(J_{j,k}) and that the vector being
-    ! preconditioned constists of \(n\) scalar fields (\(d_j\)). Then
-    ! \(m^{th}\) estimate of the solution for the \(j^{th}\)
-    ! field in the preconditioned vector (\(z^m_j\)) is the solution
-    ! to $$ J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n
-    ! J{j,k}z^{m-1}_k. $$ Depending on the type of fields being used
+    ! Say that the Jacobian is an \(n\times n\) system of blocks of
+    ! the sort implemented in the [[jacobian_block]] type (each
+    ! labeled as \(J_{j,k}\)) and that the vector being preconditioned
+    ! constists of \(n\) scalar fields (\(d_j\)). Then \(m^{th}\)
+    ! estimate of the solution for the \(j^{th}\) field in the
+    ! preconditioned vector (\(z^m_j\)) is the solution to $$
+    ! J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n
+    ! J_{j,k}z^{m-1}_k. $$ Depending on the type of fields being used
     ! and the direction in which derivatives are being taken,
     ! \(J_{j,j}\) may be tridiaganol, meaning it can be solved
     ! efficiently. <!--Otherwise, it can be approximated that $$
@@ -107,7 +108,7 @@ contains
     !
     class(preconditioner), intent(in)                    :: this
     class(jacobian_block), dimension(:,:), intent(inout) :: jacobian
-      !! An \(n\timesn\) matrix approximating the Jacobian for which
+      !! An \(n\times n\) matrix approximating the Jacobian for which
       !! the preconditioner is used.
     class(scalar_field), dimension(:), intent(in)        :: vector
       !! A vector of size \(n\) which is to be preconditioned.
