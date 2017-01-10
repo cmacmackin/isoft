@@ -141,10 +141,18 @@ module jacobian_block_mod
     integer, dimension(:), allocatable  :: boundary_locs
       !! Locations in the raw arrays which are used to specify
       !! boundary conditions.
+    real(r8)                            :: scalar_increment
+      !! A scalar value which is to be added to this Jacobian block
+      !! (i.e. to the diagonal).
+    logical                             :: has_increment = .false.
+      !! Indicates whether or not there has been a `scalar_increment`
+      !! added to this block.
   contains
     private
     procedure :: jacobian_block_multiply
+    procedure :: jacobian_block_add
     generic, public :: operator(*) => jacobian_block_multiply
+    generic, public :: operator(+) => jacobian_block_add
     procedure, public :: solve_for => jacobian_block_solve
   end type jacobian_block
 
@@ -202,13 +210,39 @@ contains
     class(scalar_field), allocatable  :: tmp
     allocate(product, mold=this%contents)
     if (this%extra_derivative==no_extra_derivative) then
-      product = this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
-   else
+      if (this%has_increment) then
+        product = (this%derivative + this%scalar_increment) * rhs &
+                + this%contents * rhs%d_dx(this%direction)
+      else
+        product = this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
+      end if
+    else
       allocate(tmp, mold=rhs)
       tmp = rhs%d_dx(this%extra_derivative)
-      product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
+      if (this%has_increment) then
+        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
+                + this%scalar_increment*rhs
+      else
+        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
+      end if
     end if
   end function jacobian_block_multiply
+
+  function jacobian_block_add(this, rhs) result(sum)
+    !* Author: Chris MacMackin 
+    !  Date: December 2016
+    !
+    ! Provides a matrix multiplication operator between a Jacobian
+    ! block and a scalar field (which corresponds to a state vector).
+    !
+    class(jacobian_block), intent(in) :: this
+    real(r8), intent(in)              :: rhs
+      !! A scalar which should be added to this block
+    type(jacobian_block)              :: sum
+    sum = this
+    sum%scalar_increment = rhs
+    sum%has_increment = .true.
+  end function jacobian_block_add
 
   function jacobian_block_solve(this, rhs) result(solution)
     !* Author: Chris MacMackin
@@ -313,6 +347,9 @@ contains
         ! Create the tridiagonal matrix when there is no additional
         ! differentiation operator on the RHS
         this%diagonal = this%derivative%raw()
+        if (this%has_increment) then
+          this%diagonal = this%diagonal + this%scalar_increment
+        end if
         this%diagonal(1) = this%diagonal(1) - cont(1)*cached_dx_c(1)
         this%diagonal(n) = this%diagonal(n) + cont(n)*cached_dx_c(n)
         this%super_diagonal = cont(1:n-1) * cached_dx_c(1:n-1)
@@ -328,6 +365,9 @@ contains
                          - deriv(1) * cached_dx_c(1)
         this%diagonal(n) = cont(n) * cached_dx2_ud(n) &
                          + deriv(n) * cached_dx_c(n)
+        if (this%has_increment) then
+          this%diagonal = this%diagonal + this%scalar_increment
+        end if
         allocate(this%super_diagonal(n-1))
         this%super_diagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &
                                    + deriv(2:n-1) * cached_dx_c(2:n-1)

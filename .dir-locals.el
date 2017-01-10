@@ -11,7 +11,7 @@
 			    "./tests/mod"))))
          (eval . (message "Include directories set to `%s'." flycheck-gfortran-include-path))
 	 (eval . (setq flycheck-gfortran-args 
-		     (concat "-J" 
+		     (concat "-DDEBUG -J" 
 		         (expand-file-name '"./mod" my-project-path))))
          (eval . (message "Gfortran arguments set to `%s'." flycheck-gfortran-args))
 )))

@@ -39,6 +39,7 @@ module ice_sheet_mod
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
                          cheb1d_vector_field, maxval
   use viscosity_mod, only: abstract_viscosity
+  use jacobian_block_mod, only: jacobian_block
   use hdf5
   implicit none
   private
@@ -80,6 +81,7 @@ module ice_sheet_mod
     procedure :: ice_temperature => sheet_temperature
     procedure :: residual => sheet_residual
     procedure :: update => sheet_update
+    procedure :: precondition =>  sheet_precondition
     procedure :: set_time => sheet_set_time
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
@@ -345,6 +347,40 @@ contains
       !! A real array containing the data describing the state of the
       !! glacier.
   end subroutine sheet_update
+
+
+  function sheet_precondition(this, previous_states, melt_rate, &
+                              basal_drag_parameter, water_density, &
+                              delta_state) result(preconditioned)
+    !* Author: Chris MacMackin
+    !  Date: January 2016
+    !
+    ! Provides a preconditioner for the nonlinear solver trying to
+    ! bring the residual to zero. The Jacobian is approximated as a
+    ! block matrix, where each block is a tridiagonal matrix using a
+    ! finite difference method for differentiation.
+    !
+    class(ice_sheet), intent(inout)     :: this
+    class(glacier), dimension(:), intent(in) :: previous_states
+      !! The states of the glacier in the previous time steps. The
+      !! first element of the array should be the most recent. The
+      !! default implementation will only make use of the most
+      !! recent state, but the fact that this is an array allows
+      !! overriding methods to use older states for higher-order
+      !! integration methods.
+    class(scalar_field), intent(in)          :: melt_rate
+      !! Thickness of the ice above the glacier
+    class(scalar_field), intent(in)     :: basal_drag_parameter
+      !! A paramter, e.g. coefficient of friction, needed to calculate
+      !! the drag on basal surface of the glacier.
+    real(r8), intent(in)                :: water_density
+      !! The density of the water below the glacier
+    real(r8), dimension(:), intent(in)  :: delta_state
+      !! The change to the state vector which is being preconditioned.
+    real(r8), dimension(:), allocatable :: preconditioned
+      !! The result of applying the preconditioner to `delta_state`.
+  end function sheet_precondition
+
 
   subroutine sheet_set_time(this, time)
     !* Author: Christopher MacMackin

@@ -236,7 +236,7 @@ contains
                    + 0.5_r8*(x_grid(i) - x_grid(i-1))*(array(i-1) + array(i))
     end do
     if (present(boundary)) then
-       integrate = integrate + (boundary - integrate(size(array)))
+      integrate = integrate + (boundary - integrate(size(array)))
     end if
   end function integrate
 

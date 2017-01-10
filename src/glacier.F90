@@ -122,21 +122,40 @@ module glacier_mod
       class(scalar_field), intent(in)          :: melt_rate
         !! Thickness of the ice above the glacier
       class(scalar_field), intent(in)          :: basal_drag_parameter
-        !! A paramter, e.g. coefficient of friction, needed to calculate the
-        !! drag on basal surface of the glacier.
+        !! A paramter, e.g. coefficient of friction, needed to
+        !! calculate the drag on basal surface of the glacier.
       real(r8), intent(in)                     :: water_density
         !! The density of the water below the glacier
       real(r8), dimension(:), allocatable      :: residual
-        !! The residual of the system of equations describing the glacier
+        !! The residual of the system of equations describing the
+        !! glacier
     end function get_residual
 
-    function precond(this, delta_state) result(preconditioned)
+    function precond(this, previous_states, melt_rate, &
+                     basal_drag_parameter, water_density, &
+                     delta_state) result(preconditioned)
       import :: glacier
+      import :: scalar_field
       import :: r8
-      class(glacier), intent(inout)       :: this
-      real(r8), dimension(:), intent(in)  :: delta_state
-        !! The change to the state vector which is being preconditioned.
-      real(r8), dimension(:), allocatable :: preconditioned
+      class(glacier), intent(inout)            :: this
+      class(glacier), dimension(:), intent(in) :: previous_states
+        !! The states of the glacier in the previous time steps. The
+        !! first element of the array should be the most recent. The
+        !! default implementation will only make use of the most
+        !! recent state, but the fact that this is an array allows
+        !! overriding methods to use older states for higher-order
+        !! integration methods.
+      class(scalar_field), intent(in)          :: melt_rate
+        !! Thickness of the ice above the glacier
+      class(scalar_field), intent(in)          :: basal_drag_parameter
+        !! A paramter, e.g. coefficient of friction, needed to
+        !! calculate the drag on basal surface of the glacier.
+      real(r8), intent(in)                     :: water_density
+        !! The density of the water below the glacier
+      real(r8), dimension(:), intent(in)       :: delta_state
+        !! The change to the state vector which is being
+        !! preconditioned.
+      real(r8), dimension(:), allocatable      :: preconditioned
         !! The result of applying the preconditioner to `delta_state`.
     end function precond
     
@@ -360,7 +379,8 @@ contains
         ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
         ! failure to produce \(P^{-1}\vec{v}\)
       if (ijob /= 1) return
-      z(1:n) = this%precondition(v(1:n))
+      z(1:n) = this%precondition(old_states, basal_melt, basal_drag, &
+                                 water_density, v(1:n))
       itrmjv = 0
     end subroutine nitsol_precondition
 

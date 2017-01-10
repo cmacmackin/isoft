@@ -40,7 +40,7 @@ module dallaston2015_glacier_boundary_mod
   use glacier_boundary_mod, only: glacier_boundary
   implicit none
   private
-  
+
   type, extends(glacier_boundary), public :: dallaston2015_glacier_boundary
     !* Author: Chris MacMackin
     !  Date: November 2016
@@ -74,9 +74,18 @@ module dallaston2015_glacier_boundary_mod
       !! getting or setting the raw representation of the velocity
       !! field.
     procedure :: boundary_residuals => dallaston2015_residuals
-      !! Returns an array consisting of the difference between the required
-      !! boundary values and those which actually exist. This can then be
-      !! appended to a glacier's state vector
+      !! Returns an array consisting of the difference between the
+      !! required boundary values and those which actually exist. This
+      !! can then be appended to a glacier's state vector. The order
+      !! in which these are listed is as follows: lower thickness
+      !! boundary, upper thickness boundary, lower velocity boundary,
+      !! and upper velocity boundary.
+    procedure :: invert_residuals => dallaston2015_invert
+      !! Returns an estimate of the values of thickness and velocity
+      !! at the boundaries from the given array of residuals. The
+      !! order in which the residuals are stored in the array must be
+      !! the same as in that produced by the `boundary_residuals`
+      !! method.
   end type dallaston2015_glacier_boundary
 
   interface dallaston2015_glacier_boundary
@@ -142,10 +151,14 @@ contains
     class(vector_field), intent(in)     :: velocity
       !! A field containing the flow velocity of the glacier
     real(r8), intent(in)                :: t
-      !! The time at which the boundary conditions are to be calculated.
+      !! The time at which the boundary conditions are to be
+      !! calculated.
     real(r8), allocatable, dimension(:) :: residuals
-      !! An array containing the difference between the required boundary
-      !! values and those which are actually present.
+      !! An array containing the difference between the required
+      !! boundary values and those which are actually present. They
+      !! are stored in the order: lower thickness boundary, upper
+      !! thickness boundary, lower velocity boundary, and upper
+      !! velocity boundary.
     class(scalar_field), allocatable :: thickness_bound_lower, &
                                         thickness_bound_upper
     class(vector_field), allocatable :: velocity_bound
@@ -158,5 +171,39 @@ contains
     residuals = [thickness_bound_lower%raw(), thickness_bound_upper%raw(), &
                  velocity_bound%raw()]
   end function dallaston2015_residuals
+
+  function dallaston2015_invert(this, residuals, thickness, velocity, t) &
+                                 result(inversion)
+    class(dallaston2015_glacier_boundary), intent(in) :: this
+    real(r8), dimension(:), intent(in)  :: residuals
+      !! An array containing the difference between the required
+      !! boundary values and those which are actually present. The
+      !! storage order must be the same as in the result of the
+      !! `boundary_residuals` funciton.
+    class(scalar_field), intent(in)     :: thickness
+      !! A field containing the thickness of the glacier
+    class(vector_field), intent(in)     :: velocity
+      !! A field containing the flow velocity of the glacier
+    real(r8), intent(in)                :: t
+      !! The time at which the boundary conditions are to be
+      !! calculated.
+    real(r8), allocatable, dimension(:) :: inversion
+      !! An array containing estimates of the values of the thickness
+      !! at the lower boundary, thickness at the upper boundary,
+      !! velocity at the lower boundary, and velocity of the upper
+      !! boundary, in that order. These are calculated from the
+      !! residuals.
+    integer :: i, j
+    allocate(inversion(size(residuals)))
+    i = 1
+    j = thickness%raw_size() - thickness%raw_size(this%thickness_lower_bound())
+    inversion(i:j) = residuals(i:j) + this%thickness
+    i = j + 1
+    j = i + thickness%raw_size() - thickness%raw_size(this%thickness_upper_bound()) - 1
+    inversion(i:j) = residuals(i:j)
+    i = j + 1
+    j = i + velocity%raw_size() - velocity%raw_size(this%velocity_lower_bound()) - 1
+    inversion(i:j) = residuals(i:j) + this%velocity
+  end function dallaston2015_invert
 
 end module dallaston2015_glacier_boundary_mod

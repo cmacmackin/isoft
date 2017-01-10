@@ -86,9 +86,17 @@ module glacier_boundary_mod
       !! getting or setting the raw representation of the velocity
       !! field.
     procedure :: boundary_residuals
-      !! Returns an array consisting of the difference between the required
-      !! boundary values and those which actually exist. This can then be
-      !! appended to a glacier's state vector
+      !! Returns an array consisting of the difference between the
+      !! required boundary values and those which actually exist. The
+      !! order in which these are listed is as follows: lower
+      !! thickness boundary, upper thickness boundary, lower velocity
+      !! boundary, and upper velocity boundary.
+    procedure :: invert_residuals
+      !! Returns an estimate of the values of thickness and velocity
+      !! at the boundaries from the given array of residuals. The
+      !! order in which the residuals are stored in the array must be
+      !! the same as in that produced by the `boundary_residuals`
+      !! method.
   end type glacier_boundary
 
   abstract interface
@@ -96,7 +104,6 @@ module glacier_boundary_mod
 
 contains
  
-
   pure function bound_array(this)
     !* Author: Chris MacMackin
     !  Date: September 2016
@@ -129,12 +136,40 @@ contains
     class(vector_field), intent(in)     :: velocity
       !! A field containing the flow velocity of the glacier
     real(r8), intent(in)                :: t
-      !! The time at which the boundary conditions are to be calculated.
+      !! The time at which the boundary conditions are to be
+      !! calculated.
     real(r8), allocatable, dimension(:) :: residuals
-      !! An array containing the difference between the required boundary
-      !! values and those which are actually present.
+      !! An array containing the difference between the required
+      !! boundary values and those which are actually present. They
+      !! are stored in the order: lower thickness boundary, upper
+      !! thickness boundary, lower velocity boundary, and upper
+      !! velocity boundary.
     allocate(residuals(0))
     return
   end function boundary_residuals
+
+  function invert_residuals(this, residuals, thickness, velocity, t) &
+                                 result(inversion)
+    class(glacier_boundary), intent(in) :: this
+    real(r8), dimension(:), intent(in)  :: residuals
+      !! An array containing the difference between the required
+      !! boundary values and those which are actually present. The
+      !! storage order must be the same as in the result of the
+      !! `boundary_residuals` funciton.
+    class(scalar_field), intent(in)     :: thickness
+      !! A field containing the thickness of the glacier
+    class(vector_field), intent(in)     :: velocity
+      !! A field containing the flow velocity of the glacier
+    real(r8), intent(in)                :: t
+      !! The time at which the boundary conditions are to be
+      !! calculated.
+    real(r8), allocatable, dimension(:) :: inversion
+      !! An array containing estimates of the values of the thickness
+      !! at the lower boundary, thickness at the upper boundary,
+      !! velocity at the lower boundary, and velocity of the upper
+      !! boundary, in that order. These are calculated from the
+      !! residuals.
+    allocate(inversion(0))
+  end function invert_residuals
 
 end module glacier_boundary_mod

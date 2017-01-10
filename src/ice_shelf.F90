@@ -43,6 +43,7 @@ module ice_shelf_mod
   use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
   use jacobian_block_mod, only: jacobian_block
+  use preconditioner_mod, only: preconditioner
   use hdf5
   use h5lt
   implicit none
@@ -76,16 +77,33 @@ module ice_shelf_mod
       !! An object specifying the boundary conditions for the ice
       !! shelf.
     real(r8)                  :: time
-      !! The time at which the ice shelf is in this state
+      !! The time at which the ice shelf is in this state.
     integer                   :: thickness_size
-      !! The number of data values in the thickness field
+      !! The number of data values in the thickness field.
     integer                   :: velocity_size
-      !! The number of data values in the velocity field
-    real(r8)                  :: jacobi_time
-      !! The time at which the jacobi was last updated.
-    type(jacobian_block), dimension(2) :: jacobi
-      !! A representation of the tridiagonal data in the Jacobian for
-      !! this ice shelf.
+      !! The number of data values in the velocity field.
+    integer                   :: boundary_start
+      !! The number of data values needed to represent the boundary
+      !! conditions.
+    integer                   :: thickness_lower_bound_size
+      !! The number of data values needed to represent the lower
+      !! boundary conditions for thickness.
+    integer                   :: thickness_upper_bound_size
+      !! The number of data values needed to represent the upper
+      !! boundary conditions for thickness.
+    integer                   :: velocity_lower_bound_size
+      !! The number of data values needed to represent the lower
+      !! boundary conditions for velocity.
+    integer                   :: velocity_upper_bound_size
+      !! The number of data values needed to represent the upper
+      !! boundary conditions for thickness.
+    real(r8)                  :: jacobian_time
+      !! The time at which the Jacobian was last updated.
+    type(jacobian_block), dimension(2,2) :: jacobian
+      !! A representation of the Jacobian for this ice shelf.
+    type(preconditioner)      :: precondition_obj
+      !! An object with a method to apply a block-Jacobian
+      !! preconditioner, with the specified convergence properties.
   contains
 !$    procedure            :: t => shelf_dt
 !$    procedure            :: local_error => shelf_local_error
@@ -160,37 +178,67 @@ contains
     type(ice_shelf)                      :: this
       !! An ice shelf object with its domain and initial conditions set
       !! according to the arguments of the constructor function.
+
+    integer, dimension(:), allocatable :: lower, upper
+
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
     this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
     this%thickness_size = this%thickness%raw_size()
     this%velocity_size = this%velocity%raw_size()
+
     if (present(temperature)) then
       continue ! This doesn't do anything at the moment
     else
       continue ! Again, doesn't do anything at the moment
     end if
+
     if (present(viscosity_law)) then
       call move_alloc(viscosity_law, this%viscosity_law)
     else
       allocate(newtonian_viscosity:: this%viscosity_law)
     end if
+
     if (present(boundaries)) then
       call move_alloc(boundaries, this%boundaries)
     else
       allocate(dallaston2015_glacier_boundary :: this%boundaries)
     end if
+
     if (present(lambda)) then
       this%lambda = lambda
     else
       this%lambda = 0.37_r8
     end if
+
     if (present(chi)) then
       this%chi = chi
     else
       this%chi = 4.0_r8
     end if
+
+    lower = this%boundaries%thickness_lower_bound()
+    upper = this%boundaries%thickness_upper_bound()
+    this%thickness_lower_bound_size = this%thickness_size &
+                                    - this%thickness%raw_size(lower)
+    this%thickness_upper_bound_size = this%thickness_size &
+                                    - this%thickness%raw_size(upper)
+
+    lower = this%boundaries%velocity_lower_bound()
+    upper = this%boundaries%velocity_upper_bound()
+    this%velocity_lower_bound_size = this%velocity_size &
+                                   - this%velocity%raw_size(lower)
+    this%velocity_upper_bound_size = this%velocity_size &
+                                   - this%velocity%raw_size(upper)
+
+    this%boundary_start = this%thickness_size + this%velocity_size &
+                        - this%thickness_lower_bound_size &
+                        - this%thickness_upper_bound_size &
+                        - this%velocity_lower_bound_size &
+                        - this%velocity_upper_bound_size
+
     this%time = 0.0_r8
-    this%jacobi_time = -1._r8
+    this%jacobian_time = -1._r8
+    this%precondition_obj = preconditioner(1.e-3_r8, 10)
   end function constructor
 
 !$  function shelf_dt(self,t)
@@ -406,7 +454,6 @@ contains
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
     type(cheb1d_scalar_field) :: scalar_tmp
-    real(r8) :: t_old
     integer :: start, finish
     integer, dimension(:), allocatable :: lower, upper
 
@@ -471,36 +518,139 @@ contains
     call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
   end subroutine shelf_update
 
-  function shelf_precondition(this, delta_state) result(preconditioned)
-    class(ice_shelf), intent(inout)       :: this
-    real(r8), dimension(:), intent(in)  :: delta_state
+
+  function shelf_precondition(this, previous_states, melt_rate, &
+                              basal_drag_parameter, water_density, &
+                              delta_state) result(preconditioned)
+    !* Author: Chris MacMackin
+    !  Date: January 2016
+    !
+    ! Provides a preconditioner for the nonlinear solver trying to
+    ! bring the residual to zero. The Jacobian is approximated as a
+    ! block matrix, where each block is a tridiagonal matrix using a
+    ! finite difference method for differentiation.
+    !
+    class(ice_shelf), intent(inout)          :: this
+    class(glacier), dimension(:), intent(in) :: previous_states
+      !! The states of the glacier in the previous time steps. The
+      !! first element of the array should be the most recent. The
+      !! default implementation will only make use of the most
+      !! recent state, but the fact that this is an array allows
+      !! overriding methods to use older states for higher-order
+      !! integration methods.
+    class(scalar_field), intent(in)          :: melt_rate
+      !! Thickness of the ice above the glacier
+    class(scalar_field), intent(in)          :: basal_drag_parameter
+      !! A paramter, e.g. coefficient of friction, needed to calculate
+      !! the drag on basal surface of the glacier.
+    real(r8), intent(in)                     :: water_density
+      !! The density of the water below the glacier
+    real(r8), dimension(:), intent(in)       :: delta_state
       !! The change to the state vector which is being preconditioned.
-    real(r8), dimension(:), allocatable :: preconditioned
+    real(r8), dimension(:), allocatable      :: preconditioned
       !! The result of applying the preconditioner to `delta_state`.
+
     type(ice_shelf) :: delta_shelf
-    class(scalar_field), allocatable :: tmp
-    integer :: n1, n2
+    class(scalar_field), dimension(:), allocatable :: vector, estimate
+    integer :: i
+    real(r8) :: delta_t
+    real(r8), allocatable, dimension(:) :: inverse_bounds
+
     allocate(preconditioned(size(delta_state)))
+    select type(previous_states)
+    class is(ice_shelf)
+      delta_t = this%time - previous_states(1)%time
+    class default
+      error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
+                  'object as a previous state.')
+    end select
     call delta_shelf%update(delta_state)
+    inverse_bounds = this%boundaries%invert_residuals( &
+         delta_state(this%boundary_start:), this%thickness, &
+         this%velocity, this%time)
+
     associate(h => this%thickness, u => this%velocity%component(1), &
               v => this%velocity%component(2), dh => delta_shelf%thickness, &
-              du => delta_shelf%velocity%component(1), &
+              chi => this%chi, du => delta_shelf%velocity%component(1), &
               dv => delta_shelf%velocity%component(2), &
               eta => this%viscosity_law%ice_viscosity(this%velocity, &
                                    this%ice_temperature(), this%time))
-      allocate(tmp, mold=dh)
-      if (this%jacobi_time < this%time) then
-        !this%jacobi(1) =
-        !this%jacobi(2) = 
+      if (this%jacobian_time < this%time) then
+        this%jacobian(1,1) = jacobian_block(u,1, &
+                                            boundaries=jacobian_thickness_bounds) &
+                           + 1._r8/delta_t
+        this%jacobian(1,2) = jacobian_block(h,1)
+        this%jacobian(2,1) = jacobian_block(4._r8*eta*u%d_dx(1) - 2._r8*chi*h,1)
+        this%jacobian(2,2) = jacobian_block(4._r8*eta*h,1,1, &
+                                            boundaries=jacobian_velocity1_bounds)
+        this%jacobian_time = this%time
       end if
-      tmp = this%jacobi(1)%solve_for(dh)
-      n1 = tmp%raw_size()
-      preconditioned(:n1) = tmp%raw()
-      tmp = this%jacobi(2)%solve_for(du)
-      n2 = tmp%raw_size()
-      preconditioned(n1+1:n1+n2) = tmp%raw()
+
+      allocate(vector(2), mold=dh)
+      vector(1) = dh
+      vector(2) = du
+      allocate(estimate(2), mold=h) ! FIXME: Must set these to 0
+      call this%precondition_obj%apply(this%jacobian, vector, estimate)
     end associate
+    
+    preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
+
+  contains
+    
+    subroutine jacobian_thickness_bounds(rhs, boundary_values, boundary_locations)
+      !* Author: Chris MacMackin
+      !  Date: January 2016
+      !
+      ! Provides boundary conditions for the ice thickness to the
+      ! Jacobian-block preconditioner.
+      !
+      class(scalar_field), intent(in)                  :: rhs
+        !! The scalar field representing the vector being multiplied
+        !! by the inverse Jacobian (i.e. the right hand side of the
+        !! Jacobian system being solved).
+      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+        !! The values specifying the boundary conditions.
+      integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+        !! The locations in the raw representation of `rhs` with which
+        !! each of the elements of `boundary_values` is associated.
+      integer :: i, sl, el, su, eu
+      boundary_values = inverse_bounds(:this%thickness_lower_bound_size &
+                                       +this%thickness_upper_bound_size)
+      sl = 1
+      el = this%thickness_lower_bound_size
+      su = this%thickness_size - this%thickness_upper_bound_size + 1
+      eu = this%thickness_size
+      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+    end subroutine jacobian_thickness_bounds
+    
+    subroutine jacobian_velocity1_bounds(rhs, boundary_values, boundary_locations)
+      !* Author: Chris MacMackin
+      !  Date: January 2016
+      !
+      ! Provides boundary conditions for the x-component of the ice
+      ! velocity to the Jacobian-block preconditioner.
+      !
+      class(scalar_field), intent(in)                  :: rhs
+        !! The scalar field representing the vector being multiplied
+        !! by the inverse Jacobian (i.e. the right hand side of the
+        !! Jacobian system being solved).
+      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+        !! The values specifying the boundary conditions.
+      integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+        !! The locations in the raw representation of `rhs` with which
+        !! each of the elements of `boundary_values` is associated.
+      integer :: i, sl, el, su, eu
+      boundary_values = inverse_bounds(this%thickness_lower_bound_size+1 &
+                                      +this%thickness_upper_bound_size:)
+      sl = 1
+      el = this%velocity_lower_bound_size
+      su = this%velocity_size - this%velocity_upper_bound_size + 1
+      eu = this%velocity_size
+      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+    end subroutine jacobian_velocity1_bounds
+
   end function shelf_precondition
+
 
   subroutine shelf_set_time(this, time)
     !* Author: Christopher MacMackin
@@ -528,7 +678,7 @@ contains
     class(ice_shelf), intent(in) :: this
     integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
-    shelf_data_size = this%thickness%raw_size() + this%velocity%raw_size()
+    shelf_data_size = this%thickness_size + this%velocity_size
   end function shelf_data_size
 
 
