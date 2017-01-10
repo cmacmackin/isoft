@@ -551,8 +551,8 @@ contains
       !! The result of applying the preconditioner to `delta_state`.
 
     type(ice_shelf) :: delta_shelf
-    class(scalar_field), dimension(:), allocatable :: vector, estimate
-    integer :: i
+    type(cheb1d_scalar_field), dimension(2) :: vector, estimate
+    integer :: i, elem
     real(r8) :: delta_t
     real(r8), allocatable, dimension(:) :: inverse_bounds
 
@@ -586,10 +586,13 @@ contains
         this%jacobian_time = this%time
       end if
 
-      allocate(vector(2), mold=dh)
       vector(1) = dh
       vector(2) = du
-      allocate(estimate(2), mold=h) ! FIXME: Must set these to 0
+      elem = h%elements()
+      do i = 1, size(estimate)
+        estimate(i) = cheb1d_scalar_field(elem)
+        call estimate(i)%assign_meta_data(vector(i))
+      end do
       call this%precondition_obj%apply(this%jacobian, vector, estimate)
     end associate
     
