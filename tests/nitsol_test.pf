@@ -61,16 +61,10 @@ contains
 !    input(10) = 3
     xvals = collocation_points(points-1,lower_bound,upper_bound)
     
-    residual(1:points) = integrate(xvals,xvals)
-    @assertEqual(0.5_r8*xvals**2,residual(1:points),tolerance=tol,message='Incorrect result of integration.')
-    residual(1:points) = integrate(xvals,xvals,1._r8)
-    @assertEqual(0.5_r8*xvals**2+0.5_r8,residual(1:points),tolerance=tol,message='Incorrect result of integration.')
-    
     expected(1:points)            = xvals - lower_bound
     expected(points+1:2*points)   = q_g**(1.0_r8/3.0_r8)
     expected(2*points+1:3*points) = q_g**(2.0_r8/3.0_r8)
     call test_f(n_tot,expected,residual,real_param,int_param,flag)
-
     @assertEqual(flag,0,message='Failed to calculate residual of expected solution')
     @assertEqual(expected*0.0_r8,residual,tolerance=tol,message='Expected solution did not have zero residual')
 
@@ -96,7 +90,7 @@ contains
     !@assertEqual(expected,x_guess,tolerance=tol,message='Preconditioner not providing inverse to F.')
     
     allocate( worker(n_tot*(kdmax+5) + kdmax*(kdmax+3)) )
-    iplvl = 4
+    iplvl = 0
     call nitsol(n_tot, x_guess, test_f, preconditioner, tol, tol, input, &
                 output, worker, real_param, int_param, flag, ddot, dnrm2)
     iplvl = 0

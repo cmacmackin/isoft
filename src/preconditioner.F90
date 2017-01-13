@@ -177,7 +177,7 @@ contains
       end do
       ! If difference between result and previous guess is less than
       ! the tolerance, stop iterations
-      print*,i,max_err
+!!$      print*,i,max_err
       if (max_err < this%tolerance) then
         write(msg,success_format) max_err, i
         call logger%debug('preconditioner_apply',msg)

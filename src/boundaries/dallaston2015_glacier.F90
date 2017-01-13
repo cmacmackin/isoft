@@ -63,7 +63,7 @@ module dallaston2015_glacier_boundary_mod
       !! `exclude_lower_bound`/`provide_lower_bound` argument when
       !! getting or setting the raw representation of the thickness
       !! field.
-    procedure :: thickness_upper_bound => dallaston2015_upper_bound
+!    procedure :: thickness_upper_bound => dallaston2015_upper_bound
       !! Returns a 1D array which should be passed as the
       !! `exclude_upper_bound`/`provide_upper_bound` argument when
       !! getting or setting the raw representation of the thickness
@@ -168,7 +168,7 @@ contains
              source=thickness%get_boundary(1,1))
     allocate(velocity_bound, &
              source=(velocity%get_boundary(-1,1) - [this%velocity]))
-    residuals = [thickness_bound_lower%raw(), thickness_bound_upper%raw(), &
+    residuals = [thickness_bound_lower%raw(),&! thickness_bound_upper%raw(), &
                  velocity_bound%raw()]
   end function dallaston2015_residuals
 
