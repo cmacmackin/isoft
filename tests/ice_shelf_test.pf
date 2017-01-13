@@ -180,7 +180,7 @@ contains
   pure function melt_rate(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: melt_rate
-    melt_rate = 1.0_r8 
+    melt_rate = 1.0_r8
   end function melt_rate
 
   pure function drag_coef(location)
@@ -220,6 +220,39 @@ contains
   end subroutine test_update
 
   @Test
+  subroutine test_preconditioner(this)
+    !! Tests that the preconditioner approximately solves the Jacobian system.
+    class(test_shelf), intent(inout)    :: this
+    real(r8), dimension(:), allocatable :: actual, expected, rhs, delta
+    type(cheb1d_scalar_field) :: melt, drag
+    real(r8), parameter :: eps = 1.e-7_r8
+    type(ice_shelf) :: old_shelf
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
+    drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
+                               this%upper1)
+    expected = 0.01_r8 * this%shelf1%state_vector()
+    old_shelf = this%shelf1
+    call this%shelf1%set_time(1._r8)
+    call this%shelf3%update(this%shelf1%state_vector() + eps*expected)
+    rhs = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
+           this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
+    actual = this%shelf1%precondition([old_shelf],melt,drag,1.0_r8,rhs)
+    !print*,''
+    print*,(expected-actual)/(expected+1.e-10_r8)
+    print*,'--------------'
+    !print*,expected
+    @assertEqual(expected,actual,message='Preconditioner returns incorrect result',tolerance=2.e-2_r8)
+    delta = this%shelf1%precondition([old_shelf],melt,drag,1.0_r8,expected)
+    !print*,delta
+    call this%shelf3%update(this%shelf1%state_vector() + eps*delta)
+    actual = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
+              this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
+    print*,(expected-actual)/(expected+1.e-10_r8)
+    @assertEqual(expected,actual,message='Preconditioner returns incorrect result', tolerance=2.e-2_r8)
+  end subroutine test_preconditioner
+
+  @Test
   subroutine test_integrate_steady(this)
     !! Tests that an ice shelf at the steady state will remain there
     class(test_shelf), intent(inout) :: this
@@ -252,6 +285,7 @@ contains
     real(r8) :: t, time
     real(r8), dimension(:), allocatable :: actual, expected
     integer :: i, steps
+    type(ice_shelf) :: old_shelf
     type(cheb1d_scalar_field) :: melt, drag
     time = 2._r8
     t = this%shelf4%time_step()
@@ -259,15 +293,19 @@ contains
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    !iplvl = 4
+    iplvl = 4
     do while(t < time)
+      print*,t
+      old_shelf = this%shelf4
       call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, t)
       t = t + this%shelf4%time_step()
     end do
+    old_shelf = this%shelf4
     call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time)
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
     @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=1.e-9_r8)
+    iplvl = 0
   end subroutine test_integrate
 
 end module ice_shelf_test

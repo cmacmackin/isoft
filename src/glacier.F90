@@ -304,6 +304,7 @@ contains
     call this%set_time(time)
     input = 0
     input(4) = kdmax
+    input(5) = 1
     !input(10) = 3
     !etafixed = 0.8_r8
 
@@ -378,7 +379,10 @@ contains
         ! Termination flag. 0 indcates normal termination, 1
         ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
         ! failure to produce \(P^{-1}\vec{v}\)
-      if (ijob /= 1) return
+      if (ijob /= 1) then
+        itrmjv = 0
+        return
+      end if
       z(1:n) = this%precondition(old_states, basal_melt, basal_drag, &
                                  water_density, v(1:n))
       itrmjv = 0

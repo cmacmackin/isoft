@@ -151,7 +151,6 @@ contains
       ! subtracted from the right-hand-side.
       max_err = 0._r8
       prev_estimate = estimate
-      print*,'----------------------------------------------'
       do j = 1, n
         first = .true.
         do k = 1, n
@@ -164,20 +163,27 @@ contains
           end if
         end do
         estimate(j) = jacobian(j,j)%solve_for(vector(j) - tmp_field)
+!!$        if (j==1) then
+!!$           print*,'======================='
+!!$           print*,vector(j)%raw() - tmp_field%raw()
+!!$           print*,'-----------------------'
+!!$           print*,estimate(j)%raw()
+!!$           print*,'-----------------------'
+!!$           tmp_field = jacobian(j,j) * estimate(j)
+!!$           print*,tmp_field%raw()
+!!$        end if
         max_err = max(max_err, &
                       maxval(abs( (estimate(j)-prev_estimate(j))/(prev_estimate(j)+1e-10_r8) )))
-        print*,i,j,estimate(j)%raw()
       end do
-      print*,i,max_err
       ! If difference between result and previous guess is less than
       ! the tolerance, stop iterations
+      print*,i,max_err
       if (max_err < this%tolerance) then
         write(msg,success_format) max_err, i
         call logger%debug('preconditioner_apply',msg)
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
         return
       end if
-      print*,i,old_max_err,max_err,old_max_err<=max_err
       if (i > 1 .and. old_max_err <= max_err) then
         call logger%error('preconditioner_apply', &
                          'Iterations diverging. Exiting and returning previous iterate.')

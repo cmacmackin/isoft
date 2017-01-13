@@ -204,6 +204,7 @@ contains
     i = j + 1
     j = i + velocity%raw_size() - velocity%raw_size(this%velocity_lower_bound()) - 1
     inversion(i:j) = residuals(i:j) + this%velocity
+    inversion = residuals !TODO: This is not a general way of handling things!!!!
   end function dallaston2015_invert
 
 end module dallaston2015_glacier_boundary_mod

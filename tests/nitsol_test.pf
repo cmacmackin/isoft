@@ -96,7 +96,7 @@ contains
     !@assertEqual(expected,x_guess,tolerance=tol,message='Preconditioner not providing inverse to F.')
     
     allocate( worker(n_tot*(kdmax+5) + kdmax*(kdmax+3)) )
-    iplvl = 0
+    iplvl = 4
     call nitsol(n_tot, x_guess, test_f, preconditioner, tol, tol, input, &
                 output, worker, real_param, int_param, flag, ddot, dnrm2)
     iplvl = 0

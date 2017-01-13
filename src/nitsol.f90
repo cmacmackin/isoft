@@ -234,7 +234,7 @@ module nitsol_mod
           integer, intent(in)                   :: n
             !! Dimension of the problem
           real(r8), dimension(*), intent(in)    :: xcur
-            !! Array of lenght `n` containing the current $x$ value
+            !! Array of lenght `n` containing the current \(x\) value
           real(r8), dimension(*), intent(in)    :: fcur
             !! Array of lenght `n` containing the current \(f(x)\) value
           integer, intent(in)                   :: ijob
@@ -251,7 +251,7 @@ module nitsol_mod
             !! Parameter/work array
           integer, intent(out)                  :: itrmjv
             !! Termination flag. 0 indcates normal termination, 1
-            !! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
+            !! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
             !! failure to produce \(P^{-1}\vec{v}\)
         end subroutine jacv
       end interface
@@ -410,7 +410,7 @@ contains
     integer, intent(in)                   :: n
       ! Dimension of the problem
     real(r8), dimension(*), intent(in)    :: xcur
-      ! Array of lenght `n` containing the current $x$ value
+      ! Array of lenght `n` containing the current \(x\) value
     real(r8), dimension(*), intent(in)    :: fcur
       ! Array of lenght `n` containing the current \(f(x)\) value
     integer, intent(in)                   :: ijob
@@ -427,7 +427,7 @@ contains
       ! Parameter/work array
     integer, intent(out)                  :: itrmjv
       ! Termination flag. 0 indcates normal termination, 1
-      ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
+      ! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
       ! failure to produce \(P^{-1}\vec{v}\)
   end subroutine dummy_jacv
 

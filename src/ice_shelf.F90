@@ -37,7 +37,7 @@ module ice_shelf_mod
   !use foodie, only: integrand
   use glacier_mod, only: glacier, thickness_func, velocity_func, hdf_type_attr
   use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
-                         cheb1d_vector_field, maxval
+                         cheb1d_vector_field, maxval, minval, abs
   use viscosity_mod, only: abstract_viscosity
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
@@ -230,7 +230,7 @@ contains
     this%velocity_upper_bound_size = this%velocity_size &
                                    - this%velocity%raw_size(upper)
 
-    this%boundary_start = this%thickness_size + this%velocity_size &
+    this%boundary_start = this%thickness_size + this%velocity_size + 1 &
                         - this%thickness_lower_bound_size &
                         - this%thickness_upper_bound_size &
                         - this%velocity_lower_bound_size &
@@ -454,8 +454,9 @@ contains
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
     type(cheb1d_scalar_field) :: scalar_tmp
-    integer :: start, finish
+    integer :: start, finish, bounds_start, bounds_finish
     integer, dimension(:), allocatable :: lower, upper
+    real(r8), dimension(:), allocatable :: bounds
 
     allocate(residual(this%data_size()))
     start = 1
@@ -469,14 +470,29 @@ contains
                                    this%ice_temperature(), this%time), &
                 m => melt_rate, lambda => this%lambda, chi => this%chi, &
                 t_old => previous_states(1)%time)
+        ! Boundary conditions
+        bounds = this%boundaries%boundary_residuals(h, uvec, this%time)
 
         ! Continuity equation
         scalar_tmp = (h - h_old)/(this%time - t_old) + .div.(h*uvec) + lambda*m
         
         lower = this%boundaries%thickness_lower_bound()
         upper = this%boundaries%thickness_upper_bound()
+        ! TODO: Figure out how to make this independent of order which
+        ! values are stored in the field
+        finish = start + this%thickness_upper_bound_size - 1
+        bounds_start = this%thickness_lower_bound_size + 1
+        bounds_finish = this%thickness_lower_bound_size &
+                      + this%thickness_upper_bound_size
+        residual(start:finish) = bounds(bounds_start:bounds_finish)
+        start = finish + 1
         finish = start + scalar_tmp%raw_size(lower,upper) - 1
         residual(start:finish) = scalar_tmp%raw(lower,upper)
+        start = finish + 1
+        finish = start + this%thickness_lower_bound_size - 1
+        bounds_start = 1
+        bounds_finish = this%thickness_lower_bound_size
+        residual(start:finish) = bounds(bounds_start:bounds_finish)
         start = finish + 1
   
         ! Momentum equation, x-component
@@ -485,13 +501,24 @@ contains
         
         lower = this%boundaries%velocity_lower_bound()
         upper = this%boundaries%velocity_upper_bound()
+        ! TODO: Figure out how to make this independent of order which
+        ! values are stored in the field
+        finish = start + this%velocity_upper_bound_size - 1
+        bounds_start = this%thickness_lower_bound_size &
+                     + this%thickness_upper_bound_size &
+                     + this%velocity_lower_bound_size + 1
+        bounds_finish = bounds_start + this%velocity_upper_bound_size - 1
+        residual(start:finish) = bounds(bounds_start:bounds_finish)
+        start = finish + 1
         finish = start + scalar_tmp%raw_size(lower,upper) - 1
         residual(start:finish) = scalar_tmp%raw(lower,upper)
         start = finish + 1
-
-        ! Boundary conditions
-        residual(finish+1:) = this%boundaries%boundary_residuals(h, uvec, this%time)
-      end associate   
+        finish = start + this%velocity_lower_bound_size - 1
+        bounds_start = this%thickness_lower_bound_size &
+                     + this%thickness_upper_bound_size + 1
+        bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
+        residual(start:finish) = bounds(bounds_start:bounds_finish)
+      end associate
     class default
       error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
                   'object as a previous state.')
@@ -564,11 +591,14 @@ contains
       error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
                   'object as a previous state.')
     end select
+    call delta_shelf%thickness%assign_meta_data(this%thickness)
+    call delta_shelf%velocity%assign_meta_data(this%velocity)
+    delta_shelf%thickness_size = this%thickness_size
+    delta_shelf%velocity_size = this%velocity_size
     call delta_shelf%update(delta_state)
     inverse_bounds = this%boundaries%invert_residuals( &
          delta_state(this%boundary_start:), this%thickness, &
          this%velocity, this%time)
-
     associate(h => this%thickness, u => this%velocity%component(1), &
               v => this%velocity%component(2), dh => delta_shelf%thickness, &
               chi => this%chi, du => delta_shelf%velocity%component(1), &
@@ -617,13 +647,14 @@ contains
         !! The locations in the raw representation of `rhs` with which
         !! each of the elements of `boundary_values` is associated.
       integer :: i, sl, el, su, eu
-      boundary_values = inverse_bounds(:this%thickness_lower_bound_size &
-                                       +this%thickness_upper_bound_size)
-      sl = 1
-      el = this%thickness_lower_bound_size
-      su = this%thickness_size - this%thickness_upper_bound_size + 1
-      eu = this%thickness_size
-      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+      ! TODO: Figure out how to make this independent of order which
+      ! values are stored in the field
+      sl = this%thickness_size - this%thickness_lower_bound_size + 1
+      el = this%thickness_size
+      su = 1
+      eu = this%thickness_upper_bound_size
+      boundary_values = [delta_state(sl:el)]!, delta_state(su:eu)]
+      boundary_locations = [(i, i=sl,el)]!, (i, i=su,eu)]
     end subroutine jacobian_thickness_bounds
     
     subroutine jacobian_velocity1_bounds(rhs, boundary_values, boundary_locations)
@@ -643,12 +674,14 @@ contains
         !! The locations in the raw representation of `rhs` with which
         !! each of the elements of `boundary_values` is associated.
       integer :: i, sl, el, su, eu
-      boundary_values = inverse_bounds(this%thickness_lower_bound_size+1 &
-                                      +this%thickness_upper_bound_size:)
-      sl = 1
-      el = this%velocity_lower_bound_size
-      su = this%velocity_size - this%velocity_upper_bound_size + 1
-      eu = this%velocity_size
+      ! TODO: Figure out how to make this independent of order which
+      ! values are stored in the field
+      sl = this%velocity_size - this%velocity_lower_bound_size + 1
+      el = this%velocity_size
+      su = 1
+      eu = this%velocity_upper_bound_size
+      i = this%thickness_size
+      boundary_values = [delta_state(i+sl:i+el), delta_state(i+su:i+eu)]
       boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
     end subroutine jacobian_velocity1_bounds
 
@@ -777,7 +810,7 @@ contains
     associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
               C => 1.0_r8)
       associate(dx1 => dx%component(1))
-        dt = maxval(C*dx1/u)
+        dt = minval(abs(C*dx1/u))
       end associate
     end associate
   end function shelf_time_step
