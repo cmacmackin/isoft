@@ -496,7 +496,7 @@ contains
         start = finish + 1
   
         ! Momentum equation, x-component
-        scalar_tmp = 2.0_r8*eta*h*(2.0_r8*u%d_dx(1))
+        scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
         scalar_tmp = scalar_tmp%d_dx(1) - 2.0_r8*chi*h*h%d_dx(1)
         
         lower = this%boundaries%velocity_lower_bound()
@@ -646,15 +646,23 @@ contains
       integer, dimension(:), allocatable, intent(out)  :: boundary_locations
         !! The locations in the raw representation of `rhs` with which
         !! each of the elements of `boundary_values` is associated.
+      integer, dimension(:), allocatable, intent(out)  :: boundary_types
+        !! Integers specifying the type of boundary condition. The type
+        !! of boundary condition corresponding to a given integer is
+        !! specified in [[boundary_types_mod]].
       integer :: i, sl, el, su, eu
+      integer, dimension(2) :: upper_type, lower_type
       ! TODO: Figure out how to make this independent of order which
       ! values are stored in the field
       sl = this%thickness_size - this%thickness_lower_bound_size + 1
       el = this%thickness_size
       su = 1
       eu = this%thickness_upper_bound_size
-      boundary_values = [delta_state(sl:el)]!, delta_state(su:eu)]
-      boundary_locations = [(i, i=sl,el)]!, (i, i=su,eu)]
+      boundary_values = [delta_state(sl:el), delta_state(su:eu)]
+      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+      upper_type = this%boundaries%thickness_upperer_type()
+      lower_type = this%boundaries%thickness_lower_type()
+      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu),]
     end subroutine jacobian_thickness_bounds
     
     subroutine jacobian_velocity1_bounds(rhs, boundary_values, boundary_locations)
@@ -674,6 +682,7 @@ contains
         !! The locations in the raw representation of `rhs` with which
         !! each of the elements of `boundary_values` is associated.
       integer :: i, sl, el, su, eu
+      integer, dimension(2) :: upper_type, lower_type
       ! TODO: Figure out how to make this independent of order which
       ! values are stored in the field
       sl = this%velocity_size - this%velocity_lower_bound_size + 1
@@ -683,6 +692,9 @@ contains
       i = this%thickness_size
       boundary_values = [delta_state(i+sl:i+el), delta_state(i+su:i+eu)]
       boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+      upper_type = this%boundaries%velocity_upperer_type()
+      lower_type = this%boundaries%velocity_lower_type()
+      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu),]
     end subroutine jacobian_velocity1_bounds
 
   end function shelf_precondition

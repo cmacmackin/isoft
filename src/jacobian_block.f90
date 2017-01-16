@@ -33,6 +33,7 @@ module jacobian_block_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field
+  use boundary_types_mod, only: dirichlet, neumann
   use f95_lapack, only: la_gtsvx
   use logger_mod, only: logger => master_logger
   implicit none
@@ -141,6 +142,9 @@ module jacobian_block_mod
     integer, dimension(:), allocatable  :: boundary_locs
       !! Locations in the raw arrays which are used to specify
       !! boundary conditions.
+    integer, dimension(:), allocatable  :: boundary_types
+      !! The types of boundary conditions, specified using the
+      !! parameters found in [[boundary_types_mod]].
     real(r8)                            :: scalar_increment
       !! A scalar value which is to be added to this Jacobian block
       !! (i.e. to the diagonal).
@@ -383,12 +387,30 @@ contains
                    'in the 1-direction')
       end if
       ! Figure out the boundary conditions for this problem
-      call this%get_boundaries(rhs, this%boundary_vals, this%boundary_locs)
+      call this%get_boundaries(rhs, this%boundary_vals, this%boundary_locs, &
+                               this%boundary_types)
       do i = 1, size(this%boundary_locs)
         pos = this%boundary_locs(i)
-        this%diagonal(pos) = 1._r8
-        if (pos < n) this%super_diagonal(pos) = 0._r8
-        if (pos > 1) this%sub_diagonal(pos-1) = 0._r8
+        if (this%boundary_types(i) == dirichlet) then
+          this%diagonal(pos) = 1._r8
+          if (pos < n) this%super_diagonal(pos) = 0._r8
+          if (pos > 1) this%sub_diagonal(pos-1) = 0._r8
+        else if (this%boundary_types(i) == neumann) then
+          if (pos == n) then
+            this%diagonal(n) = cached_dx_c(n)
+            this%sub_diagonal(n-1) = -cached_dx_c(n)
+          else if (pos == 1) then
+            this%diagonal(1) = -cached_dx_c(1)
+            this%super_diagonal(1) = cached_dx_c(1)
+          else
+            this%super_diagonal(pos) = cached_dx_c(pos)
+            this%sub_diagonal(pos-1) = cached_dx_c(pos)
+            this%diagonal(pos) = 0._r8
+          end if
+        else
+          error stop ('Boundary condition of type other than Dirichlet '// &
+                      'or Neumann encountered.')
+        end if
       end do
       ! Allocate the arrays used to hold the factorisation of the
       ! tridiagonal matrix
@@ -424,7 +446,7 @@ contains
     call solution%set_from_raw(sol_vector)
   end function jacobian_block_solve
 
-  subroutine jacobian_block_bounds(rhs, boundary_values, boundary_locations)
+  subroutine jacobian_block_bounds(rhs, boundary_values, boundary_locations, boundary_types)
     !* Author: Chris MacMackin
     !  Date: January 2016
     !
@@ -441,8 +463,13 @@ contains
     integer, dimension(:), allocatable, intent(out)  :: boundary_locations
       !! The locations in the raw representation of `rhs` with which
       !! each of the elements of `boundary_values` is associated.
+    integer, dimension(:), allocatable, intent(out)  :: boundary_types
+      !! Integers specifying the type of boundary condition. The type
+      !! of boundary condition corresponding to a given integer is
+      !! specified in [[boundary_types_mod]].
     allocate(boundary_values(0))
     allocate(boundary_locations(0))
+    allocate(boundary_types(0))
   end subroutine jacobian_block_bounds
   
 end module jacobian_block_mod

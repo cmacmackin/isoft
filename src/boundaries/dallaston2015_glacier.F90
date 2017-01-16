@@ -37,6 +37,7 @@ module dallaston2015_glacier_boundary_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field
+  use boundary_types_mod, only: free_boundary, dirichlet, neumann
   use glacier_boundary_mod, only: glacier_boundary
   implicit none
   private
@@ -57,15 +58,13 @@ module dallaston2015_glacier_boundary_mod
       !! The thickness of the glacier at the inflowing boundary
     real(r8) :: velocity = 1.0_r8
       !! The velocity of the glacier at the inflowing boundary
+    real(r8) :: chi = 1.0_r8
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
   contains
     procedure :: thickness_lower_bound => dallaston2015_lower_bound
       !! Returns a 1D array which should be passed as the
       !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the thickness
-      !! field.
-!    procedure :: thickness_upper_bound => dallaston2015_upper_bound
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_upper_bound`/`provide_upper_bound` argument when
       !! getting or setting the raw representation of the thickness
       !! field.
     procedure :: velocity_lower_bound => dallaston2015_lower_bound
@@ -73,6 +72,26 @@ module dallaston2015_glacier_boundary_mod
       !! `exclude_lower_bound`/`provide_lower_bound` argument when
       !! getting or setting the raw representation of the velocity
       !! field.
+    procedure :: velocity_upper_bound => dallaston2015_upper_bound
+      !! Returns a 1D array which should be passed as the
+      !! `exclude_upper_bound`/`provide_upper_bound` argument when
+      !! getting or setting the raw representation of the velocity
+      !! field.
+    procedure :: thickness_lower_type => dallaston2015_lower_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for thickness at the lower boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
+    procedure :: velocity_lower_type => dallaston2015_lower_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for velocity at the lower boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
+    procedure :: velocity_upper_type => dallaston2015_upper_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for velocity at the upper boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
     procedure :: boundary_residuals => dallaston2015_residuals
       !! Returns an array consisting of the difference between the
       !! required boundary values and those which actually exist. This
@@ -80,12 +99,6 @@ module dallaston2015_glacier_boundary_mod
       !! in which these are listed is as follows: lower thickness
       !! boundary, upper thickness boundary, lower velocity boundary,
       !! and upper velocity boundary.
-    procedure :: invert_residuals => dallaston2015_invert
-      !! Returns an estimate of the values of thickness and velocity
-      !! at the boundaries from the given array of residuals. The
-      !! order in which the residuals are stored in the array must be
-      !! the same as in that produced by the `boundary_residuals`
-      !! method.
   end type dallaston2015_glacier_boundary
 
   interface dallaston2015_glacier_boundary
@@ -94,7 +107,7 @@ module dallaston2015_glacier_boundary_mod
 
 contains
 
-  pure function constructor(thickness, velocity) result(this)
+  pure function constructor(thickness, velocity, chi) result(this)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -105,9 +118,13 @@ contains
       !! The ice thickness at the inflowing ice shelf boundary
     real(r8), intent(in) :: velocity
       !! The longitudinal ice velocity at the inflowing ice shelf boundary
+    real(r8), intent(in) :: chi
+      !! The dimensionless ratio
+      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
     type(dallaston2015_glacier_boundary) :: this
     this%thickness = thickness
     this%velocity = velocity
+    this%chi = chi
   end function constructor
 
   pure function dallaston2015_lower_bound(this) result(bound_array)
@@ -136,7 +153,31 @@ contains
     bound_array = [1,0]
   end function dallaston2015_upper_bound
 
-  function dallaston2015_residuals(this, thickness, velocity, t) &
+  pure function dallaston2015_lower_type(this) result(bound_type)
+    !* Author: Chris MacMackin
+    !  Date: January 2017
+    !
+    ! Specifies that the lower boundary in the first dimension has
+    ! Dirichlet boundary conditions.
+    !
+    class(dallaston2015_glacier_boundary), intent(in) :: this
+    integer, dimension(:), allocatable  :: bound_type
+    bound_type = [dirichlet, free_boundary]
+  end function dallaston2015_lower_type
+
+  pure function dallaston2015_upper_type(this) result(bound_type)
+    !* Author: Chris MacMackin
+    !  Date: January 2017
+    !
+    ! Specifies that the upper boundary in the first dimension has
+    ! Neumann boundary conditions.
+    !
+    class(dallaston2015_glacier_boundary), intent(in) :: this
+    integer, dimension(:), allocatable  :: bound_type
+    bound_type = [neumann, free_boundary]
+  end function dallaston2015_upper_type
+
+  function dallaston2015_residuals(this, thickness, velocity, viscosity, t) &
                                    result(residuals)
     !* Author: Chris MacMackin
     !  Date: November 2016
@@ -150,6 +191,8 @@ contains
       !! A field containing the thickness of the glacier
     class(vector_field), intent(in)     :: velocity
       !! A field containing the flow velocity of the glacier
+    class(scalar_field), intent(in)     :: viscosity
+      !! A field containing the viscosity of the ice in the glacier.
     real(r8), intent(in)                :: t
       !! The time at which the boundary conditions are to be
       !! calculated.
@@ -159,52 +202,23 @@ contains
       !! are stored in the order: lower thickness boundary, upper
       !! thickness boundary, lower velocity boundary, and upper
       !! velocity boundary.
-    class(scalar_field), allocatable :: thickness_bound_lower, &
-                                        thickness_bound_upper
-    class(vector_field), allocatable :: velocity_bound
-    allocate(thickness_bound_lower, &
+    class(scalar_field), allocatable :: thickness_bound,      &
+                                        velocity_bound_upper, &
+                                        velocity_deriv
+    class(vector_field), allocatable :: velocity_bound_lower
+    call velocity%allocate_scalar_field(velocity_deriv)
+    velocity_deriv = velocity%component_d_dx(1,1)
+    allocate(thickness_bound, &
              source=(thickness%get_boundary(-1,1) - this%thickness))
-    allocate(thickness_bound_upper, &
-             source=thickness%get_boundary(1,1))
-    allocate(velocity_bound, &
+    allocate(velocity_bound_lower, &
              source=(velocity%get_boundary(-1,1) - [this%velocity]))
-    residuals = [thickness_bound_lower%raw(),&! thickness_bound_upper%raw(), &
-                 velocity_bound%raw()]
+    allocate(velocity_bound_upper, &
+             source=(velocity_deriv%get_boundary(1,1)  &
+                    *thickness%get_boundary(1,1)       &
+                    - 0.25_r8*this%chi*thickness%get_boundary(1,1)**2 &
+                      /viscosity%get_boundary(1,1)))
+    residuals = [thickness_bound%raw(), velocity_bound_lower%raw(), &
+                 velocity_bound_upper%raw()]
   end function dallaston2015_residuals
-
-  function dallaston2015_invert(this, residuals, thickness, velocity, t) &
-                                 result(inversion)
-    class(dallaston2015_glacier_boundary), intent(in) :: this
-    real(r8), dimension(:), intent(in)  :: residuals
-      !! An array containing the difference between the required
-      !! boundary values and those which are actually present. The
-      !! storage order must be the same as in the result of the
-      !! `boundary_residuals` funciton.
-    class(scalar_field), intent(in)     :: thickness
-      !! A field containing the thickness of the glacier
-    class(vector_field), intent(in)     :: velocity
-      !! A field containing the flow velocity of the glacier
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary conditions are to be
-      !! calculated.
-    real(r8), allocatable, dimension(:) :: inversion
-      !! An array containing estimates of the values of the thickness
-      !! at the lower boundary, thickness at the upper boundary,
-      !! velocity at the lower boundary, and velocity of the upper
-      !! boundary, in that order. These are calculated from the
-      !! residuals.
-    integer :: i, j
-    allocate(inversion(size(residuals)))
-    i = 1
-    j = thickness%raw_size() - thickness%raw_size(this%thickness_lower_bound())
-    inversion(i:j) = residuals(i:j) + this%thickness
-    i = j + 1
-    j = i + thickness%raw_size() - thickness%raw_size(this%thickness_upper_bound()) - 1
-    inversion(i:j) = residuals(i:j)
-    i = j + 1
-    j = i + velocity%raw_size() - velocity%raw_size(this%velocity_lower_bound()) - 1
-    inversion(i:j) = residuals(i:j) + this%velocity
-    inversion = residuals !TODO: This is not a general way of handling things!!!!
-  end function dallaston2015_invert
 
 end module dallaston2015_glacier_boundary_mod

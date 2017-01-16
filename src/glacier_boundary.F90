@@ -35,6 +35,7 @@ module glacier_boundary_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field
+  use boundary_types_mod, only: free_boundary
   implicit none
   private
   
@@ -85,18 +86,32 @@ module glacier_boundary_mod
       !! `exclude_upper_bound`/`provide_upper_bound` argument when
       !! getting or setting the raw representation of the velocity
       !! field.
+    procedure :: thickness_lower_type => bound_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for thickness at the lower boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
+    procedure :: thickness_upper_type => bound_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for thickness at the upper boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
+    procedure :: velocity_lower_type => bound_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for velocity at the lower boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
+    procedure :: velocity_upper_type => bound_type
+      !! Returns an array indicating what type of boundary conditions
+      !! apply for velocity at the upper boundary of each
+      !! dimension. The types are specified using the parameters in
+      !! [boundary_types_mod].
     procedure :: boundary_residuals
       !! Returns an array consisting of the difference between the
       !! required boundary values and those which actually exist. The
       !! order in which these are listed is as follows: lower
       !! thickness boundary, upper thickness boundary, lower velocity
       !! boundary, and upper velocity boundary.
-    procedure :: invert_residuals
-      !! Returns an estimate of the values of thickness and velocity
-      !! at the boundaries from the given array of residuals. The
-      !! order in which the residuals are stored in the array must be
-      !! the same as in that produced by the `boundary_residuals`
-      !! method.
   end type glacier_boundary
 
   abstract interface
@@ -120,7 +135,7 @@ contains
     bound_array = 0
   end function bound_array
 
-  function boundary_residuals(this, thickness, velocity, t) &
+  function boundary_residuals(this, thickness, velocity, viscosity, t) &
                                  result(residuals)
     !* Author: Chris MacMackin
     !  Date: September 2016
@@ -135,6 +150,8 @@ contains
       !! A field containing the thickness of the glacier
     class(vector_field), intent(in)     :: velocity
       !! A field containing the flow velocity of the glacier
+    class(scalar_field), intent(in)     :: viscosity
+      !! A field containing the viscosity of the ice in the glacier.
     real(r8), intent(in)                :: t
       !! The time at which the boundary conditions are to be
       !! calculated.
@@ -145,31 +162,19 @@ contains
       !! thickness boundary, lower velocity boundary, and upper
       !! velocity boundary.
     allocate(residuals(0))
-    return
   end function boundary_residuals
 
-  function invert_residuals(this, residuals, thickness, velocity, t) &
-                                 result(inversion)
+  pure function bound_type(this)
+    !* Author: Chris MacMackin
+    !  Date: January 2017
+    !
+    ! Default implementation of the methods getting the boundary types
+    ! for a glacier.  It returns an array which indicates free
+    ! boundaries.
+    !
     class(glacier_boundary), intent(in) :: this
-    real(r8), dimension(:), intent(in)  :: residuals
-      !! An array containing the difference between the required
-      !! boundary values and those which are actually present. The
-      !! storage order must be the same as in the result of the
-      !! `boundary_residuals` funciton.
-    class(scalar_field), intent(in)     :: thickness
-      !! A field containing the thickness of the glacier
-    class(vector_field), intent(in)     :: velocity
-      !! A field containing the flow velocity of the glacier
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary conditions are to be
-      !! calculated.
-    real(r8), allocatable, dimension(:) :: inversion
-      !! An array containing estimates of the values of the thickness
-      !! at the lower boundary, thickness at the upper boundary,
-      !! velocity at the lower boundary, and velocity of the upper
-      !! boundary, in that order. These are calculated from the
-      !! residuals.
-    allocate(inversion(0))
-  end function invert_residuals
+    integer, dimension(:), allocatable  :: bound_type
+    bound_type = [free_boundary, free_boundary]
+  end function bound_type
 
 end module glacier_boundary_mod
