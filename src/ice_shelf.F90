@@ -471,7 +471,7 @@ contains
                 m => melt_rate, lambda => this%lambda, chi => this%chi, &
                 t_old => previous_states(1)%time)
         ! Boundary conditions
-        bounds = this%boundaries%boundary_residuals(h, uvec, this%time)
+        bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
 
         ! Continuity equation
         scalar_tmp = (h - h_old)/(this%time - t_old) + .div.(h*uvec) + lambda*m
@@ -581,7 +581,6 @@ contains
     type(cheb1d_scalar_field), dimension(2) :: vector, estimate
     integer :: i, elem
     real(r8) :: delta_t
-    real(r8), allocatable, dimension(:) :: inverse_bounds
 
     allocate(preconditioned(size(delta_state)))
     select type(previous_states)
@@ -596,9 +595,6 @@ contains
     delta_shelf%thickness_size = this%thickness_size
     delta_shelf%velocity_size = this%velocity_size
     call delta_shelf%update(delta_state)
-    inverse_bounds = this%boundaries%invert_residuals( &
-         delta_state(this%boundary_start:), this%thickness, &
-         this%velocity, this%time)
     associate(h => this%thickness, u => this%velocity%component(1), &
               v => this%velocity%component(2), dh => delta_shelf%thickness, &
               chi => this%chi, du => delta_shelf%velocity%component(1), &
@@ -630,7 +626,8 @@ contains
 
   contains
     
-    subroutine jacobian_thickness_bounds(rhs, boundary_values, boundary_locations)
+    subroutine jacobian_thickness_bounds(rhs, boundary_values, &
+                                         boundary_locations, boundary_types)
       !* Author: Chris MacMackin
       !  Date: January 2016
       !
@@ -660,12 +657,13 @@ contains
       eu = this%thickness_upper_bound_size
       boundary_values = [delta_state(sl:el), delta_state(su:eu)]
       boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-      upper_type = this%boundaries%thickness_upperer_type()
+      upper_type = this%boundaries%thickness_upper_type()
       lower_type = this%boundaries%thickness_lower_type()
-      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu),]
+      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
     end subroutine jacobian_thickness_bounds
     
-    subroutine jacobian_velocity1_bounds(rhs, boundary_values, boundary_locations)
+    subroutine jacobian_velocity1_bounds(rhs, boundary_values, &
+                                         boundary_locations, boundary_types)
       !* Author: Chris MacMackin
       !  Date: January 2016
       !
@@ -681,6 +679,10 @@ contains
       integer, dimension(:), allocatable, intent(out)  :: boundary_locations
         !! The locations in the raw representation of `rhs` with which
         !! each of the elements of `boundary_values` is associated.
+      integer, dimension(:), allocatable, intent(out)  :: boundary_types
+      !! Integers specifying the type of boundary condition. The type
+      !! of boundary condition corresponding to a given integer is
+      !! specified in [[boundary_types_mod]].
       integer :: i, sl, el, su, eu
       integer, dimension(2) :: upper_type, lower_type
       ! TODO: Figure out how to make this independent of order which
@@ -692,9 +694,9 @@ contains
       i = this%thickness_size
       boundary_values = [delta_state(i+sl:i+el), delta_state(i+su:i+eu)]
       boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-      upper_type = this%boundaries%velocity_upperer_type()
+      upper_type = this%boundaries%velocity_upper_type()
       lower_type = this%boundaries%velocity_lower_type()
-      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu),]
+      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
     end subroutine jacobian_velocity1_bounds
 
   end function shelf_precondition
