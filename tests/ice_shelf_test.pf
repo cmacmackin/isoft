@@ -45,7 +45,7 @@ module ice_shelf_test
   type, extends(testcase) :: test_shelf
     type(ice_shelf) :: shelf1, shelf2, shelf3, shelf4
     integer         :: nodes = resolution
-    real(r8)        :: lower1 = 0.0_r8, upper1 = big_x
+    real(r8)        :: lower1 = 0.0_r8, upper1 = 0.9_r8*big_x
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
     real(r8)        :: temperature = -15._r8, lambda = lambda_d, &
                        chi = chi_val
@@ -105,7 +105,7 @@ contains
     class(abstract_viscosity), allocatable :: visc
     class(glacier_boundary), allocatable :: bound
     allocate(visc, source=newtonian_viscosity(1.0_r8))
-    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8))
+    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
     domain1(1,1) = this%lower1
     domain1(1,2) = this%upper1
     domain2(1,1) = this%lower2
@@ -115,7 +115,7 @@ contains
     this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
     this%shelf3 = this%shelf1
     allocate(visc, source=newtonian_viscosity(1.0_r8))
-    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8))
+    allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
     this%shelf4 = ice_shelf(domain1, [this%nodes], thickness3, velocity3, &
                             this%temperature, visc, bound, this%lambda, this%chi)
     call this%shelf3%set_time(1.0_r8)
@@ -238,7 +238,7 @@ contains
     rhs = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
            this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
     actual = this%shelf1%precondition([old_shelf],melt,drag,1.0_r8,rhs)
-    !print*,''
+    print*,''
     print*,(expected-actual)/(expected+1.e-10_r8)
     print*,'--------------'
     !print*,expected
@@ -248,6 +248,8 @@ contains
     call this%shelf3%update(this%shelf1%state_vector() + eps*delta)
     actual = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
               this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
+    print*,actual
+    print*,'--------------'
     print*,(expected-actual)/(expected+1.e-10_r8)
     @assertEqual(expected,actual,message='Preconditioner returns incorrect result', tolerance=2.e-2_r8)
   end subroutine test_preconditioner

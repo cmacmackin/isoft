@@ -26,6 +26,7 @@ module preconditioner_test
   use factual_mod, only: scalar_field, cheb1d_scalar_field
   use jacobian_block_mod, only: jacobian_block
   use preconditioner_mod, only: preconditioner
+  use boundary_types_mod, only: dirichlet
   implicit none
 
   integer, parameter :: resolution = 50
@@ -179,58 +180,85 @@ contains
     v3 = (location(1)-5._r8)**2 + 3._r8*(location(1)-0.1_r8)**2
   end function v3
 
-  subroutine bounds1(rhs,boundary_values,boundary_locations)
-    class(scalar_field), intent(in)                  :: rhs
-    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+  function bounds1(contents, derivative, rhs, boundary_locs, boundary_types) &
+       result(boundary_values)
+    class(scalar_field), intent(in)                :: contents
+    class(scalar_field), intent(in)                :: derivative
+    class(scalar_field), intent(in)                :: rhs
+    integer, dimension(:), allocatable, intent(in) :: boundary_locs
+    integer, dimension(:), allocatable, intent(in) :: boundary_types
+    real(r8), dimension(:), allocatable            :: boundary_values
     boundary_values = [v1([-1._r8])]
-    boundary_locations = [rhs%raw_size()]
-  end subroutine bounds1
+  end function bounds1
 
-  subroutine bounds2(rhs,boundary_values,boundary_locations)
-    class(scalar_field), intent(in)                  :: rhs
-    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+  function bounds2(contents, derivative, rhs, boundary_locs, boundary_types) &
+       result(boundary_values)
+    class(scalar_field), intent(in)                :: contents
+    class(scalar_field), intent(in)                :: derivative
+    class(scalar_field), intent(in)                :: rhs
+    integer, dimension(:), allocatable, intent(in) :: boundary_locs
+    integer, dimension(:), allocatable, intent(in) :: boundary_types
+    real(r8), dimension(:), allocatable            :: boundary_values
     boundary_values = [v2([1._r8]), v2([-1._r8])]
-    boundary_locations = [1,rhs%raw_size()]
-  end subroutine bounds2
+  end function bounds2
 
-  subroutine bounds3(rhs,boundary_values,boundary_locations)
-    class(scalar_field), intent(in)                  :: rhs
-    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
+  function bounds3(contents, derivative, rhs, boundary_locs, boundary_types) &
+       result(boundary_values)
+    class(scalar_field), intent(in)                :: contents
+    class(scalar_field), intent(in)                :: derivative
+    class(scalar_field), intent(in)                :: rhs
+    integer, dimension(:), allocatable, intent(in) :: boundary_locs
+    integer, dimension(:), allocatable, intent(in) :: boundary_types
+    real(r8), dimension(:), allocatable            :: boundary_values
     boundary_values = [v3([1._r8])]
-    boundary_locations = [1]
-  end subroutine bounds3
-  
+  end function bounds3
+
   subroutine setup(this)
     class(test_preconditioner), intent(inout) :: this
+    integer, dimension(:), allocatable :: locs, typs
     this%prec1 = preconditioner(1e-2_r8,10)
     this%prec2 = preconditioner(1e-5_r8,50)
-    this%jacobian(1,1) = jacobian_block(cheb1d_scalar_field(resolution,j11), &
-                                        1, boundaries=bounds1)
-    this%jacobian(1,2) = jacobian_block(cheb1d_scalar_field(resolution,j12),1)
-    this%jacobian(1,3) = jacobian_block(cheb1d_scalar_field(resolution,j13),1,1)
-    this%jacobian(2,1) = jacobian_block(cheb1d_scalar_field(resolution,j21),1)
+    locs = [resolution]
+    typs = [dirichlet]
+    this%jacobian(1,1) = jacobian_block(cheb1d_scalar_field(resolution,j11), 1, &
+                                        boundary_locs=locs, boundary_types=typs)
+    this%jacobian(1,2) = jacobian_block(cheb1d_scalar_field(resolution,j12),1, &
+                                        boundary_locs=locs, boundary_types=typs)
+    this%jacobian(1,3) = jacobian_block(cheb1d_scalar_field(resolution,j13),1,1, &
+                                        locs, typs, bounds1)
+    locs = [1,resolution]
+    typs = [dirichlet,dirichlet]
+    this%jacobian(2,1) = jacobian_block(cheb1d_scalar_field(resolution,j21),1,   &
+                                        boundary_locs=locs, boundary_types=typs, &
+                                        boundary_operations=bounds2)
     this%jacobian(2,2) = jacobian_block(cheb1d_scalar_field(resolution,j22), &
-                                        1,1,bounds2)
-    this%jacobian(2,3) = jacobian_block(cheb1d_scalar_field(resolution,j23),1)
-    this%jacobian(3,1) = jacobian_block(cheb1d_scalar_field(resolution,j31),1)
-    this%jacobian(3,2) = jacobian_block(cheb1d_scalar_field(resolution,j32),1)
-    this%jacobian(3,3) = jacobian_block(cheb1d_scalar_field(resolution,j33), &
-                                        1, boundaries=bounds3)
+                                        1,1,locs,typs)
+    this%jacobian(2,3) = jacobian_block(cheb1d_scalar_field(resolution,j23),1, &
+                                        boundary_locs=locs, boundary_types=typs)
+    locs = [1]
+    this%jacobian(3,1) = jacobian_block(cheb1d_scalar_field(resolution,j31),1,   &
+                                        boundary_locs=locs, boundary_types=typs, &
+                                        boundary_operations=bounds3)
+    this%jacobian(3,2) = jacobian_block(cheb1d_scalar_field(resolution,j32),1, &
+                                        boundary_locs=locs, boundary_types=typs)
+    this%jacobian(3,3) = jacobian_block(cheb1d_scalar_field(resolution,j33), 1, &
+                                        boundary_locs=locs, boundary_types=typs)
     this%vector(1) = cheb1d_scalar_field(resolution,v1)
     this%vector(2) = cheb1d_scalar_field(resolution,v2)
     this%vector(3) = cheb1d_scalar_field(resolution,v3)
     this%rhs(1) = this%jacobian(1,1) * this%vector(1) &
                 + this%jacobian(1,2) * this%vector(2) &
                 + this%jacobian(1,3) * this%vector(3)
+    call this%rhs(1)%set_element(resolution,0._r8) ! Have to mess with these a bit to make work
     this%rhs(2) = this%jacobian(2,1) * this%vector(1) &
                 + this%jacobian(2,2) * this%vector(2) &
                 + this%jacobian(2,3) * this%vector(3)
+    call this%rhs(2)%set_element(1,0._r8)
+    call this%rhs(2)%set_element(resolution,0._r8)
     this%rhs(3) = this%jacobian(3,1) * this%vector(1) &
                 + this%jacobian(3,2) * this%vector(2) &
                 + this%jacobian(3,3) * this%vector(3)
+    call this%rhs(3)%set_element(1,0._r8)
   end subroutine setup
 
   @Test

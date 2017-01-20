@@ -43,7 +43,7 @@ module boundary_types_mod
     !! Indicates that the value of the solution and its first
     !! derivative are both prescribed at this boundary.
   integer, parameter, public :: robin = 6
-    !! Indicates that the linear combinatino of the solution's value
+    !! Indicates that the linear combination of the solution's value
     !! and first derivative is prescribed at this boundary.
 
 end module boundary_types_mod

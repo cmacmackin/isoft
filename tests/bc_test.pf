@@ -52,7 +52,7 @@ contains
     @assertEqual([0,0],test_glacier%thickness_upper_bound(),message='Incorrect upper bounds returned for thickness.')
     @assertEqual([0,0],test_glacier%velocity_lower_bound(),message='Incorrect lower bounds returned for velocity.')
     @assertEqual([0,0],test_glacier%velocity_upper_bound(),message='Incorrect upper bounds returned for velocity.')
-    @assertEqual(0,size(test_glacier%boundary_residuals(scalar,vector,0.0_r8)),message='Non-empty residual.')
+    @assertEqual(0,size(test_glacier%boundary_residuals(scalar,vector,scalar,0.0_r8)),message='Non-empty residual.')
   end subroutine test_defaults
 
 end module bc_test

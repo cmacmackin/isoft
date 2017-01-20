@@ -47,7 +47,7 @@ VENDOR_ = $(shell echo $(VENDOR) | tr A-Z a-z)
 
 ifeq ($(VENDOR_),intel)
   F90      := ifort
-  FCFLAGS  := -O0 -g -I$(INC) -module $(MDIR) -traceback -assume realloc_lhs
+  FCFLAGS  := -O0 -g -DDEBUG -fpp -module $(MDIR) -traceback -assume realloc_lhs
   LDFLAGS  := -O0 -g -traceback
   COVFLAGS := 
 else

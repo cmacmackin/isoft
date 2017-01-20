@@ -92,6 +92,21 @@ module jacobian_block_mod
     ! right-hand-side of the linear system, in cases where the system
     ! can not be expressed as a tridiagonal matrix.-->
     !
+    ! Boundary conditions are a complicated issue. When constructing
+    ! an instance of this type, locations in the raw field
+    ! representation can be specified for which boundary conditions
+    ! are given. By default these are all Dirichlet conditions, but
+    ! this behaviour may be overridden to be Neumann conditions. Note
+    ! that Neumann conditions result in approximately an order of
+    ! magnitude lower accuracy. When using the Jacobian block for
+    ! multiplation, the type of the boundary does not matter; the
+    ! value at the boundary in the result will be set to 0 or to
+    ! values produced by an optional user-provided function. When
+    ! using the `solve_for` method, the tridiagonal matrix will be
+    ! altered in the specified locations to reflect the correct
+    ! boundary conditions. This effectively mimics the sorts of
+    ! Jacobian rows typically produced by boundary conditions.
+    !
     private
     integer                             :: direction
       !! The direction in which any derivatives are taken.
@@ -103,11 +118,10 @@ module jacobian_block_mod
       !!The value, \(A\), to which the Jacobian block operation is
       !!beiing applied.
     procedure(jacobian_block_bounds), pointer, nopass  :: &
-                                           get_boundaries => jacobian_block_bounds
-      !! A subroutine which determines the expected boundary value
+                                           get_boundaries
+      !! A subroutine which determines the expected boundary conditions
       !! (and their location in the raw array) for the solution of the
-      !! Jacobian block. It effectively inverts the process by which
-      !! residuals are determined for boundary values.
+      !! Jacobian block.
     class(scalar_field), allocatable    :: derivative
       !! The cached derivative of `contents`
     real(r8), dimension(:), allocatable :: diagonal
@@ -167,7 +181,8 @@ module jacobian_block_mod
 contains
 
   function constructor(source_field, direction, extra_derivative, &
-                       boundaries) result(this)
+                       boundary_locs, boundary_types,             &
+                       boundary_operations) result(this)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
@@ -175,7 +190,11 @@ contains
     ! $$\frac{\partial F}{\partial x_i} + F\Delta_i,$$ where \(F\) is
     ! a scalar field and \(\Delta_i\) is the differentiation operator
     ! in the \(i\)-direction. Additionally, a further differentiation
-    ! operator may be added to the right hand side of this matrix block.
+    ! operator may be added to the right hand side of this matrix
+    ! block.  Optional arguments allow for handling of boundary
+    ! conditions. See the end of the documentation of the
+    ! [[jacobian_block(type)]] type for a description of how boundary
+    ! conditions are treated.
     !
     class(scalar_field), intent(in)             :: source_field
       !! A scalar field (\(F\)) making up this block of the Jacobian
@@ -185,18 +204,46 @@ contains
       !! If present, specifies the direction of a differentiation
       !! operator to be added to the right hand side of this matrix
       !! block.
-    procedure(jacobian_block_bounds),  optional :: boundaries
-      !! A subroutine which specifies boundary values for the solution
-      !! to Jacobian system. This is only needed if you will be using
-      !! the `solve_for` method.
-    type(jacobian_block)            :: this
+    integer, dimension(:), optional, intent(in) :: boundary_locs
+      !! The locations in the raw representation of `rhs` for which
+      !! boundary conditions are specified. Defaults to there being
+      !! none.
+    integer, dimension(:), optional, intent(in) :: boundary_types
+      !! Integers specifying the type of boundary condition. The type
+      !! of boundary condition corresponding to a given integer is
+      !! specified in [[boundary_types_mod]]. Only Dirichlet and
+      !! Neumann conditions are supported. Defaults to Dirichlet. The
+      !! order in which they are stored must match that of
+      !! `boundary_locs`.
+    procedure(jacobian_block_bounds),  optional :: boundary_operations
+      !! A function specifying the values to place at the boundaries
+      !! of teh result when using the Jacobian block for
+      !! multiplication. By default, all boundaries are set to 0. The
+      !! order in which the resulting values are stored should match
+      !! that of `boundary_locs`.
+    type(jacobian_block)                        :: this
       !! A new Jacobian block
     allocate(this%contents, source=source_field)
     allocate(this%derivative, mold=this%contents)
     this%direction = direction
     this%derivative = this%contents%d_dx(this%direction)
     if (present(extra_derivative)) this%extra_derivative = extra_derivative
-    if (present(boundaries)) this%get_boundaries => boundaries
+    if (present(boundary_locs)) then
+      this%boundary_locs = boundary_locs
+    else
+      allocate(this%boundary_locs(0))
+    end if
+    if (present(boundary_types)) then
+      this%boundary_types = boundary_types
+    else
+      allocate(this%boundary_types(size(this%boundary_locs)))
+      this%boundary_types = dirichlet
+    end if
+    if (present(boundary_operations)) then
+      this%get_boundaries => boundary_operations
+    else
+      this%get_boundaries => jacobian_block_bounds
+    end if
   end function constructor
 
   function jacobian_block_multiply(this, rhs) result(product)
@@ -212,6 +259,8 @@ contains
       !! the Jacobian block.
     class(scalar_field), allocatable  :: product
     class(scalar_field), allocatable  :: tmp
+    real(r8), dimension(:), allocatable :: bounds
+    integer :: i
     allocate(product, mold=this%contents)
     if (this%extra_derivative==no_extra_derivative) then
       if (this%has_increment) then
@@ -230,6 +279,10 @@ contains
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
       end if
     end if
+    bounds = this%get_boundaries(this%contents,this%derivative,rhs,this%boundary_locs,this%boundary_types)
+    do i = 1, size(this%boundary_locs)
+      call product%set_element(this%boundary_locs(i), bounds(i))
+    end do
   end function jacobian_block_multiply
 
   function jacobian_block_add(this, rhs) result(sum)
@@ -246,6 +299,8 @@ contains
     sum = this
     sum%scalar_increment = rhs
     sum%has_increment = .true.
+    print*,'made it here'
+    print*, sum%get_boundaries(this%contents,this%derivative,this%contents,this%boundary_locs,this%boundary_types)
   end function jacobian_block_add
 
   function jacobian_block_solve(this, rhs) result(solution)
@@ -285,7 +340,7 @@ contains
                                                  cached_dx2_uc, &
                                                  cached_dx2_ud, &
                                                  cached_dx2_dc
-    real(r8), dimension(:), allocatable       :: cont, deriv, rhs_raw
+    real(r8), dimension(:), allocatable       :: cont, deriv
     integer                                   :: i, pos
     
     allocate(sol_vector(rhs%raw_size()))
@@ -386,9 +441,7 @@ contains
         error stop('Currently no support for extra derivatives other than '// &
                    'in the 1-direction')
       end if
-      ! Figure out the boundary conditions for this problem
-      call this%get_boundaries(rhs, this%boundary_vals, this%boundary_locs, &
-                               this%boundary_types)
+      ! Set the boundary conditions for this problem
       do i = 1, size(this%boundary_locs)
         pos = this%boundary_locs(i)
         if (this%boundary_types(i) == dirichlet) then
@@ -422,13 +475,8 @@ contains
     else
       factor = 'F'
     end if
-    rhs_raw = rhs%raw()
-    do i = 1, size(this%boundary_locs)
-      pos = this%boundary_locs(i)
-      rhs_raw(pos) = this%boundary_vals(i)
-    end do
     call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
-                  rhs_raw, sol_vector, this%l_multipliers, this%u_diagonal, &
+                  rhs%raw(), sol_vector, this%l_multipliers, this%u_diagonal, &
                   this%u_superdiagonal1, this%u_superdiagonal2, this%pivots,  &
                   factor, 'N', forward_err, backward_err, condition_num,      &
                   flag)
@@ -446,30 +494,40 @@ contains
     call solution%set_from_raw(sol_vector)
   end function jacobian_block_solve
 
-  subroutine jacobian_block_bounds(rhs, boundary_values, boundary_locations, boundary_types)
+  function jacobian_block_bounds(contents, derivative, rhs,     &
+                                 boundary_locs, boundary_types) &
+                                 result(boundary_values)
     !* Author: Chris MacMackin
     !  Date: January 2016
     !
     ! A default implementation of the `get_boundaries` procedure
-    ! pointer for the `jacobian_block` type. It corresponds to free
-    ! boundaries.
+    ! pointer for the `jacobian_block` type. It corresponds to setting
+    ! all boundaries to 0 when multiplying a field by the Jacobian
+    ! block.
     !
-    class(scalar_field), intent(in)                  :: rhs
+    class(scalar_field), intent(in)                :: contents
+      !! The field used to construct the Jacobian block
+    class(scalar_field), intent(in)                :: derivative
+      !! The first spatial derivative of the field used to construct
+      !! the Jacobian block, in the direction specified
+    class(scalar_field), intent(in)                :: rhs
       !! The scalar field representing the vector being multiplied
-      !! by the inverse Jacobian (i.e. the right hand side of the
-      !! Jacobian system being solved).
-    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-      !! The values specifying the boundary conditions.
-    integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-      !! The locations in the raw representation of `rhs` with which
-      !! each of the elements of `boundary_values` is associated.
-    integer, dimension(:), allocatable, intent(out)  :: boundary_types
+      !! by Jacobian
+    integer, dimension(:), allocatable, intent(in) :: boundary_locs
+      !! The locations in the raw representation of `rhs` containing
+      !! the boundaries.
+    integer, dimension(:), allocatable, intent(in) :: boundary_types
       !! Integers specifying the type of boundary condition. The type
       !! of boundary condition corresponding to a given integer is
-      !! specified in [[boundary_types_mod]].
-    allocate(boundary_values(0))
-    allocate(boundary_locations(0))
-    allocate(boundary_types(0))
-  end subroutine jacobian_block_bounds
+      !! specified in [[boundary_types_mod]]. Only Dirichlet and
+      !! Neumann conditions are supported. The storage order must
+      !! correspond to that of `boundary_locs`.
+    real(r8), dimension(:), allocatable            :: boundary_values
+      !! The values to go at the boundaries when multiplying a field
+      !! by the Jacobian block. The storage order must be the same as
+      !! for `boundary_locs`.
+    allocate(boundary_values(size(boundary_locs)))
+    boundary_values = 0._r8
+  end function jacobian_block_bounds
   
 end module jacobian_block_mod

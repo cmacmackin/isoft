@@ -579,7 +579,10 @@ contains
 
     type(ice_shelf) :: delta_shelf
     type(cheb1d_scalar_field), dimension(2) :: vector, estimate
+    integer :: sl, el, su, eu
     integer :: i, elem
+    integer, dimension(2) :: upper_type, lower_type
+    integer, dimension(:), allocatable :: boundary_types, boundary_locations
     real(r8) :: delta_t
 
     allocate(preconditioned(size(delta_state)))
@@ -602,13 +605,35 @@ contains
               eta => this%viscosity_law%ice_viscosity(this%velocity, &
                                    this%ice_temperature(), this%time))
       if (this%jacobian_time < this%time) then
-        this%jacobian(1,1) = jacobian_block(u,1, &
-                                            boundaries=jacobian_thickness_bounds) &
+        sl = this%thickness_size - this%thickness_lower_bound_size + 1
+        el = this%thickness_size
+        su = 1
+        eu = this%thickness_upper_bound_size
+        boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+        upper_type = this%boundaries%thickness_upper_type()
+        lower_type = this%boundaries%thickness_lower_type()
+        boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
+
+        this%jacobian(1,1) = jacobian_block(u, 1, boundary_locs=boundary_locations) &
                            + 1._r8/delta_t
-        this%jacobian(1,2) = jacobian_block(h,1)
-        this%jacobian(2,1) = jacobian_block(4._r8*eta*u%d_dx(1) - 2._r8*chi*h,1)
-        this%jacobian(2,2) = jacobian_block(4._r8*eta*h,1,1, &
-                                            boundaries=jacobian_velocity1_bounds)
+        this%jacobian(1,2) = jacobian_block(h, 1, boundary_locs=boundary_locations, &
+                                            boundary_types=boundary_types)
+
+        sl = this%velocity_size - this%velocity_lower_bound_size + 1
+        el = this%velocity_size
+        su = 1
+        eu = this%velocity_upper_bound_size
+        boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+        upper_type = this%boundaries%velocity_upper_type()
+        lower_type = this%boundaries%velocity_lower_type()
+        boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
+
+        this%jacobian(2,1) = jacobian_block(4._r8*eta*u%d_dx(1) - 2._r8*chi*h, 1, &
+                                            boundary_locs=boundary_locations,     &
+                                            boundary_operations=jacobian_bounds_2_1)
+        this%jacobian(2,2) = jacobian_block(4._r8*eta*h, 1, 1,                &
+                                            boundary_locs=boundary_locations, &
+                                            boundary_types=boundary_types)
         this%jacobian_time = this%time
       end if
 
@@ -626,79 +651,42 @@ contains
 
   contains
     
-    subroutine jacobian_thickness_bounds(rhs, boundary_values, &
-                                         boundary_locations, boundary_types)
+    function jacobian_bounds_2_1(contents, derivative, rhs,     &
+                                 boundary_locs, boundary_types) &
+                                 result(boundary_values)
       !* Author: Chris MacMackin
       !  Date: January 2016
       !
-      ! Provides boundary conditions for the ice thickness to the
-      ! Jacobian-block preconditioner.
+      ! Specifies the boundary values for the result multiplying the
+      ! thickness field by the bottom-left Jacobian block.
       !
-      class(scalar_field), intent(in)                  :: rhs
+      class(scalar_field), intent(in)                :: contents
+        !! The field used to construct the Jacobian block
+      class(scalar_field), intent(in)                :: derivative
+        !! The first spatial derivative of the field used to construct
+        !! the Jacobian block, in the direction specified
+      class(scalar_field), intent(in)                :: rhs
         !! The scalar field representing the vector being multiplied
-        !! by the inverse Jacobian (i.e. the right hand side of the
-        !! Jacobian system being solved).
-      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-        !! The values specifying the boundary conditions.
-      integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-        !! The locations in the raw representation of `rhs` with which
-        !! each of the elements of `boundary_values` is associated.
-      integer, dimension(:), allocatable, intent(out)  :: boundary_types
+        !! by Jacobian
+      integer, dimension(:), allocatable, intent(in) :: boundary_locs
+        !! The locations in the raw representation of `rhs` containing
+        !! the boundaries.
+      integer, dimension(:), allocatable, intent(in) :: boundary_types
         !! Integers specifying the type of boundary condition. The type
         !! of boundary condition corresponding to a given integer is
-        !! specified in [[boundary_types_mod]].
-      integer :: i, sl, el, su, eu
-      integer, dimension(2) :: upper_type, lower_type
-      ! TODO: Figure out how to make this independent of order which
-      ! values are stored in the field
-      sl = this%thickness_size - this%thickness_lower_bound_size + 1
-      el = this%thickness_size
-      su = 1
-      eu = this%thickness_upper_bound_size
-      boundary_values = [delta_state(sl:el), delta_state(su:eu)]
-      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-      upper_type = this%boundaries%thickness_upper_type()
-      lower_type = this%boundaries%thickness_lower_type()
-      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
-    end subroutine jacobian_thickness_bounds
-    
-    subroutine jacobian_velocity1_bounds(rhs, boundary_values, &
-                                         boundary_locations, boundary_types)
-      !* Author: Chris MacMackin
-      !  Date: January 2016
-      !
-      ! Provides boundary conditions for the x-component of the ice
-      ! velocity to the Jacobian-block preconditioner.
-      !
-      class(scalar_field), intent(in)                  :: rhs
-        !! The scalar field representing the vector being multiplied
-        !! by the inverse Jacobian (i.e. the right hand side of the
-        !! Jacobian system being solved).
-      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-        !! The values specifying the boundary conditions.
-      integer, dimension(:), allocatable, intent(out)  :: boundary_locations
-        !! The locations in the raw representation of `rhs` with which
-        !! each of the elements of `boundary_values` is associated.
-      integer, dimension(:), allocatable, intent(out)  :: boundary_types
-      !! Integers specifying the type of boundary condition. The type
-      !! of boundary condition corresponding to a given integer is
-      !! specified in [[boundary_types_mod]].
-      integer :: i, sl, el, su, eu
-      integer, dimension(2) :: upper_type, lower_type
-      ! TODO: Figure out how to make this independent of order which
-      ! values are stored in the field
-      sl = this%velocity_size - this%velocity_lower_bound_size + 1
-      el = this%velocity_size
-      su = 1
-      eu = this%velocity_upper_bound_size
-      i = this%thickness_size
-      boundary_values = [delta_state(i+sl:i+el), delta_state(i+su:i+eu)]
-      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-      upper_type = this%boundaries%velocity_upper_type()
-      lower_type = this%boundaries%velocity_lower_type()
-      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
-    end subroutine jacobian_velocity1_bounds
-
+        !! specified in [[boundary_types_mod]]. Only Dirichlet and
+        !! Neumann conditions are supported. The storage order must
+        !! correspond to that of `boundary_locs`.
+      real(r8), dimension(:), allocatable            :: boundary_values
+        !! The values to go at the boundaries when multiplying a field
+        !! by the Jacobian block. The storage order must be the same as
+        !! for `boundary_locs`.
+      integer :: n
+      n = size(boundary_locs)
+      allocate(boundary_values(n))
+      !TODO: Make this general
+      boundary_values = [0._r8,this%thickness%get_element(boundary_locs(n))]
+    end function jacobian_bounds_2_1
   end function shelf_precondition
 
 
