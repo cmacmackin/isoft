@@ -180,38 +180,38 @@ contains
     v3 = (location(1)-5._r8)**2 + 3._r8*(location(1)-0.1_r8)**2
   end function v3
 
-  function bounds1(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds1(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
-    boundary_values = [v1([-1._r8])]
-  end function bounds1
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    boundary_values = [-v1([-1._r8])]
+  end subroutine bounds1
 
-  function bounds2(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds2(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
-    boundary_values = [v2([1._r8]), v2([-1._r8])]
-  end function bounds2
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    boundary_values = [-v2([1._r8]), -v2([-1._r8])]
+  end subroutine bounds2
 
-  function bounds3(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds3(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
-    boundary_values = [v3([1._r8])]
-  end function bounds3
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
+    boundary_values = [-v3([1._r8])]
+  end subroutine bounds3
 
   subroutine setup(this)
     class(test_preconditioner), intent(inout) :: this

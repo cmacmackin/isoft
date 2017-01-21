@@ -651,33 +651,33 @@ contains
 
   contains
     
-    function jacobian_bounds_2_1(contents, derivative, rhs,     &
-                                 boundary_locs, boundary_types) &
-                                 result(boundary_values)
+    subroutine jacobian_bounds_2_1(contents, derivative, rhs,     &
+                                   boundary_locs, boundary_types, &
+                                   boundary_values)
       !* Author: Chris MacMackin
       !  Date: January 2016
       !
       ! Specifies the boundary values for the result multiplying the
       ! thickness field by the bottom-left Jacobian block.
       !
-      class(scalar_field), intent(in)                :: contents
+      class(scalar_field), intent(in)                  :: contents
         !! The field used to construct the Jacobian block
-      class(scalar_field), intent(in)                :: derivative
+      class(scalar_field), intent(in)                  :: derivative
         !! The first spatial derivative of the field used to construct
         !! the Jacobian block, in the direction specified
-      class(scalar_field), intent(in)                :: rhs
+      class(scalar_field), intent(in)                  :: rhs
         !! The scalar field representing the vector being multiplied
         !! by Jacobian
-      integer, dimension(:), allocatable, intent(in) :: boundary_locs
+      integer, dimension(:), allocatable, intent(in)   :: boundary_locs
         !! The locations in the raw representation of `rhs` containing
         !! the boundaries.
-      integer, dimension(:), allocatable, intent(in) :: boundary_types
+      integer, dimension(:), allocatable, intent(in)   :: boundary_types
         !! Integers specifying the type of boundary condition. The type
         !! of boundary condition corresponding to a given integer is
         !! specified in [[boundary_types_mod]]. Only Dirichlet and
         !! Neumann conditions are supported. The storage order must
         !! correspond to that of `boundary_locs`.
-      real(r8), dimension(:), allocatable            :: boundary_values
+      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
         !! The values to go at the boundaries when multiplying a field
         !! by the Jacobian block. The storage order must be the same as
         !! for `boundary_locs`.
@@ -686,7 +686,7 @@ contains
       allocate(boundary_values(n))
       !TODO: Make this general
       boundary_values = [0._r8,this%thickness%get_element(boundary_locs(n))]
-    end function jacobian_bounds_2_1
+    end subroutine jacobian_bounds_2_1
   end function shelf_precondition
 
 

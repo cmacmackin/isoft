@@ -115,49 +115,49 @@ contains
     prod4 = f_dx(location)*g_dx(location) + f(location)*g_d2x(location) + 5._r8*g(location)
   end function prod4
 
-  function bounds1(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds1(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     boundary_values = [g_dx([-1._r8])]
-  end function bounds1
+  end subroutine bounds1
 
-  function bounds2(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds2(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     boundary_values = [g_dx([1._r8]), g([-1._r8])]
-  end function bounds2
+  end subroutine bounds2
   
-  function bounds4(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds4(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     boundary_values = [g([1._r8])]
-  end function bounds4
+  end subroutine bounds4
   
-  function bounds5(contents, derivative, rhs, boundary_locs, boundary_types) &
-       result(boundary_values)
+  subroutine bounds5(contents, derivative, rhs, boundary_locs, boundary_types, &
+                     boundary_values)
     class(scalar_field), intent(in)                :: contents
     class(scalar_field), intent(in)                :: derivative
     class(scalar_field), intent(in)                :: rhs
     integer, dimension(:), allocatable, intent(in) :: boundary_locs
     integer, dimension(:), allocatable, intent(in) :: boundary_types
-    real(r8), dimension(:), allocatable            :: boundary_values
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
     boundary_values = [g([1._r8]), g([-1._r8])]
-  end function bounds5
+  end subroutine bounds5
 
   subroutine setup(this)
     class(test_jacobian), intent(inout) :: this
@@ -174,9 +174,9 @@ contains
                                  boundary_operations=bounds4)
     this%block5 = jacobian_block(this%ones, 1, 1, [dirichlet,dirichlet], &
                                  [1,resolution])
-    this%block6 = jacobian_block(this%contents, 1, boundary_locs=[resolution], &
-                                 boundary_types=[neumann], &
-                                 boundary_operations=bounds1) + 1._r8
+    this%block6 =  jacobian_block(this%contents, 1, boundary_locs=[resolution], &
+                                  boundary_types=[neumann], &
+                                  boundary_operations=bounds1) + 1._r8
     this%block7 = jacobian_block(this%contents, 1, 1, [1,resolution], &
                                  [neumann,dirichlet]) + 5._r8
     ! Create vectors for solving/multiplying with
@@ -191,7 +191,7 @@ contains
     call this%rhs2%set_element(1,g_dx([1._r8]))
     call this%rhs2%set_element(resolution,g([-1._r8]))
     this%rhs3 = cheb1d_scalar_field(resolution, prod3)
-    call this%rhs3%set_element(resolution,g([-1._r8]))
+    call this%rhs3%set_element(resolution,g_dx([-1._r8]))
     this%rhs4 = cheb1d_scalar_field(resolution, prod4)
     call this%rhs4%set_element(1,g_dx([1._r8]))
     call this%rhs4%set_element(resolution,g([-1._r8]))

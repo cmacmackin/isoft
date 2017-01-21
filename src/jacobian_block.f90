@@ -279,7 +279,9 @@ contains
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
       end if
     end if
-    bounds = this%get_boundaries(this%contents,this%derivative,rhs,this%boundary_locs,this%boundary_types)
+    call this%get_boundaries(this%contents,this%derivative,rhs,      &
+                            this%boundary_locs,this%boundary_types, &
+                            bounds)
     do i = 1, size(this%boundary_locs)
       call product%set_element(this%boundary_locs(i), bounds(i))
     end do
@@ -299,8 +301,6 @@ contains
     sum = this
     sum%scalar_increment = rhs
     sum%has_increment = .true.
-    print*,'made it here'
-    print*, sum%get_boundaries(this%contents,this%derivative,this%contents,this%boundary_locs,this%boundary_types)
   end function jacobian_block_add
 
   function jacobian_block_solve(this, rhs) result(solution)
@@ -494,9 +494,9 @@ contains
     call solution%set_from_raw(sol_vector)
   end function jacobian_block_solve
 
-  function jacobian_block_bounds(contents, derivative, rhs,     &
-                                 boundary_locs, boundary_types) &
-                                 result(boundary_values)
+  subroutine jacobian_block_bounds(contents, derivative, rhs,   &
+                                 boundary_locs, boundary_types, &
+                                 boundary_values)
     !* Author: Chris MacMackin
     !  Date: January 2016
     !
@@ -505,29 +505,29 @@ contains
     ! all boundaries to 0 when multiplying a field by the Jacobian
     ! block.
     !
-    class(scalar_field), intent(in)                :: contents
+    class(scalar_field), intent(in)                 :: contents
       !! The field used to construct the Jacobian block
-    class(scalar_field), intent(in)                :: derivative
+    class(scalar_field), intent(in)                 :: derivative
       !! The first spatial derivative of the field used to construct
       !! the Jacobian block, in the direction specified
-    class(scalar_field), intent(in)                :: rhs
+    class(scalar_field), intent(in)                 :: rhs
       !! The scalar field representing the vector being multiplied
       !! by Jacobian
-    integer, dimension(:), allocatable, intent(in) :: boundary_locs
+    integer, dimension(:), allocatable, intent(in)  :: boundary_locs
       !! The locations in the raw representation of `rhs` containing
       !! the boundaries.
-    integer, dimension(:), allocatable, intent(in) :: boundary_types
+    integer, dimension(:), allocatable, intent(in)  :: boundary_types
       !! Integers specifying the type of boundary condition. The type
       !! of boundary condition corresponding to a given integer is
       !! specified in [[boundary_types_mod]]. Only Dirichlet and
       !! Neumann conditions are supported. The storage order must
       !! correspond to that of `boundary_locs`.
-    real(r8), dimension(:), allocatable            :: boundary_values
+    real(r8), dimension(:), allocatable, intent(out) :: boundary_values
       !! The values to go at the boundaries when multiplying a field
       !! by the Jacobian block. The storage order must be the same as
       !! for `boundary_locs`.
     allocate(boundary_values(size(boundary_locs)))
     boundary_values = 0._r8
-  end function jacobian_block_bounds
+  end subroutine jacobian_block_bounds
   
 end module jacobian_block_mod
