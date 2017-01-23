@@ -579,6 +579,7 @@ contains
 
     type(ice_shelf) :: delta_shelf
     type(cheb1d_scalar_field), dimension(2) :: vector, estimate
+    class(scalar_field), allocatable :: eta
     integer :: sl, el, su, eu
     integer :: i, elem
     integer, dimension(2) :: upper_type, lower_type
@@ -598,12 +599,12 @@ contains
     delta_shelf%thickness_size = this%thickness_size
     delta_shelf%velocity_size = this%velocity_size
     call delta_shelf%update(delta_state)
+    allocate(eta, source=this%viscosity_law%ice_viscosity(this%velocity, &
+                                       this%ice_temperature(), this%time))
     associate(h => this%thickness, u => this%velocity%component(1), &
               v => this%velocity%component(2), dh => delta_shelf%thickness, &
               chi => this%chi, du => delta_shelf%velocity%component(1), &
-              dv => delta_shelf%velocity%component(2), &
-              eta => this%viscosity_law%ice_viscosity(this%velocity, &
-                                   this%ice_temperature(), this%time))
+              dv => delta_shelf%velocity%component(2))
       if (this%jacobian_time < this%time) then
         sl = this%thickness_size - this%thickness_lower_bound_size + 1
         el = this%thickness_size
@@ -685,7 +686,8 @@ contains
       n = size(boundary_locs)
       allocate(boundary_values(n))
       !TODO: Make this general
-      boundary_values = [0._r8,this%thickness%get_element(boundary_locs(n))]
+      boundary_values = [0._r8,-this%thickness%get_element(boundary_locs(n))/ &
+                         eta%get_element(boundary_locs(n))*.25_r8*this%chi]
     end subroutine jacobian_bounds_2_1
   end function shelf_precondition
 
@@ -810,7 +812,7 @@ contains
     real(r8) :: dt
       !! The time-step to use
     associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
-              C => 1.0_r8)
+              C => 10.0_r8)
       associate(dx1 => dx%component(1))
         dt = minval(abs(C*dx1/u))
       end associate
