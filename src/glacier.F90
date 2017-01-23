@@ -38,6 +38,8 @@ module glacier_mod
   use factual_mod, only: scalar_field, vector_field
   use nitsol_mod!, only: nitsol, dummy_jacv, ddot, dnrm2
   use hdf5, only: hid_t
+  use penf, only: str
+  use logger_mod, only: logger => master_logger
   implicit none
   private
 
@@ -261,7 +263,7 @@ module glacier_mod
 contains
 
   subroutine glacier_integrate(this, old_states, basal_melt, basal_drag, &
-                               water_density, time)
+                               water_density, time, success)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -285,6 +287,9 @@ contains
       !! The density of the water below the glacier.
     real(r8), intent(in)                     :: time
       !! The time to which the glacier should be integrated
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+
     logical                                   :: first_call
     integer, save                             :: nval, kdmax = 20
     real(r8), dimension(:), allocatable       :: state
@@ -305,22 +310,33 @@ contains
     input = 0
     input(4) = kdmax
     input(5) = 1
-    !input(10) = 3
-    !etafixed = 0.8_r8
+    input(9) = -1
 
+#ifdef DEBUG
+    call logger%debug('glacier%integrate','Calling NITSOL (nonlinear solver)')
+#endif
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
-                1.e-6_r8, 1.e-6_r8, input, info, work, real_param, &
+                1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
                 int_param, flag, ddot, dnrm2)
+#ifdef DEBUG
+    call logger%debug('glacier%integrate','NITSOL required '//str(info(5))// &
+                      ' nonlinear iterations and '//str(info(1))//           &
+                      ' function calls.')
+#endif
+    print*,info(5),info(1)
 
     select case(flag)
     case(0)
-      !write(*,*) 'Integrated glacier to time', time
+      call logger%info('glacier%integrate', 'Integrated glacier to time '//str(time))
+      success = .true.
     case(1)
-      write(*,*) 'Reached maximum number of iterations integrating glacier'
-      error stop
+      call logger%error('glacier%integrate', 'Reached maximum number of'// &
+                        ' iterations integrating glacier')
+      success = .false.
     case default
-      write(*,*) 'NITSOL failed when integrating glacier with error code', flag
-      error stop
+      call logger%error('glacier%integrate', 'NITSOL failed when integrating'// &
+                        ' glacier with error code '//str(flag))
+      success = .false.
     end select
 
   contains

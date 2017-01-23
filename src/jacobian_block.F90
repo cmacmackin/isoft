@@ -35,6 +35,7 @@ module jacobian_block_mod
   use factual_mod, only: scalar_field, vector_field
   use boundary_types_mod, only: dirichlet, neumann
   use f95_lapack, only: la_gtsvx
+  use penf, only: str
   use logger_mod, only: logger => master_logger
   implicit none
   private
@@ -244,6 +245,9 @@ contains
     else
       this%get_boundaries => jacobian_block_bounds
     end if
+#ifdef DEBUG
+    call logger%debug('jacobian_block','Instantiated a Jacobian block object.')
+#endif
   end function constructor
 
   function jacobian_block_multiply(this, rhs) result(product)
@@ -285,6 +289,10 @@ contains
     do i = 1, size(this%boundary_locs)
       call product%set_element(this%boundary_locs(i), bounds(i))
     end do
+#ifdef DEBUG
+    call logger%debug('jacobian_block%multiply','Multiplied vector by '// &
+                      'Jacobian block.')
+#endif
   end function jacobian_block_multiply
 
   function jacobian_block_add(this, rhs) result(sum)
@@ -301,6 +309,9 @@ contains
     sum = this
     sum%scalar_increment = rhs
     sum%has_increment = .true.
+#ifdef DEBUG
+    call logger%debug('jacobian_block%add','Added scalar to a Jacobian block.')
+#endif
   end function jacobian_block_add
 
   function jacobian_block_solve(this, rhs) result(solution)
@@ -321,12 +332,6 @@ contains
     class(scalar_field), allocatable     :: solution
     real(r8), dimension(:), allocatable  :: sol_vector
 
-    character(len=52), parameter :: error_format = '("Tridiagonal matrix '// &
-         'solver returned with flag ",i5)'
-    character(len=77), parameter :: success_format = '("Tridiagonal matrix '// &
-         'solver returned with estimated condition number ",es8.5)'
-    integer, parameter                        :: error_len = 50, &
-                                                 success_len = 75
     integer                                   :: flag, n
     real(r8)                                  :: forward_err, &
                                                  backward_err, &
@@ -346,7 +351,9 @@ contains
     allocate(sol_vector(rhs%raw_size()))
     ! Construct tridiagonal matrix for this operation, if necessary
     if (.not. allocated(this%pivots)) then
-      call logger%debug('jacobian_block_solve','Constructing tridiagonal matrix.')
+#ifdef DEBUG
+      call logger%debug('jacobian_block%solve_for','Constructing tridiagonal matrix.')
+#endif
       factor = 'N'
       n = this%contents%raw_size()
       ! Try to use cached copy of inverse grid spacing, if available and suitable 
@@ -366,6 +373,10 @@ contains
           deallocate(cached_dx2_dc)
           deallocate(cached_dx2_ud)
         end if
+#ifdef DEBUG
+        call logger%debug('jacobian_block%solve_for','Calculating and caching '// &
+                         'grid spacings.')
+#endif
         allocate(cached_field_type, mold=this%contents)
         allocate(cached_dx_c(n))
         allocate(cached_dx2_uc(n-1))
@@ -438,8 +449,9 @@ contains
         this%sub_diagonal(n-1) = -2 * cont(n) * cached_dx2_dc(n-1) &
                                - deriv(n) * cached_dx_c(n)
       else
-        error stop('Currently no support for extra derivatives other than '// &
-                   'in the 1-direction')
+        call logger%fatal('jacobian_block%solve_for', 'Currently no support '// &
+                          'for extra derivatives other than in the 1-direction')
+        error stop
       end if
       ! Set the boundary conditions for this problem
       do i = 1, size(this%boundary_locs)
@@ -461,8 +473,9 @@ contains
             this%diagonal(pos) = 0._r8
           end if
         else
-          error stop ('Boundary condition of type other than Dirichlet '// &
-                      'or Neumann encountered.')
+          call logger%fatal('jacobian_block%solve_for','Boundary condition of '// &
+                            'type other than Dirichlet or Neumann encountered.')
+          error stop
         end if
       end do
       ! Allocate the arrays used to hold the factorisation of the
@@ -481,13 +494,14 @@ contains
                   factor, 'N', forward_err, backward_err, condition_num,      &
                   flag)
     if (flag/=0) then
-      allocate(character(len=error_len) :: msg)
-      write(msg,error_format) flag
-      call logger%error('jacobian_block_solve',msg)
+      msg = 'Tridiagonal matrix solver returned with flag '//str(flag)
+      call logger%error('jacobian_block%solve_for',msg)
     else
-      allocate(character(len=success_len) :: msg)
-      write(msg,success_format) condition_num
-      call logger%debug('jacobian_block_solve',msg)
+      msg = 'Tridiagonal matrix solver retunred with estimated condition '// &
+            'number '//str(condition_num)
+#ifdef DEBUG
+      call logger%debug('jacobian_block%solve_for',msg)
+#endif
     end if
     allocate(solution, mold=rhs)
     call solution%assign_meta_data(rhs)

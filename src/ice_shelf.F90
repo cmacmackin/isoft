@@ -46,6 +46,8 @@ module ice_shelf_mod
   use preconditioner_mod, only: preconditioner
   use hdf5
   use h5lt
+  use logger_mod, only: logger => master_logger
+  use penf, only: str
   implicit none
   private
 
@@ -239,6 +241,9 @@ contains
     this%time = 0.0_r8
     this%jacobian_time = -1._r8
     this%precondition_obj = preconditioner(1.e-3_r8, 10)
+#ifdef DEBUG
+    call logger%debug('ice_shelf','Instantiated new ice shelf object')
+#endif
   end function constructor
 
 !$  function shelf_dt(self,t)
@@ -381,6 +386,9 @@ contains
     class(ice_shelf), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
     allocate(thickness, source=this%thickness)
+#ifdef DEBUG
+    call logger%debug('ice_shelf%thickness','Returned ice shelf thickness')
+#endif    
   end function shelf_thickness
 
 
@@ -393,6 +401,9 @@ contains
     class(ice_shelf), intent(in)     :: this
     class(vector_field), allocatable :: velocity !! The ice velocity.
     allocate(velocity, source=this%velocity)
+#ifdef DEBUG
+    call logger%debug('ice_shelf%velocity','Returned ice shelf velocity')
+#endif    
   end function shelf_velocity
 
 
@@ -410,6 +421,10 @@ contains
     class(ice_shelf), intent(in) :: this
     real(r8)                     :: density !! The ice density.
     density = 1.0_r8/1.12_r8 !TODO: Will probably want to change this at some point
+#ifdef DEBUG
+    call logger%debug('ice_shelf%density','Ice shelf has '// &
+                      str(density))
+#endif
   end function shelf_density
 
 
@@ -423,6 +438,10 @@ contains
     class(ice_shelf), intent(in) :: this
     real(r8)                     :: temperature !! The ice density.
     temperature = -15.0_r8 !TODO: Will probably want to change this at some point.
+#ifdef DEBUG
+    call logger%debug('ice_shelf%temperature','Ice shelf has temperature '// &
+                      str(temperature))
+#endif
   end function shelf_temperature
 
 
@@ -520,9 +539,14 @@ contains
         residual(start:finish) = bounds(bounds_start:bounds_finish)
       end associate
     class default
-      error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
-                  'object as a previous state.')
+      call logger%fatal('ice_shelf%residual','Type other than `ice_shelf` '// &
+                        'passed to `ice_shelf` object as a previous state.')
+      error stop
     end select
+
+#ifdef DEBUG
+    call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
+#endif
   end function shelf_residual
 
 
@@ -543,6 +567,9 @@ contains
     call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
     i = 1 + this%thickness_size
     call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
+#ifdef DEBUG
+    call logger%debug('ice_shelf%update','Updated state of ice shelf.')
+#endif
   end subroutine shelf_update
 
 
@@ -650,6 +677,10 @@ contains
     
     preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
 
+#ifdef DEBUG
+    call logger%debug('ice_shelf%precondition','Applied preconditioner for ice shelf.')
+#endif
+
   contains
     
     subroutine jacobian_bounds_2_1(contents, derivative, rhs,     &
@@ -703,6 +734,10 @@ contains
     real(r8), intent(in)            :: time
       !! The time at which the glacier is in the present state.
     this%time = time
+#ifdef DEBUG
+    call logger%debug('ice_shelf%set_time','Updating time for ice shelf to '// &
+                      str(time))
+#endif
   end subroutine shelf_set_time
 
 
@@ -719,6 +754,10 @@ contains
     integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
     shelf_data_size = this%thickness_size + this%velocity_size
+#ifdef DEBUG
+    call logger%debug('ice_shelf%data_size','Ice shelf has '//                &
+                      str(shelf_data_size)//' elements in its state vector.')
+#endif
   end function shelf_data_size
 
 
@@ -733,6 +772,10 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice shelf.
     state_vector = [this%thickness%raw(),this%velocity%raw()]
+#ifdef DEBUG
+    call logger%debug('ice_shelf%state_vector','Returning state vector '// &
+                      'for ice shelf.')
+#endif
   end function shelf_state_vector
 
 
@@ -760,45 +803,49 @@ contains
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when creating HDF '// &
-                 'group', group_name
-      write(*,*) '         Data IO not performed for ice shelf'
+      call logger%warning('ice_shelf%write_data', 'Error code '//str(error)// &
+                          ' returned when creating HDF group "'//group_name//'"')
+      call logger%error('ice_shelf%write_data','Data IO not performed for '// &
+                        'ice shelf')
       return
     end if
 
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code', error,' returned when writing '// &
-                 'attribute to HDF group', group_name
-      write(*,*) '         Output file will have missing information'
+      call logger%warning('ice_shelf%write_data','Error code'//str(error)// &
+                          ' returned when writing attribute to HDF group'// &
+                          group_name)
       ret_err = error
     end if
 
     call this%thickness%write_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing ice '// &
-                 'shelf thickness field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
+                          ' returned when writing ice shelf thickness '//    &
+                          'field to HDF file')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%velocity%write_hdf(group_id, hdf_velocity, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing ice '// &
-                 'shelf velocity field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
+                          ' returned when writing ice shelf velocity '//     &
+                          'field to HDF file')
       if (ret_err == 0) ret_err = error
     end if
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when closing HDF '// &
-                 'group', group_name
-      write(*,*) '         Possible bad IO'
+      call logger%warning('ice_shelf%write_data','Error code'//str(error)// &
+                          ' returned when closing HDF group'//group_name)
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
+#ifdef DEBUG
+    call logger%debug('ice_shelf%write_data','Wrote ice shelf data to '// &
+                      'HDF group'//group_name)
+#endif
   end subroutine shelf_write_data
 
   function shelf_time_step(this) result(dt)
@@ -815,6 +862,8 @@ contains
               C => 10.0_r8)
       associate(dx1 => dx%component(1))
         dt = minval(abs(C*dx1/u))
+        call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
+                           str(dt)//' using Courant number of '//str(C))
       end associate
     end associate
   end function shelf_time_step

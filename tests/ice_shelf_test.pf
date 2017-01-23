@@ -34,12 +34,12 @@ module ice_shelf_test
   use nitsol_mod
   implicit none
 
-  integer, parameter :: resolution = 100
+  integer, parameter :: resolution = 200
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: chi_val = 4._r8
 
-  real(r8), parameter :: perturbation = 1.e-2_r8
+  real(r8), parameter :: perturbation = 1.e-4_r8
 
   @TestCase
   type, extends(testcase) :: test_shelf
@@ -263,6 +263,7 @@ contains
     real(r8), dimension(:), allocatable :: actual, expected
     integer :: i, steps
     type(cheb1d_scalar_field) :: melt, drag
+    logical :: success
     time = 1._r8
     dt = 0.5_r8 * (this%upper1 - this%lower1)/real(this%nodes,r8)
     steps = int(time/dt) + 1
@@ -273,7 +274,8 @@ contains
     time = 0._r8
     do i=1,steps
       time = time + dt
-      call this%shelf1%integrate([this%shelf1], melt, drag, 1._r8, time)
+      call this%shelf1%integrate([this%shelf1], melt, drag, 1._r8, time, success)
+      @assertTrue(success,message='Integration failed.')
     end do
     expected = this%shelf3%state_vector()
     actual = this%shelf1%state_vector()
@@ -290,25 +292,28 @@ contains
     integer :: i, steps
     type(ice_shelf) :: old_shelf
     type(cheb1d_scalar_field) :: melt, drag
+    logical :: success
     time = 4._r8
-    t = 10 * this%shelf4%time_step()
+    t = 0.1 * this%shelf4%time_step()
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    iplvl = 2
+    iplvl = 4
     do while(t < time)
-      print*,t
-      print*,'***************************************************************************'
+      !print*,t
+      !print*,'***************************************************************************'
       old_shelf = this%shelf4
-      call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, t)
-      t = t + 10*this%shelf4%time_step()
+      call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, t, success)
+      @assertTrue(success,message='Integration of shelf failed.')
+      t = t + 0.1*this%shelf4%time_step()
     end do
     old_shelf = this%shelf4
-    call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time)
+    call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time, success)
+    @assertTrue(success,message='Integration of shelf failed.')
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
-    @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=1.e-4_r8)
+    @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-6_r8)
     iplvl = 0
   end subroutine test_integrate
 
