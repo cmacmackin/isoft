@@ -24,6 +24,7 @@ module ice_shelf_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
   use test_utils, only: test_field
+  use penf, only: str
   use ice_shelf_mod, only: ice_shelf
   use factual_mod, only: abstract_field, scalar_field, vector_field, &
                          cheb1d_scalar_field, cheb1d_vector_field
@@ -34,12 +35,12 @@ module ice_shelf_test
   use nitsol_mod
   implicit none
 
-  integer, parameter :: resolution = 200
+  integer, parameter :: resolution = 100
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: chi_val = 4._r8
 
-  real(r8), parameter :: perturbation = 1.e-4_r8
+  real(r8), parameter :: perturbation = 2.e-1_r8
 
   @TestCase
   type, extends(testcase) :: test_shelf
@@ -72,8 +73,9 @@ contains
   pure function thickness3(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    thickness = (1._r8 + perturbation*cos(2*location(1)/big_x)) &
+    thickness = (1._r8 + perturbation*sin(5*location(1)/big_x)) &
               * thickness1(location)
+    !thickness = 1.0_r8 - lambda_d*location(1)
   end function thickness3
 
   pure function velocity1(location) result(velocity)
@@ -95,7 +97,7 @@ contains
     real(r8), dimension(:), intent(in)  :: location
     real(r8), dimension(:), allocatable :: velocity
     allocate(velocity(1))
-    velocity = (1._r8 + perturbation*sin(2*location(1)/big_x)) &
+    velocity = (1._r8 + perturbation*sin(5*location(1)/big_x)) &
              * velocity1(location)
   end function velocity3
 
@@ -286,35 +288,44 @@ contains
   subroutine test_integrate(this)
     !! Tests that an ice shelf perturbed from the steady state will
     !! evolve back to it
+    use hdf5
     class(test_shelf), intent(inout) :: this
     real(r8) :: t, time
     real(r8), dimension(:), allocatable :: actual, expected
-    integer :: i, steps
+    integer :: i, steps, herr
     type(ice_shelf) :: old_shelf
     type(cheb1d_scalar_field) :: melt, drag
     logical :: success
-    time = 4._r8
-    t = 0.1 * this%shelf4%time_step()
+    integer(hid_t) :: hfile, hgroup
+    call h5open_f(herr)
+    call h5fcreate_f('ice_shelf.h5', H5F_ACC_TRUNC_F, hfile, herr)
+    time = 3._r8
+    t = 10 * this%shelf4%time_step()
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
-    iplvl = 4
+    iplvl = 0
+    i = -1
     do while(t < time)
-      !print*,t
+      print*,t
       !print*,'***************************************************************************'
+      i = i + 1
+      call this%shelf4%write_data(hfile,'shelf'//str(i),herr)
       old_shelf = this%shelf4
       call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, t, success)
       @assertTrue(success,message='Integration of shelf failed.')
-      t = t + 0.1*this%shelf4%time_step()
+      t = t + 10*this%shelf4%time_step()
     end do
     old_shelf = this%shelf4
     call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time, success)
+    call this%shelf4%write_data(hfile,'shelf'//str(i+1),herr)
     @assertTrue(success,message='Integration of shelf failed.')
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
     @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-6_r8)
     iplvl = 0
+    call h5fclose_f(hfile , herr)
   end subroutine test_integrate
 
 end module ice_shelf_test

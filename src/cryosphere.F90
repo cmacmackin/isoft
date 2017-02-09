@@ -134,6 +134,7 @@ contains
     real(r8), intent(in)             :: time
       !! The time to which to integrate the cryosphere
     logical, save :: first_call = .true.
+    logical :: success
 
     ! Normally the plume should be solved at the end of the previous
     ! iteration, but in the first iteration obviously there hasn't
@@ -154,7 +155,7 @@ contains
     ! too smart for its own good with its optimisations, though.
     call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), &
                             this%sub_ice%basal_drag_parameter(),  &
-                            this%sub_ice%water_density(), time)
+                            this%sub_ice%water_density(), time, success)
 
     ! Solve the plume so that it is ready for use in the next step of
     ! the time integration.

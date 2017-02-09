@@ -36,7 +36,7 @@ LIBDIR := $(PREFIX)/lib
 INCDIR := $(PREFIX)/include 
 BINDIR := $(PREFIX)/bin
 
-BLAS := openblas
+BLAS := blas
 
 # Include paths internal to project
 PROJECT_INCDIRS := $(FMDIR) $(TDIR)
@@ -52,8 +52,8 @@ ifeq ($(VENDOR_),intel)
   COVFLAGS := 
 else
   F90      := gfortran-6
-  FCFLAGS  := -O0 -g -fcheck=all -DDEBUG -cpp -J$(MDIR)# -ffpe-trap=invalid,zero,overflow,underflow,denormal
-  LDFLAGS  := -O0 -g
+  FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR)  #-ffpe-trap=underflow,denormal
+  LDFLAGS  := -O0 -g -pg
   COVFLAGS := -fprofile-arcs -ftest-coverage 
 endif
 
@@ -62,12 +62,12 @@ FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
 LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -llapack95 -lhdf5_fortran -lhdf5hl_fortran -lflogging \
-        -l$(BLAS) -llapack
+        -l$(BLAS) -llapack -lpenf
 LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
-EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5|f95_lapack|logger_mod$$
+EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5|f95_lapack|logger_mod|penf$$
 
 # Extensions of Fortran files, case insensitive
 F_EXT := f for fpp f90 f95 f03 f08 f15
@@ -109,7 +109,7 @@ tests: $(TEXEC)
 
 $(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
 	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 $(COVFLAGS) \
-		$(FCFLAGS) $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
+		$(FCFLAGS)  $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
 	@echo $(META_OBJ)

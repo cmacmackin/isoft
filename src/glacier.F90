@@ -311,6 +311,8 @@ contains
     input(4) = kdmax
     input(5) = 1
     input(9) = -1
+    input(10) = 3
+    etafixed = 0.3_r8
 
 #ifdef DEBUG
     call logger%debug('glacier%integrate','Calling NITSOL (nonlinear solver)')
@@ -318,12 +320,20 @@ contains
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
                 1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
                 int_param, flag, ddot, dnrm2)
+!!$    if (flag == 6 .and. input(9) > -1) then
+!!$      input(9) = -1
+!!$      call logger%trivia('glacier%integrate','Backtracking failed in NITSOL '// &
+!!$                         'at simulation time '//str(time)//'. Trying again '//  &
+!!$                         'without backtracking.')
+!!$      call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
+!!$                  1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
+!!$                  int_param, flag, ddot, dnrm2)
+!!$    end if
 #ifdef DEBUG
     call logger%debug('glacier%integrate','NITSOL required '//str(info(5))// &
                       ' nonlinear iterations and '//str(info(1))//           &
                       ' function calls.')
 #endif
-    print*,info(5),info(1)
 
     select case(flag)
     case(0)
