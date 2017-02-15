@@ -77,6 +77,12 @@ module glacier_mod
       !! Writes the data describing the glacier to the disc as an HDF5 file.
     procedure(t_step), deferred       :: time_step
       !! Calculates the appropriate time step for integration.
+    procedure(assign_ice), private, deferred :: assign
+      !! Copies the data from one glacier into another. This is only
+      !! needed due to a bug in gfortran which means that the
+      !! intrinsic assignment for glacier types is not using the
+      !! appropriate defined assignment for the field components.
+    generic                           :: assignment(=) => assign
     procedure                         :: integrate => glacier_integrate
       !! Performs a time-step of the integration, taking the state of
       !! the glacier to the specified time using the provided
@@ -216,6 +222,12 @@ module glacier_mod
         !! A time step which will allow integration of the ice shelf
         !! without causing numerical instability.
     end function t_step
+
+    subroutine assign_ice(this, rhs)
+      import :: glacier
+      class(glacier), intent(out) :: this
+      class(glacier), intent(in)  :: rhs
+    end subroutine assign_ice
   end interface
  
 #ifdef DEBUG
@@ -300,6 +312,8 @@ contains
     integer, dimension(1)                     :: int_param
     integer                                   :: flag
 
+    call basal_melt%guard_temp(); call basal_drag%guard_temp()
+
     first_call = .true.
     if (.not. allocated(work)) then
       nval = this%data_size()
@@ -348,6 +362,8 @@ contains
                         ' glacier with error code '//str(flag))
       success = .false.
     end select
+
+    call basal_melt%clean_temp(); call basal_drag%clean_temp()
 
   contains
     

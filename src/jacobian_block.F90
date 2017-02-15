@@ -170,8 +170,10 @@ module jacobian_block_mod
     private
     procedure :: jacobian_block_multiply
     procedure :: jacobian_block_add
+    procedure :: jacobian_block_assign
     generic, public :: operator(*) => jacobian_block_multiply
     generic, public :: operator(+) => jacobian_block_add
+    generic, public :: assignment(=) => jacobian_block_assign
     procedure, public :: solve_for => jacobian_block_solve
   end type jacobian_block
 
@@ -224,10 +226,12 @@ contains
       !! that of `boundary_locs`.
     type(jacobian_block)                        :: this
       !! A new Jacobian block
-    allocate(this%contents, source=source_field)
-    allocate(this%derivative, mold=this%contents)
-    this%direction = direction
+    call source_field%guard_temp()
+    call source_field%allocate_scalar_field(this%contents)
+    call source_field%allocate_scalar_field(this%derivative)
+    this%contents = source_field
     this%derivative = this%contents%d_dx(this%direction)
+    this%direction = direction
     if (present(extra_derivative)) this%extra_derivative = extra_derivative
     if (present(boundary_locs)) then
       this%boundary_locs = boundary_locs
@@ -245,9 +249,12 @@ contains
     else
       this%get_boundaries => jacobian_block_bounds
     end if
+    call source_field%clean_temp()
 #ifdef DEBUG
     call logger%debug('jacobian_block','Instantiated a Jacobian block object.')
 #endif
+    call this%contents%set_temp()
+    call this%derivative%set_temp()
   end function constructor
 
   function jacobian_block_multiply(this, rhs) result(product)
@@ -265,7 +272,8 @@ contains
     class(scalar_field), allocatable  :: tmp
     real(r8), dimension(:), allocatable :: bounds
     integer :: i
-    allocate(product, mold=this%contents)
+    call rhs%guard_temp()
+    call this%contents%allocate_scalar_field(product)
     if (this%extra_derivative==no_extra_derivative) then
       if (this%has_increment) then
         product = (this%derivative + this%scalar_increment) * rhs &
@@ -289,6 +297,8 @@ contains
     do i = 1, size(this%boundary_locs)
       call product%set_element(this%boundary_locs(i), bounds(i))
     end do
+    call rhs%clean_temp()
+    call product%set_temp()
 #ifdef DEBUG
     call logger%debug('jacobian_block%multiply','Multiplied vector by '// &
                       'Jacobian block.')
@@ -307,12 +317,46 @@ contains
       !! A scalar which should be added to this block
     type(jacobian_block)              :: sum
     sum = this
+    call sum%contents%set_temp()
+    call sum%derivative%set_temp()
     sum%scalar_increment = rhs
     sum%has_increment = .true.
 #ifdef DEBUG
     call logger%debug('jacobian_block%add','Added scalar to a Jacobian block.')
 #endif
   end function jacobian_block_add
+
+  subroutine jacobian_block_assign(this, rhs)
+    !* Author: Chris MacMackin 
+    !  Date: December 2016
+    !
+    ! Copies the contents of the `rhs` Jacobian block into this
+    ! one. It will safely deallocate any data necessary.
+    !
+    class(jacobian_block), intent(out) :: this
+    type(jacobian_block), intent(in)   :: rhs
+    this%direction = rhs%direction
+    this%extra_derivative = rhs%extra_derivative
+    allocate(this%contents, mold=rhs%contents)
+    allocate(this%derivative, mold=rhs%derivative)
+    this%contents = rhs%contents
+    this%derivative = rhs%derivative
+    this%get_boundaries => rhs%get_boundaries
+    if (allocated(rhs%diagonal)) then
+      this%diagonal = rhs%diagonal
+      this%super_diagonal = rhs%super_diagonal
+      this%sub_diagonal = rhs%sub_diagonal
+      this%l_multipliers = rhs%l_multipliers
+      this%u_diagonal = rhs%u_diagonal
+      this%u_superdiagonal1 = rhs%u_superdiagonal1
+      this%u_superdiagonal2 = rhs%u_superdiagonal2
+      this%pivots = rhs%pivots
+    end if
+    if (allocated(rhs%boundary_locs)) this%boundary_locs = rhs%boundary_locs
+    if (allocated(rhs%boundary_types)) this%boundary_types = rhs%boundary_types
+    this%scalar_increment = rhs%scalar_increment
+    this%has_increment = rhs%has_increment
+  end subroutine jacobian_block_assign
 
   function jacobian_block_solve(this, rhs) result(solution)
     !* Author: Chris MacMackin
@@ -347,7 +391,8 @@ contains
                                                  cached_dx2_dc
     real(r8), dimension(:), allocatable       :: cont, deriv
     integer                                   :: i, pos
-    
+
+    call rhs%guard_temp()
     allocate(sol_vector(rhs%raw_size()))
     ! Construct tridiagonal matrix for this operation, if necessary
     if (.not. allocated(this%pivots)) then
@@ -506,6 +551,8 @@ contains
     allocate(solution, mold=rhs)
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
+    call rhs%clean_temp()
+    call solution%set_temp()
   end function jacobian_block_solve
 
   subroutine jacobian_block_bounds(contents, derivative, rhs,   &

@@ -41,6 +41,7 @@ module ice_sheet_mod
   use viscosity_mod, only: abstract_viscosity
   use jacobian_block_mod, only: jacobian_block
   use hdf5
+  use logger_mod, only: logger => master_logger
   implicit none
   private
 
@@ -87,6 +88,7 @@ module ice_sheet_mod
     procedure :: state_vector => sheet_state_vector
     procedure :: write_data => sheet_write_data
     procedure :: time_step => sheet_time_step
+    procedure, private :: assign => sheet_assign
   end type ice_sheet
 
   interface ice_sheet
@@ -452,5 +454,39 @@ contains
     real(r8) :: dt
       !! The time-step to use
   end function sheet_time_step
+
+  subroutine sheet_assign(this, rhs)
+    !* Author: Chris MacMackin
+    !  Date: February 2017
+    !
+    ! Copies the data from one ice sheet into another. This is only
+    ! needed due to a bug in gfortran which means that the intrinsic
+    ! assignment for glacier types is not using the appropriate
+    ! defined assignment for the field components.
+    !
+    ! It does not assign the Jacobian object as it would take up quite
+    ! a bit of extra space and it is unlikely that it would ever be
+    ! needed without first having to be recalculated.
+    !
+    class(ice_sheet), intent(out) :: this
+    class(glacier), intent(in)    :: rhs
+      !! The ice sheet to be assigned to this one.
+    select type(rhs)
+    class is(ice_sheet)
+      this%thickness = rhs%thickness
+      this%velocity = rhs%velocity
+      this%lambda = rhs%lambda
+      this%chi = rhs%chi
+      allocate(this%viscosity_law, source=rhs%viscosity_law)
+      this%time = rhs%time
+    class default
+      call logger%fatal('ice_sheet%assign','Type other than `ice_sheet` '// &
+                        'requested to be assigned.')
+      error stop
+    end select
+#ifdef DEBUG
+    call logger%debug('ice_sheet%assign','Copied ice sheet data.')
+#endif
+  end subroutine sheet_assign
 
 end module ice_sheet_mod

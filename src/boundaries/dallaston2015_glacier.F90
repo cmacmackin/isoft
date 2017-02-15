@@ -206,19 +206,21 @@ contains
                                         velocity_bound_upper, &
                                         velocity_deriv
     class(vector_field), allocatable :: velocity_bound_lower
+    call thickness%guard_temp(); call velocity%guard_temp(); call viscosity%guard_temp()
+    call thickness%allocate_scalar_field(thickness_bound)
+    thickness_bound = thickness%get_boundary(-1,1) - this%thickness
+    call velocity%allocate_vector_field(velocity_bound_lower)
+    velocity_bound_lower = velocity%get_boundary(-1,1) - [this%velocity]
     call velocity%allocate_scalar_field(velocity_deriv)
     velocity_deriv = velocity%component_d_dx(1,1)
-    allocate(thickness_bound, &
-             source=(thickness%get_boundary(-1,1) - this%thickness))
-    allocate(velocity_bound_lower, &
-             source=(velocity%get_boundary(-1,1) - [this%velocity]))
-    allocate(velocity_bound_upper, &
-             source=(velocity_deriv%get_boundary(1,1)  &
-                    *thickness%get_boundary(1,1)       &
-                    - 0.25_r8*this%chi*thickness%get_boundary(1,1)**2 &
-                      /viscosity%get_boundary(1,1)))
+    call velocity%allocate_scalar_field(velocity_bound_upper)
+    velocity_bound_upper = velocity_deriv%get_boundary(1,1)  &
+                         * thickness%get_boundary(1,1)       &
+                         - (0.25_r8*this%chi)*thickness%get_boundary(1,1)**2 &
+                         / viscosity%get_boundary(1,1)
     residuals = [thickness_bound%raw(), velocity_bound_lower%raw(), &
                  velocity_bound_upper%raw()]
+    call thickness%clean_temp(); call velocity%clean_temp(); call viscosity%clean_temp()
   end function dallaston2015_residuals
 
 end module dallaston2015_glacier_boundary_mod

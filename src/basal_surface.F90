@@ -195,6 +195,7 @@ contains
     integer, dimension(1)                     :: int_param
     integer                                   :: flag
 
+    call ice_thickness%guard_temp()
     first_call = .true.
     if (.not. allocated(work)) then
       nval = this%data_size()
@@ -219,6 +220,7 @@ contains
       write(*,*) 'NITSOL failed when solving plume with error code', flag
       error stop
     end select
+    call ice_thickness%clean_temp()
 
   contains
 

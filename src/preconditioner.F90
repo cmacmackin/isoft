@@ -130,6 +130,7 @@ contains
     character(len=msg_len)                         :: msg
     
     call logger%debug('preconditioner_apply','Entering function `precondition`.')
+    call vector%guard_temp(); call estimate%guard_temp()
     n = size(vector)
     allocate(prev_estimate(n), mold=estimate)
     allocate(tmp_field, mold=vector(1))
@@ -182,6 +183,7 @@ contains
         write(msg,success_format) max_err, i
         call logger%debug('preconditioner_apply',msg)
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
+        call vector%clean_temp(); call estimate%clean_temp()
         return
       end if
       if (i > 1 .and. old_max_err <= max_err) then
@@ -189,12 +191,14 @@ contains
                          'Iterations diverging. Exiting and returning previous iterate.')
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
         estimate = prev_estimate
+        call vector%clean_temp(); call estimate%clean_temp()
         return
       end if
       old_max_err = max_err
     end do
     write(msg,failure_format) this%max_iterations, max_err
     call logger%error('preconditioner_apply',msg)
+    call vector%clean_temp(); call estimate%clean_temp()
     call logger%debug('preconditioner_apply','Exiting function `precondition`.')
   end subroutine preconditioner_apply
   

@@ -114,6 +114,7 @@ module plume_mod
     integer :: salinity_size
       !! the number of data values in the salinity field
   contains
+    procedure :: initialise => plume_initialise
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
     procedure :: water_density => plume_water_density
@@ -125,10 +126,6 @@ module plume_mod
     procedure :: write_data => plume_write_data
   end type plume
 
-  interface plume
-    module procedure constructor
-  end interface plume
-public :: constructor
 
   abstract interface
      
@@ -175,10 +172,10 @@ public :: constructor
 
 contains
 
-  function constructor(domain, resolution, thickness, velocity, temperature, &
-                       salinity, entrainment_formulation, melt_formulation,  &
-                       ambient_conds, eos, boundaries, delta, nu, mu,        &
-                       epsilon, r_val) result(this)
+  subroutine plume_initialise(this, domain, resolution, thickness, velocity,    &
+                              temperature, salinity, entrainment_formulation,   &
+                              melt_formulation, ambient_conds, eos, boundaries, &
+                              delta, nu, mu, epsilon, r_val)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -187,6 +184,9 @@ contains
     ! supported. If information is provided for higher dimensions then
     ! it will be ignored.
     !
+    class(plume), intent(out)            :: this
+      !! A plume object with its domain and initial conditions set according
+      !! to the arguments of the constructor function.
     real(r8), dimension(:,:), intent(in) :: domain
       !! An array containing the upper and lower limits of the domain for
       !! the plume. The first index represents the dimension for which the
@@ -256,9 +256,6 @@ contains
     real(r8), optional, intent(in)       :: r_val
       !! The dimensionless ratio of the water density to the ice shelf
       !! density, \( r = \rho_0/\rho_i. \) Defaults to 1.12.
-    type(plume) :: this
-      !! A plume object with its domain and initial conditions set according
-      !! to the arguments of the constructor function.
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
     this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
     this%temperature = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
@@ -318,7 +315,7 @@ contains
       this%r_val = 1.12_r8
     end if
     this%time = 0.0_r8
-  end function constructor
+  end subroutine plume_initialise
 
 
   function plume_melt(this) result(melt)
@@ -332,6 +329,7 @@ contains
     class(scalar_field), allocatable :: melt
       !! The melt rate at the base of the ice shelf.
     allocate(melt, source=this%melt_formulation%melt_rate())
+    call melt%set_temp()
   end function plume_melt
 
 
@@ -350,6 +348,7 @@ contains
       !! The melt rate at the base of the ice sheet.
     allocate(uniform_scalar_field :: drag)
     drag = uniform_scalar_field(0.0_r8)
+    call drag%set_temp()
   end function plume_drag_parameter
 
 
@@ -396,8 +395,11 @@ contains
       !! The residual of the system of equations describing the plume.
     type(cheb1d_scalar_field) :: scalar_tmp
     type(cheb1d_vector_field) :: vector_tmp
+    type(cheb1d_scalar_field) :: b, U, m, rho, e, S_a, T_a, rho_a
     integer :: start, finish
     integer, dimension(:), allocatable :: lower, upper
+    
+    call ice_thickness%guard_temp()
 
     allocate(residual(this%data_size()))
     call this%melt_formulation%solve_for_melt(this%velocity, ice_thickness/this%r_val, &
@@ -407,77 +409,84 @@ contains
 
     ! Use same or similar notation for variables as used in equations
     associate(D => this%thickness, Uvec => this%velocity, &
-              U => this%velocity%component(1), S => this%salinity, &
-              T => this%temperature, m => this%melt_formulation%melt_rate(), &
-              mf => this%melt_formulation, h => ice_thickness, &
-              rho => this%eos%water_density(this%temperature, this%salinity), &
+              S => this%salinity, &
+              T => this%temperature, &
+              mf => this%melt_formulation, h => ice_thickness, &              
               delta => this%delta, nu => this%nu, mu => this%mu, &
               epsilon => this%epsilon, r => this%r_val)
-      associate(e => this%entrainment_formulation%entrainment_rate(this%velocity, &
-                                                     this%thickness,-h/r,this%time), &
-                S_a => this%ambient_conds%ambient_salinity(-h/r,this%time), &
-                T_a => this%ambient_conds%ambient_temperature(-h/r,this%time))
-        associate(rho_a => this%eos%water_density(T_a, S_a))
 
-          ! Continuity equation
-          scalar_tmp = e + epsilon*m - .div.(D*Uvec)
+      b = -h/r
+      U = this%velocity%component(1)
+      m = this%melt_formulation%melt_rate()
+      rho = this%eos%water_density(this%temperature, this%salinity)
+      e = this%entrainment_formulation%entrainment_rate(this%velocity, this%thickness, &
+                                                        b,this%time)
+      call S_a%assign_meta_data(m)
+      call T_a%assign_meta_data(m)
+      call rho_a%assign_meta_data(m)
+      S_a = this%ambient_conds%ambient_salinity(b,this%time)
+      T_a = this%ambient_conds%ambient_temperature(b,this%time)
+      rho_a = this%eos%water_density(T_a, S_a)
 
-          lower = this%boundaries%thickness_lower_bound()
-          upper = this%boundaries%thickness_upper_bound()
-          finish = start + scalar_tmp%raw_size(lower,upper) - 1
-          residual(start:finish) = scalar_tmp%raw(lower,upper)
-          start = finish + 1
+      ! Continuity equation
+      scalar_tmp = e + epsilon*m - .div.(D*Uvec)
 
-          ! Momentum equation, x-component
-          scalar_tmp = .div.(D*.grad.U) ! Needed due to stupid
-                                        ! compiler issue. Works when
-                                        ! tested with trunk.
-          scalar_tmp = scalar_tmp*nu + &
-                       D*(rho_a - rho)*(this%delta*D%d_dx(1) - h%d_dx(1)/r) &
-                       - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
-                       - .div.(D*Uvec*U)
+      lower = this%boundaries%thickness_lower_bound()
+      upper = this%boundaries%thickness_upper_bound()
+      finish = start + scalar_tmp%raw_size(lower,upper) - 1
+      residual(start:finish) = scalar_tmp%raw(lower,upper)
+      start = finish + 1
 
-          lower = this%boundaries%velocity_lower_bound()
-          upper = this%boundaries%velocity_upper_bound()
-          finish = start + scalar_tmp%raw_size(lower,upper) - 1
-          residual(start:finish) = scalar_tmp%raw(lower,upper)
-          start = finish + 1
+      ! Momentum equation, x-component
+      scalar_tmp = .div.(D*.grad.U) ! Needed due to stupid
+                                    ! compiler issue. Works when
+                                    ! tested with trunk.
+      scalar_tmp = scalar_tmp*nu + &
+                   D*(rho_a - rho)*(this%delta*D%d_dx(1) - b%d_dx(1)) &
+                   - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
+                   - .div.(D*Uvec*U)
 
-          ! Salinity equation
-          scalar_tmp = .div.(D*.grad.S)
-          if (mf%has_salt_terms()) then
-            scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
-                       - .div.(D*Uvec*S)
-          else
-            scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*S)
-          end if
+      lower = this%boundaries%velocity_lower_bound()
+      upper = this%boundaries%velocity_upper_bound()
+      finish = start + scalar_tmp%raw_size(lower,upper) - 1
+      residual(start:finish) = scalar_tmp%raw(lower,upper)
+      start = finish + 1
 
-          lower = this%boundaries%salinity_lower_bound()
-          upper = this%boundaries%salinity_upper_bound()
-          finish = start + scalar_tmp%raw_size(lower,upper) - 1
-          residual(start:finish) = scalar_tmp%raw(lower,upper)
-          start = finish + 1
+      ! Salinity equation
+      scalar_tmp = .div.(D*.grad.S)
+      if (mf%has_salt_terms()) then
+        scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
+                   - .div.(D*Uvec*S)
+      else
+        scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*S)
+      end if
 
-          ! Temperature equation
-          scalar_tmp = D*T
-          scalar_tmp = .div.(D*.grad.T)
-          if (mf%has_heat_terms()) then
-            scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &
-                       - .div.(D*Uvec*T)
-          else
-            scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
-          end if
+      lower = this%boundaries%salinity_lower_bound()
+      upper = this%boundaries%salinity_upper_bound()
+      finish = start + scalar_tmp%raw_size(lower,upper) - 1
+      residual(start:finish) = scalar_tmp%raw(lower,upper)
+      start = finish + 1
 
-          lower = this%boundaries%temperature_lower_bound()
-          upper = this%boundaries%temperature_upper_bound()
-          finish = start + scalar_tmp%raw_size(lower,upper) - 1
-          residual(start:finish) = scalar_tmp%raw(lower,upper)
+      ! Temperature equation
+      scalar_tmp = D*T
+      scalar_tmp = .div.(D*.grad.T)
+      if (mf%has_heat_terms()) then
+        scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &
+                   - .div.(D*Uvec*T)
+      else
+        scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
+      end if
 
-          ! Boundary conditions
-          residual(finish+1:) = this%boundaries%boundary_residuals(D,Uvec,T,S,this%time)
-        end associate
-      end associate
+      lower = this%boundaries%temperature_lower_bound()
+      upper = this%boundaries%temperature_upper_bound()
+      finish = start + scalar_tmp%raw_size(lower,upper) - 1
+      residual(start:finish) = scalar_tmp%raw(lower,upper)
+
+      ! Boundary conditions
+      residual(finish+1:) = this%boundaries%boundary_residuals(D,Uvec,T,S,this%time)
     end associate
+
+    call ice_thickness%clean_temp()
   end function plume_residual
 
 

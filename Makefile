@@ -58,7 +58,7 @@ else
 endif
 
 # Include paths
-FCFLAGS += $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
+FCFLAGS += -I$(MDIR) $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
 
 # Libraries for use at link-time
 LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -llapack95 -lhdf5_fortran -lhdf5hl_fortran -lflogging \
@@ -67,7 +67,7 @@ LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
-EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|h5lt|hdf5|f95_lapack|logger_mod|penf$$
+EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|array_pointer_mod|h5lt|hdf5|f95_lapack|logger_mod|penf$$
 
 # Extensions of Fortran files, case insensitive
 F_EXT := f for fpp f90 f95 f03 f08 f15
@@ -89,12 +89,12 @@ META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)
 
 #OBJS := $(filter-out $(META_OBJ), $(OBJS))
 
-#.PHONEY: $(META_FILE)
+.PRECIOUS: %.F90
 
 # "make" builds all
 all: all_objects tests
 
-all_objects: $(OBJS)
+all_objects: clean_src_mod $(OBJS)
 
 exec: $(EXEC) 
 
@@ -109,13 +109,13 @@ tests: $(TEXEC)
 
 $(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
 	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 $(COVFLAGS) \
-		$(FCFLAGS)  $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
+		$(FCFLAGS) $^ isoft.a $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
 	@echo $(META_OBJ)
 	@echo $(SRCS)
 
-$(LIB): $(OBJS)
+$(LIB): clean_src_mod $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
 install_lib: lib
@@ -177,6 +177,9 @@ clean_exec:
 clean_backups:
 	@echo Deleting emacs backup files
 	@/bin/rm -rf $(shell find '.' -name '*~') $(shell find '.' -name '\#*\#')
+
+clean_src_mod:
+	/bin/rm -rf $(SDIR)/*.mod
 
 doc: documentation.md
 	ford $<

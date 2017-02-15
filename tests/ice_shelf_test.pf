@@ -35,7 +35,7 @@ module ice_shelf_test
   use nitsol_mod
   implicit none
 
-  integer, parameter :: resolution = 100
+  integer, parameter :: resolution = 50
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: chi_val = 4._r8
@@ -112,13 +112,13 @@ contains
     domain1(1,2) = this%upper1
     domain2(1,1) = this%lower2
     domain2(1,2) = this%upper2
-    this%shelf1 = ice_shelf(domain1, [this%nodes], thickness1, velocity1, &
+    call this%shelf1%initialise(domain1, [this%nodes], thickness1, velocity1, &
                             this%temperature, visc, bound, this%lambda, this%chi)
-    this%shelf2 = ice_shelf(domain2, [this%nodes], thickness2, velocity2)
+    call this%shelf2%initialise(domain2, [this%nodes], thickness2, velocity2)
     this%shelf3 = this%shelf1
     allocate(visc, source=newtonian_viscosity(1.0_r8))
     allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
-    this%shelf4 = ice_shelf(domain1, [this%nodes], thickness3, velocity3, &
+    call this%shelf4%initialise(domain1, [this%nodes], thickness3, velocity3, &
                             this%temperature, visc, bound, this%lambda, this%chi)
     call this%shelf3%set_time(1.0_r8)
   end subroutine setup
@@ -261,6 +261,7 @@ contains
   subroutine test_integrate_steady(this)
     !! Tests that an ice shelf at the steady state will remain there
     class(test_shelf), intent(inout) :: this
+    type(ice_shelf), dimension(1) :: shelf_array
     real(r8) :: dt, time
     real(r8), dimension(:), allocatable :: actual, expected
     integer :: i, steps
@@ -276,7 +277,8 @@ contains
     time = 0._r8
     do i=1,steps
       time = time + dt
-      call this%shelf1%integrate([this%shelf1], melt, drag, 1._r8, time, success)
+      shelf_array(1) = this%shelf1
+      call this%shelf1%integrate(shelf_array, melt, drag, 1._r8, time, success)
       @assertTrue(success,message='Integration failed.')
     end do
     expected = this%shelf3%state_vector()
@@ -290,10 +292,10 @@ contains
     !! evolve back to it
     use hdf5
     class(test_shelf), intent(inout) :: this
+    type(ice_shelf), dimension(1) :: shelf_array
     real(r8) :: t, time
     real(r8), dimension(:), allocatable :: actual, expected
     integer :: i, steps, herr
-    type(ice_shelf) :: old_shelf
     type(cheb1d_scalar_field) :: melt, drag
     logical :: success
     integer(hid_t) :: hfile, hgroup
@@ -312,13 +314,13 @@ contains
       !print*,'***************************************************************************'
       i = i + 1
       call this%shelf4%write_data(hfile,'shelf'//str(i),herr)
-      old_shelf = this%shelf4
-      call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, t, success)
+      shelf_array(1) = this%shelf4
+      call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, t, success)
       @assertTrue(success,message='Integration of shelf failed.')
       t = t + 10*this%shelf4%time_step()
     end do
-    old_shelf = this%shelf4
-    call this%shelf4%integrate([this%shelf4], melt, drag, 1._r8, time, success)
+    shelf_array(1) = this%shelf4
+    call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, time, success)
     call this%shelf4%write_data(hfile,'shelf'//str(i+1),herr)
     @assertTrue(success,message='Integration of shelf failed.')
     expected = this%shelf1%state_vector()

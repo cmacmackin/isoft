@@ -108,9 +108,12 @@ contains
       !! A field containing the salinity of the water
     class(scalar_field), allocatable :: density
       !! A field containing the density of the water
+    call temperature%guard_temp(); call salinity%guard_temp()
     call salinity%allocate_scalar_field(density)
     density = this%ref_rho * (1.0_r8 - this%beta_t*(temperature - this%ref_t) &
                                      + this%beta_s*(salinity - this%ref_s))
+    call temperature%clean_temp(); call salinity%clean_temp()
+    call density%set_temp()
   end function linear_water_density
 
 end module linear_eos_mod

@@ -110,11 +110,14 @@ contains
     class(scalar_field), allocatable           :: entrainment
       !! The value of the entrainment
     class(vector_field), allocatable           :: tmp
+    call velocity%guard_temp(); call thickness%guard_temp(); call depth%guard_temp()
     call depth%allocate_scalar_field(entrainment)
     call depth%allocate_vector_field(tmp)
     tmp = .grad. depth
     entrainment = tmp%norm() ! Needed due to ICE when try to put aqll on one line. TODO: Create minimal example and submit bug report.
     entrainment = this%coefficient * entrainment * velocity%norm()
+    call velocity%clean_temp(); call thickness%clean_temp(); call depth%clean_temp()
+    call entrainment%set_temp()
   end function jenkins1991_rate
 
 end module jenkins1991_entrainment_mod

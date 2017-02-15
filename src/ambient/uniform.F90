@@ -103,7 +103,9 @@ contains
     class(scalar_field), allocatable              :: property
       !! A field containing the ambient temperature at the depth specified
       !! for each location.
-    allocate(property, source=this%temperature)
+    call this%temperature%allocate_scalar_field(property)
+    property = this%temperature
+    call property%set_temp()
   end function uniform_temperature
 
   pure function uniform_salinity(this, depth, t) result(property)
@@ -121,7 +123,9 @@ contains
     class(scalar_field), allocatable              :: property
       !! A field containing the ambient salinity at the depth specified
       !! for each location.
-    allocate(property, source=this%salinity)
+    call this%salinity%allocate_scalar_field(property)
+    property = this%salinity
+    call property%set_temp()
   end function uniform_salinity
 
 end module uniform_ambient_mod

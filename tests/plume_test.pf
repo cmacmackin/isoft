@@ -174,19 +174,19 @@ contains
     domain2(1,:) = [this%lower2, this%upper2]
     vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
     call mel%solve_for_melt(vel,tmp,tmp,tmp,tmp,0.0_r8)
-    this%plume1 = plume(domain1, [this%nodes], thickness1, velocity,  &
-                        temp1, salinity1, ent, mel, amb, eos, bound, &
-                        this%delta, this%nu, this%mu, this%epsilon)
-    this%plume2 = plume(domain2, [this%nodes], thickness2, velocity, &
-                        temp2, salinity2, epsilon=this%epsilon)
+    call this%plume1%initialise(domain1, [this%nodes], thickness1, velocity,  &
+                                temp1, salinity1, ent, mel, amb, eos, bound, &
+                                this%delta, this%nu, this%mu, this%epsilon)
+    call this%plume2%initialise(domain2, [this%nodes], thickness2, velocity, &
+                                temp2, salinity2, epsilon=this%epsilon)
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
     allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
     allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),salinity1([0.0_r8])))
-    this%plume3 = plume(domain1, [this%nodes], thickness3, velocity3,  &
-                        temp3, salinity3, ent, mel, amb, eos, bound, &
-                        this%delta, this%nu, this%mu, this%epsilon)
+    call this%plume3%initialise(domain1, [this%nodes], thickness3, velocity3,  &
+                                temp3, salinity3, ent, mel, amb, eos, bound,  &
+                                this%delta, this%nu, this%mu, this%epsilon)
   end subroutine setup
 
   @Test

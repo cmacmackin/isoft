@@ -23,6 +23,7 @@
 module nitsol_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use array_pointer_mod, only: array_1d
   use chebyshev_mod
   use nitsol_mod
   use f95_lapack
@@ -41,6 +42,7 @@ contains
 
   @Test
   subroutine test_solve_dallaston2015()
+    type(array_1d) :: tmp
     real(r8), dimension(n_tot) :: x_guess, f_guess, jacob, dx, dxprime
     real(r8), dimension(n_tot) :: expected
     real(r8), dimension(n_tot) :: residual
@@ -59,7 +61,8 @@ contains
 !    input(7) = 1
 !    input(8) = 1
 !    input(10) = 3
-    xvals = collocation_points(points-1,lower_bound,upper_bound)
+    tmp = collocation_points(points-1,lower_bound,upper_bound)
+    xvals = tmp%array
     
     expected(1:points)            = xvals - lower_bound
     expected(points+1:2*points)   = q_g**(1.0_r8/3.0_r8)

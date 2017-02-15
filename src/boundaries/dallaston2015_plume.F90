@@ -144,6 +144,8 @@ contains
       !! values and those which are actually present.
     class(scalar_field), allocatable :: thickness_bound, salinity_bound
     class(vector_field), allocatable :: velocity_bound
+    call thickness%guard_temp(); call velocity%guard_temp()
+    call temperature%guard_temp; call salinity%guard_temp()
     allocate(thickness_bound,   &
              source=(thickness%get_boundary(-1,1) - this%thickness))
     allocate(velocity_bound,    &
@@ -152,6 +154,8 @@ contains
              source=(salinity%get_boundary(-1,1) - this%salinity))
     residuals = [thickness_bound%raw(), velocity_bound%raw(), &
                  salinity_bound%raw()]
+    call thickness%clean_temp(); call velocity%clean_temp()
+    call temperature%clean_temp; call salinity%clean_temp()
   end function dallaston2015_residuals
 
 end module dallaston2015_plume_boundary_mod

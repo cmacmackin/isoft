@@ -133,6 +133,7 @@ contains
     class(cryosphere), intent(inout) :: this
     real(r8), intent(in)             :: time
       !! The time to which to integrate the cryosphere
+    class(glacier), dimension(:), allocatable :: old_glaciers
     logical, save :: first_call = .true.
     logical :: success
 
@@ -148,12 +149,10 @@ contains
                               this%ice%ice_temperature(), this%time)
       first_call = .false.
     end if
-    
-    ! Be wary of passing the ice object as an argument to its own
-    ! routine. Given that it is within an array constructor, a copy
-    ! should be passed. That relies on the compiler not trying to be
-    ! too smart for its own good with its optimisations, though.
-    call this%ice%integrate([this%ice], this%sub_ice%basal_melt(), &
+
+    allocate(old_glaciers(1), mold=this%ice)
+    old_glaciers(1) = this%ice
+    call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                             this%sub_ice%basal_drag_parameter(),  &
                             this%sub_ice%water_density(), time, success)
 

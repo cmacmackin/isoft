@@ -123,14 +123,19 @@ contains
     real(r8), intent(in), optional           :: time
       !! The time at which the melting is being solved for. If not
       !! present then assumed to be same as previous value passed.
+    call velocity%guard_temp(); call pressure%guard_temp()
+    call temperature%guard_temp(); call salinity%guard_temp()
+    call plume_thickness%guard_temp()
     if (.not. allocated(this%melt_values)) then
-      allocate(this%melt_values, source=velocity%norm())
-    else
-      this%melt_values = velocity%norm()
+      call velocity%allocate_scalar_field(this%melt_values)
     end if
+    this%melt_values = velocity%norm()
     this%melt_values = this%melt_conversion * this%melt_values 
     ! Should be able to do this in one step (with better performance)
     ! but that seems to confuse the compiler.
+    call velocity%clean_temp(); call pressure%clean_temp()
+    call temperature%clean_temp(); call salinity%clean_temp()
+    call plume_thickness%clean_temp()
   end subroutine dallaston2015_solve
 
   pure function dallaston2015_heat(this) result(heat)
@@ -141,6 +146,7 @@ contains
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(heat)
     heat = this%coef * this%melt_values
+    call heat%set_temp()
   end function dallaston2015_heat
 
   pure function dallaston2015_salt(this) result(salt)
@@ -155,7 +161,9 @@ contains
     class(scalar_field), allocatable      :: melt
       !! The melt rate from the ice into the plume water.
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
-    allocate(melt, source=this%melt_values)
+    call this%melt_values%allocate_scalar_field(melt)
+    melt = this%melt_values
+    call melt%set_temp()
   end function dallaston2015_melt_rate
 
   pure function dallaston2015_has_heat(this) result(has_heat)

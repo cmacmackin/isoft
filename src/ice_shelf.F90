@@ -115,6 +115,7 @@ module ice_shelf_mod
 !$    procedure            :: add => shelf_add
 !$    procedure            :: sub => shelf_sub
 !$    procedure            :: assign_integrand => shelf_assign
+    procedure :: initialise => shelf_initialise
     procedure :: ice_thickness => shelf_thickness
 !$    procedure :: ice_velocity => shelf_velocity
     procedure :: ice_density => shelf_density
@@ -127,24 +128,26 @@ module ice_shelf_mod
     procedure :: state_vector => shelf_state_vector
     procedure :: write_data => shelf_write_data
     procedure :: time_step => shelf_time_step
+    procedure, private :: assign => shelf_assign
   end type ice_shelf
 
-  interface ice_shelf
-    module procedure constructor
-  end interface ice_shelf
+!  interface ice_shelf
+!    module procedure constructor
+!  end interface ice_shelf
 
 contains
   
-  function constructor(domain, resolution, thickness, velocity, &
-                       temperature, viscosity_law, boundaries,  &
-                       lambda, chi) result(this)
+  subroutine shelf_initialise(this, domain, resolution, thickness, velocity, &
+                              temperature, viscosity_law, boundaries,  &
+                              lambda, chi)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
-    ! Creates a new [[ice_shelf]] object with initial conditions provided
+    ! Initialises an [[ice_shelf]] object with initial conditions provided
     ! by the arguments. At present only a 1D model is supported. If
     ! information is provided for higher dimensions then it will be ignored.
     !
+    class(ice_shelf), intent(out)        :: this
     real(r8), dimension(:,:), intent(in) :: domain
       !! An array containing the upper and lower limits of the domain for
       !! the ice shelf. The first index represents the dimension for which
@@ -177,9 +180,6 @@ contains
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}\left(1 -
       !! \frac{\rho_i}{\rho_0}\right)$.
-    type(ice_shelf)                      :: this
-      !! An ice shelf object with its domain and initial conditions set
-      !! according to the arguments of the constructor function.
 
     integer, dimension(:), allocatable :: lower, upper
 
@@ -244,7 +244,7 @@ contains
 #ifdef DEBUG
     call logger%debug('ice_shelf','Instantiated new ice shelf object')
 #endif
-  end function constructor
+  end subroutine shelf_initialise
 
 !$  function shelf_dt(self,t)
 !$    !* Author: Christopher MacMackin
@@ -401,9 +401,10 @@ contains
     class(ice_shelf), intent(in)     :: this
     class(vector_field), allocatable :: velocity !! The ice velocity.
     allocate(velocity, source=this%velocity)
+    call velocity%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%velocity','Returned ice shelf velocity')
-#endif    
+#endif
   end function shelf_velocity
 
 
@@ -477,12 +478,16 @@ contains
     integer, dimension(:), allocatable :: lower, upper
     real(r8), dimension(:), allocatable :: bounds
 
+    call melt_rate%guard_temp(); call basal_drag_parameter%guard_temp()
     allocate(residual(this%data_size()))
     start = 1
 
     ! Use same or similar notation for variables as in equations
     select type(previous_states)
     class is(ice_shelf)
+      ! TODO: Either move the function results over to proper
+      ! assignment or figure out some way to have temporary results in
+      ! associate constructs.
       associate(h => this%thickness, h_old => previous_states(1)%thickness, &
                 uvec => this%velocity, u => this%velocity%component(1), &
                 eta => this%viscosity_law%ice_viscosity(this%velocity, &
@@ -544,6 +549,7 @@ contains
       error stop
     end select
 
+    call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
 #endif
@@ -606,13 +612,14 @@ contains
 
     type(ice_shelf) :: delta_shelf
     type(cheb1d_scalar_field), dimension(2) :: vector, estimate
-    class(scalar_field), allocatable :: eta
+    class(scalar_field), allocatable :: eta, u
     integer :: sl, el, su, eu
     integer :: i, elem
     integer, dimension(2) :: upper_type, lower_type
     integer, dimension(:), allocatable :: boundary_types, boundary_locations
     real(r8) :: delta_t
 
+    call melt_rate%guard_temp(); call basal_drag_parameter%guard_temp()
     allocate(preconditioned(size(delta_state)))
     select type(previous_states)
     class is(ice_shelf)
@@ -628,10 +635,13 @@ contains
     call delta_shelf%update(delta_state)
     allocate(eta, source=this%viscosity_law%ice_viscosity(this%velocity, &
                                        this%ice_temperature(), this%time))
-    associate(h => this%thickness, u => this%velocity%component(1), &
-              v => this%velocity%component(2), dh => delta_shelf%thickness, &
-              chi => this%chi, du => delta_shelf%velocity%component(1), &
-              dv => delta_shelf%velocity%component(2))
+    call eta%unset_temp()
+    vector(1) = delta_shelf%thickness
+    vector(2) = delta_shelf%velocity%component(1)
+    call this%velocity%allocate_scalar_field(u)
+    u = this%velocity%component(1)
+
+    associate(h => this%thickness, chi => this%chi)
       if (this%jacobian_time < this%time) then
         sl = this%thickness_size - this%thickness_lower_bound_size + 1
         el = this%thickness_size
@@ -665,8 +675,6 @@ contains
         this%jacobian_time = this%time
       end if
 
-      vector(1) = dh
-      vector(2) = du
       elem = h%elements()
       do i = 1, size(estimate)
         estimate(i) = cheb1d_scalar_field(elem)
@@ -677,6 +685,7 @@ contains
     
     preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
 
+    call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%precondition','Applied preconditioner for ice shelf.')
 #endif
@@ -867,5 +876,48 @@ contains
       end associate
     end associate
   end function shelf_time_step
+
+  subroutine shelf_assign(this, rhs)
+    !* Author: Chris MacMackin
+    !  Date: February 2017
+    !
+    ! Copies the data from one ice shelf into another. This is only
+    ! needed due to a bug in gfortran which means that the intrinsic
+    ! assignment for glacier types is not using the appropriate
+    ! defined assignment for the field components.
+    !
+    ! It does not assign the Jacobian object as it would take up quite
+    ! a bit of extra space and it is unlikely that it would ever be
+    ! needed without first having to be recalculated.
+    !
+    class(ice_shelf), intent(out) :: this
+    class(glacier), intent(in)    :: rhs
+      !! The ice shelf to be assigned to this one.
+    select type(rhs)
+    class is(ice_shelf)
+      this%thickness = rhs%thickness
+      this%velocity = rhs%velocity
+      this%lambda = rhs%lambda
+      this%chi = rhs%chi
+      allocate(this%viscosity_law, source=rhs%viscosity_law)
+      allocate(this%boundaries, source=rhs%boundaries)
+      this%time = rhs%time
+      this%thickness_size = rhs%thickness_size
+      this%velocity_size = rhs%velocity_size
+      this%boundary_start = rhs%boundary_start
+      this%thickness_lower_bound_size = rhs%thickness_lower_bound_size
+      this%thickness_upper_bound_size = rhs%thickness_upper_bound_size
+      this%velocity_lower_bound_size = rhs%velocity_lower_bound_size
+      this%velocity_upper_bound_size = rhs%velocity_upper_bound_size
+      this%precondition_obj = rhs%precondition_obj
+    class default
+      call logger%fatal('ice_shelf%assign','Type other than `ice_shelf` '// &
+                        'requested to be assigned.')
+      error stop
+    end select
+#ifdef DEBUG
+    call logger%debug('ice_shelf%assign','Copied ice shelf data.')
+#endif
+  end subroutine shelf_assign
 
 end module ice_shelf_mod

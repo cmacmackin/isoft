@@ -38,6 +38,7 @@ module preconditioner_test
      type(cheb1d_scalar_field), dimension(3) :: vector, rhs
   contains
     procedure :: setup
+    procedure :: teardown
   end type test_preconditioner
 
 contains
@@ -260,6 +261,14 @@ contains
                 + this%jacobian(3,3) * this%vector(3)
     call this%rhs(3)%set_element(1,0._r8)
   end subroutine setup
+
+  subroutine teardown(this)
+    class(test_preconditioner), intent(inout) :: this
+    call this%rhs%set_temp()
+    call this%rhs%clean_temp()
+    call this%vector%set_temp()
+    call this%vector%clean_temp()
+  end subroutine teardown
 
   @Test
   subroutine test_apply(this)
