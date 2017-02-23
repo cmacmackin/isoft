@@ -79,6 +79,7 @@ module dallaston2015_plume_boundary_mod
       !! Returns an array consisting of the difference between the required
       !! boundary values and those which actually exist. This can then be
       !! appended to a plume's state vector
+    procedure :: set_boundaries => dallaston2015_set
   end type dallaston2015_plume_boundary
 
   interface dallaston2015_plume_boundary
@@ -153,5 +154,28 @@ contains
     residuals = [thickness_bound%raw(), velocity_bound%raw(), &
                  salinity_bound%raw()]
   end function dallaston2015_residuals
+
+  subroutine dallaston2015_set(this, thickness, velocity, temperature, salinity, t)
+    !* Author: Chris MacMackin
+    !  Date: February 2017
+    !
+    !
+    class(dallaston2015_plume_boundary), intent(inout) :: this
+    class(scalar_field), intent(inout)                 :: thickness
+      !! A field containing the thickness of the plume
+    class(vector_field), intent(inout)                 :: velocity
+      !! A field containing the flow velocity of the plume
+    class(scalar_field), intent(inout)                 :: temperature
+      !! The field containing the temperature of the plume
+    class(scalar_field), intent(inout)                 :: salinity
+      !! The field containing the salinity of the plume
+    real(r8), intent(in)                               :: t
+      !! The time at which the boundary conditions are to be updated.
+    integer :: n
+    n  = thickness%elements()
+    call thickness%set_element(n,this%thickness)
+    call velocity%set_element(n,1,this%velocity*this%thickness)
+    call salinity%set_element(n,this%salinity*this%thickness)
+  end subroutine dallaston2015_set
 
 end module dallaston2015_plume_boundary_mod

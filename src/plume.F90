@@ -34,9 +34,10 @@ module plume_mod
   ! representing a buoyant plume beneath an ice shelf.
   !
   use iso_fortran_env, only: r8 => real64
+  use penf, only: str
   use basal_surface_mod, only: basal_surface, hdf_type_attr
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field, &
-                         uniform_scalar_field
+                         uniform_scalar_field, minval, abs
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
   use plume_boundary_mod, only: plume_boundary
@@ -70,11 +71,11 @@ module plume_mod
     type(cheb1d_scalar_field) :: thickness
       !! The thickness of the plume
     type(cheb1d_vector_field) :: velocity
-      !! The velocity of the plume
+      !! The velocity times the thickness of the plume
     type(cheb1d_scalar_field) :: temperature
-      !! The temperature of the plume
+      !! The temperature times the thickness of the plume
     type(cheb1d_scalar_field) :: salinity
-      !! The salinity of the plume
+      !! The salinity times the thickness of the plume
     class(abstract_entrainment), allocatable :: entrainment_formulation
       !! An object which provides the parameterisation for entrainment
       !! of water into the plume.
@@ -123,6 +124,7 @@ module plume_mod
     procedure :: data_size => plume_data_size
     procedure :: state_vector => plume_state_vector
     procedure :: write_data => plume_write_data
+    procedure :: solve => plume_solve
   end type plume
 
   interface plume
@@ -631,5 +633,157 @@ contains
     end if
     error = ret_err
   end subroutine plume_write_data
+
+  subroutine plume_solve(this, ice_thickness, ice_density, &
+                         ice_temperature, time)
+    !* Author: Chris MacMackin
+    !  Date: February 2017
+    !
+    ! Solves the state of the plume for the specified ice properties,
+    ! at the specified time. This is done by relaxing the plume to a
+    ! steady state.
+    !
+    class(plume), intent(inout)     :: this
+    class(scalar_field), intent(in) :: ice_thickness
+      !! Thickness of the ice above the basal surface
+    real(r8), intent(in)            :: ice_density
+      !! The density of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)            :: ice_temperature
+      !! The temperature of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)            :: time
+      !! The time to which the basal surface should be solved
+
+    integer  :: i, n, j, k
+    real(r8), parameter :: tolerance = 1.e-8_r8
+    real(r8) :: tau
+    logical  :: has_converged
+    type(cheb1d_scalar_field) :: Ucomp, S, T, b, m, rho, e, S_a, T_a, rho_a, dx
+    type(cheb1d_scalar_field) :: D_change, S_change, T_change, tmp_s
+    type(cheb1d_scalar_field), dimension(:), allocatable :: U_change
+    type(cheb1d_vector_field) :: Uvec, tmp, grid
+    integer, parameter :: fac = 10
+    j = -1
+    has_converged = .false.
+    n = this%velocity%vector_dimensions()
+    allocate(U_change(n))
+
+    associate(D => this%thickness, DU => this%velocity, &
+              DS => this%salinity, &
+              DT => this%temperature, &
+              mf => this%melt_formulation, h => ice_thickness, &              
+              delta => this%delta, nu => this%nu, mu => this%mu, &
+              epsilon => this%epsilon, r => this%r_val)
+      call this%boundaries%set_boundaries(D, DU, DT, DS, time)
+      grid = this%thickness%grid_spacing()
+      dx = grid%component(1)
+      print*,''
+      do while(.not. has_converged)
+        ! print*,this%state_vector()
+        j = j + 1
+        Uvec = DU/D
+        tmp_s = Uvec%component(1)
+        tau = 1.e0_r8/sqrt(((0.5_r8/nu)*dx%get_element(1)**2)**(-2) + &
+                         minval(abs(dx/Uvec%component(1)))**(-2))
+        print*,tau,(0.5_r8/nu)*dx%get_element(1)**2,minval(abs(dx/Uvec%component(1)))
+        if (tau < 1e-50_r8) error stop ('Time step approaching 0.')
+        if (minval(2.0*nu/abs(Uvec%raw()) - dx%raw()) < 0._r8) then
+          print*,'ERROR: Grid spacing too coarse!'
+        end if
+        S = DS/D
+        T = DT/D
+        if (mod(j,fac)==0 .and. j/fac<400 ) then
+          open(3,file='plume'//trim(str(j/fac))//'.dat')
+          do k = 1, D%elements()
+            write(3,*) D%get_element(k),Uvec%get_element(k),S%get_element(k),T%get_element(k)
+          end do
+          close(3)
+        end if
+
+        b = -h/r
+        call mf%solve_for_melt(Uvec, -b, T, S, D, this%time)
+        m = this%melt_formulation%melt_rate()
+        rho = this%eos%water_density(this%temperature, this%salinity)
+        e = this%entrainment_formulation%entrainment_rate(this%velocity, this%thickness, &
+                                                          b,this%time)
+        call S_a%assign_meta_data(m)
+        call T_a%assign_meta_data(m)
+        call rho_a%assign_meta_data(m)
+        S_a = this%ambient_conds%ambient_salinity(b,this%time)
+        T_a = this%ambient_conds%ambient_temperature(b,this%time)
+        rho_a = this%eos%water_density(T_a, S_a)
+  
+        ! Continuity equation
+        D_change = e + epsilon*m - .div.(D*Uvec)
+        tmp = D*Uvec
+        has_converged = within_tolerance(D_change,D,tolerance)
+  
+        ! Momentum equation, x-component
+        do i = 1,n
+          Ucomp = Uvec%component(i)
+          U_change(i) = .div.(D*.grad.Ucomp) ! Needed due to stupid
+                                             ! compiler issue. Works when
+                                             ! tested with trunk.
+          U_change(i) = U_change(i)*nu &
+                      + D*(rho_a - rho)*(this%delta*D%d_dx(1) - b%d_dx(1)) &
+                      - mu*Uvec%norm()*Ucomp + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
+                      - .div.(D*Uvec*Ucomp)
+          has_converged = has_converged .and. within_tolerance(U_change(i),D*Ucomp, &
+                                                               tolerance)
+          U_change(i) = D*Ucomp + U_change(i)*tau
+        end do
+  
+        ! Salinity equation
+        s_change = s%d_dx(1)
+        S_change = .div.(D*.grad.S)
+        !print*,s_change%raw()
+        if (mf%has_salt_terms()) then
+          S_change = S_change*nu + e*S_a + mf%salt_equation_terms() &
+                     - .div.(D*Uvec*S)
+        else
+          S_change = S_change*nu + e*S_a - .div.(D*Uvec*S)
+        end if
+        !print*,s_change%raw()
+        has_converged = has_converged .and. within_tolerance(S_change,DS,tolerance)
+  
+        ! Temperature equation
+        T_change = .div.(D*.grad.T)
+        if (mf%has_heat_terms()) then
+          T_change = T_change*nu + e*T_a + mf%heat_equation_terms() &
+                     - .div.(D*Uvec*T)
+        else
+          T_change = T_change*nu + e*T_a - .div.(D*Uvec*T)
+        end if
+        has_converged = has_converged .and. within_tolerance(T_change,DT,tolerance)
+
+        D = D + D_change*tau
+        DU = U_change
+        DS = DS + S_change*tau
+        DT = DT + T_change*tau
+        call this%boundaries%set_boundaries(D, DU, DT, DS, time)
+        if (any(isnan(this%state_vector()))) error stop ('A wild NaN has appeared.')
+        !error stop
+        !print*,this%state_vector()
+        !print*,'------------------'
+      end do
+    end associate
+
+  contains
+    
+    function within_tolerance(difference,original,tol)
+      class(scalar_field), intent(in) :: difference
+      class(scalar_field), intent(in) :: original
+      real(r8), intent(in)            :: tol
+      logical :: within_tolerance
+      integer :: i
+      within_tolerance = .true.
+      do i = 1, difference%elements()
+        !print*,i,(difference%get_element(i)/(original%get_element(i) + tol))
+        within_tolerance = (difference%get_element(i)/(original%get_element(i) + tol) &
+                            < tol)
+        if (.not. within_tolerance) return
+      end do
+    end function within_tolerance
+
+  end subroutine plume_solve
 
 end module plume_mod

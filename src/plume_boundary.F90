@@ -108,6 +108,7 @@ module plume_boundary_mod
       !! Returns an array consisting of the difference between the required
       !! boundary values and those which actually exist. This can then be
       !! appended to a plume's state vector
+    procedure :: set_boundaries
   end type plume_boundary
 
 contains
@@ -154,5 +155,23 @@ contains
     allocate(residuals(0))
     return
   end function boundary_residuals
+
+  subroutine set_boundaries(this, thickness, velocity, temperature, salinity, t)
+    !* Author: Chris MacMackin
+    !  Date: February 2017
+    !
+    !
+    class(plume_boundary), intent(inout) :: this
+    class(scalar_field), intent(inout)   :: thickness
+      !! A field containing the thickness of the plume
+    class(vector_field), intent(inout)   :: velocity
+      !! A field containing the flow velocity of the plume
+    class(scalar_field), intent(inout)   :: temperature
+      !! The field containing the temperature of the plume
+    class(scalar_field), intent(inout)   :: salinity
+      !! The field containing the salinity of the plume
+    real(r8), intent(in)                 :: t
+      !! The time at which the boundary conditions are to be updated.
+  end subroutine set_boundaries
 
 end module plume_boundary_mod

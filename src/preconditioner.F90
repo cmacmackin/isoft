@@ -150,7 +150,9 @@ contains
       ! with off-diagonal blocks applied to the previous guess and
       ! subtracted from the right-hand-side.
       max_err = 0._r8
-      prev_estimate = estimate
+      do j = 1,n
+        prev_estimate(j) = estimate(j)
+      end do
       do j = 1, n
         first = .true.
         do k = 1, n
@@ -188,7 +190,9 @@ contains
         call logger%error('preconditioner_apply', &
                          'Iterations diverging. Exiting and returning previous iterate.')
         call logger%debug('preconditioner_apply','Exiting function `precondition`.')
-        estimate = prev_estimate
+        do j = 1,n
+          estimate(j) = prev_estimate(j)
+        end do
         return
       end if
       old_max_err = max_err

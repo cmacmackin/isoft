@@ -36,10 +36,11 @@ module plume_test
   use jenkins1991_entrainment_mod, only: entrainment => jenkins1991_entrainment
   use uniform_ambient_mod, only: ambient => uniform_ambient_conditions
   use dallaston2015_plume_boundary_mod, only: boundary => dallaston2015_plume_boundary
+  use simple_plume_boundary_mod, only: simple_boundary => simple_plume_boundary
   use linear_eos_mod, only: linear_eos
   implicit none
 
-  integer, parameter  :: resolution = 10
+  integer, parameter  :: resolution = 30
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: q_g = 1.0_r8
@@ -47,6 +48,9 @@ module plume_test
   real(r8), parameter :: beta = 0.024
   real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
   real(r8), parameter :: r = 1.12_r8
+  real(r8), parameter :: chi_val = 4._r8
+  real(r8), parameter :: length = 2.0_r8
+  real(r8), parameter :: offset = 0.2
   
   real(r8), parameter :: perturbation = 1.e-5_r8
 
@@ -54,7 +58,7 @@ module plume_test
   type, extends(testcase), public :: test_plume
     type(plume) :: plume1, plume2, plume3
     integer     :: nodes = resolution
-    real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
+    real(r8)    :: lower1 = 0.0_r8, upper1 = length
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
     real(r8)    :: delta = 0.0_r8, nu = 0.0_r8
     real(r8)    :: mu = 0.0_r8, epsilon = 0.0_r8
@@ -77,6 +81,16 @@ contains
     depth2 = 1.0_r8 / (location(1) + 2.0_r8)**2 / r
   end function depth2
 
+  pure function d_depth1(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: d_depth1
+    real(r8) :: vel
+    vel = sqrt(1._r8 + 0.25_r8*chi_val*big_x - &
+                       0.25_r8*chi_val*big_x*(1._r8 - location(1)/big_x)**2)
+    d_depth1 = (2._r8*vel + 0.5_r8*chi_val*big_x*(depth1(location)*r)**2) / &
+               (2._r8*big_x*vel)/r
+  end function d_depth1
+
   pure function thickness1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness1
@@ -92,8 +106,8 @@ contains
   pure function thickness3(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness3
-    thickness3 = (1._r8 + perturbation*sin(2*location(1)/big_x)) &
-               * thickness1(location)
+    !thickness3 = 1.e-2_r8 + 0.1_r8*location(1)
+    thickness3 = depth1([0._r8]) - depth1(location + offset)
   end function thickness3
 
   pure function velocity(location)
@@ -103,10 +117,9 @@ contains
   end function velocity
 
   pure function velocity3(location)
-    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), intent(in)  :: location
     real(r8), dimension(:), allocatable :: velocity3
-    velocity3 = (1._r8 + perturbation*cos(2*location(1)/big_x)) &
-              * velocity(location)
+    velocity3 = velocity(location)*thickness3(location)
   end function velocity3
 
   pure function salinity1(location)
@@ -124,8 +137,7 @@ contains
   pure function salinity3(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity3
-    salinity3 = (1._r8 + perturbation*sin(2*location(1)/big_x)) &
-              * salinity1(location)
+    salinity3 = Q_g**(2.0/3.0)
   end function salinity3
 
   pure function temp1(location)
@@ -151,8 +163,7 @@ contains
   pure function temp3(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: temp3
-    temp3 = (1._r8 + perturbation*cos(2*location(1)/big_x)) &
-          * temp1(location)
+    temp3 = (beta + 1.0_r8) * (location(1) + offset)
   end function temp3
 
   subroutine setup(this)
@@ -165,11 +176,13 @@ contains
     class(plume_boundary), allocatable :: bound
     type(cheb1d_vector_field) :: vel
     type(cheb1d_scalar_field) :: tmp
+    real(r8) :: D, D_x
+    real(r8), dimension(1) :: DU
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
     allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
-    allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),salinity1([0.0_r8])))
+    allocate(bound, source=boundary(1.e-16_r8,q_g**(1.0/3.0),salinity1([0.0_r8])))
     domain1(1,:) = [this%lower1, this%upper1]
     domain2(1,:) = [this%lower2, this%upper2]
     vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
@@ -181,12 +194,16 @@ contains
                         temp2, salinity2, epsilon=this%epsilon)
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
-    allocate(amb, source=ambient(0.0_r8,0.0_r8))
-    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
-    allocate(bound, source=boundary(0.0_r8,q_g**(1.0/3.0),salinity1([0.0_r8])))
+    allocate(amb, source=ambient(1.0_r8,1.0_r8))
+    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, 1.0_r8))
+    D = thickness3([0._r8])
+    D_x = d_depth1([0._r8])
+    DU = velocity3([0._r8])
+    allocate(bound, source=simple_boundary(D,DU(1)/D,salinity3([0.0_r8])/D, &
+                           temp3([0.0_r8])/D, d_salinity=-Q_g**(2._r8/3._r8)*D_x/D**2))
     this%plume3 = plume(domain1, [this%nodes], thickness3, velocity3,  &
                         temp3, salinity3, ent, mel, amb, eos, bound, &
-                        this%delta, this%nu, this%mu, this%epsilon)
+                        this%delta, 1.e-2_r8, 1.e-1_r8, this%epsilon)
   end subroutine setup
 
   @Test
@@ -255,7 +272,7 @@ contains
     @assertEqual(this%plume1%state_vector(),this%plume2%state_vector(),message='State vector not updated.')
   end subroutine test_update
 
-  !@Test
+  @Test
   subroutine test_solve(this)
     !! Tests that the correct solution will be found for a plume.
     class(test_plume), intent(inout) :: this
@@ -267,7 +284,7 @@ contains
     density = 1.0_r8 / r
     temperature = 0.0_r8
     time = 1.0_r8
-    expected=this%plume3%residual(thickness, density, temperature)
+    !expected=this%plume3%residual(thickness, density, temperature)
     !print*,expected
     call this%plume3%solve(thickness, density, temperature, time)
     expected = this%plume1%state_vector()
