@@ -31,6 +31,11 @@ module nitsol_mod
   ! control NITSOL are also provided here. At some point I may produce
   ! a proper object oriented interface for it.
   !
+  ! Also present is an interface to the GMRES solver provided by
+  ! NITSOL. Both a direct interface and a wrapper are provided. The
+  ! wrapper offers a somewhat more general and F90-ish presentation of
+  ! the routine.
+  !
   use iso_fortran_env, only: r8 => real64
   implicit none
 
@@ -49,6 +54,115 @@ module nitsol_mod
   common /nitparam/ choice1_exp, choice2_exp, choice2_coef, &
                     eta_cutoff, etamax, thmin, thmax, etafixed
 
+  abstract interface
+    subroutine f_intr(n, xcur, fcur, rpar, ipar, itrmf)
+      !! Interface for a subroutine which evaluates the function
+      !! the zero of which is sought.
+      import :: r8
+      integer, intent(in)                   :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(out)   :: fcur
+        !! Array of length `n` containing f(xcur) on output
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      integer, intent(out)                  :: itrmf
+        !! Termination flag. 0 means normal termination, 1 means
+        !! failure to produce f(xcur)
+    end subroutine f_intr
+
+    subroutine jacv_intr(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! Interface for a subroutine which optionally evaluates
+      !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+      !! of \(f\) and \(P\) is a right preconditioning operator.
+      import :: r8
+      integer, intent(in)                   :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)    :: fcur
+        !! Array of length `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        !! Integer flag indicating which product is desired. 0
+        !! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(n), intent(in)    :: v
+        !! An array of length `n` to be multiplied
+      real(r8), dimension(n), intent(out)   :: z
+        !! An array of length n containing the desired product on
+        !! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        !! Termination flag. 0 indcates normal termination, 1
+        !! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
+        !! failure to produce \(P^{-1}\vec{v}\)
+    end subroutine jacv_intr
+      
+    function dinpr_intr(n, x, sx, y, sy)
+      !! Interface for function which calculates vector inner products.
+      !! This has the same interace as the BLAS routine
+      !! [ddot](http://www.netlib.org/lapack/explore-html/de/da4/group__double__blas__level1_ga75066c4825cb6ff1c8ec4403ef8c843a.html).
+      import :: r8
+      integer, intent(in)                :: n
+        !! The length of the vectors
+      real(r8), dimension(*), intent(in) :: x
+        !! The first input vector
+      integer, intent(in)                :: sx
+        !! The stride in memory between successive elements of `x`
+      real(r8), dimension(*), intent(in) :: y
+        !! The second input vector
+      integer, intent(in)                :: sy
+        !! The stride in memory between successive elements of `y`
+      real(r8)                           :: dinpr_intr
+        !! Inner product of `x` and `y`
+    end function dinpr_intr
+
+    function dnorm_intr(n, x, sx)
+      !! Interface for function which calculates vector norms. This
+      !! has the same interface as the BLAS routine dnrm2.
+      import :: r8
+      integer, intent(in)                :: n
+        !! The length of the array
+      real(r8), dimension(*), intent(in) :: x
+        !! The input vector
+      integer, intent(in)                :: sx
+        !! The stride in memory between consecutive elements of `x`
+      real(r8) :: dnorm_intr
+        !! The vector norm of `x`
+    end function dnorm_intr
+
+    function mat_mult(v, xcur, rhs, rpar, ipar, success)
+      !! Interface for operations representing the multiplication of a
+      !! vector by a matrix, such as that for a linear operator or a
+      !! preconditioner.
+      import :: r8
+      real(r8), dimension(:), intent(in)    :: v
+        !! The vector to be multiplied
+      real(r8), dimension(:), intent(in)    :: xcur
+        !! Array containing the current estimate of the independent
+        !! variables in the linear system. This may not be needed, but
+        !! is provided just in case.
+      real(r8), dimension(:), intent(in)    :: rhs
+        !! Array containing the right hand side of the linear
+        !! system. This may not be needed, but is provided just in
+        !! case.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      logical, intent(out)                  :: success
+        !! Indicates whether operation was completed succesfully
+      real(r8), dimension(size(xcur))       :: mat_mult
+        !! Result of the operation
+    end function mat_mult
+  end interface
+
+
   interface
     subroutine nitsol(n, x, f, jacv, ftol, stptol, input, info, rwork, &
                       rpar, ipar, iterm, dinpr, dnorm)
@@ -56,7 +170,7 @@ module nitsol_mod
       !  Date: July 2016
       !
       ! An explicit interface to the 
-      ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)  
+      ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
       ! Newton iterative nonlinear solver.
       !
       !####Input parameters
@@ -200,62 +314,18 @@ module nitsol_mod
       real(r8), dimension(n), intent(inout) :: x
         !! Vector of length n, initial guess on input and final
         !! approximate solution on output
-
-      interface
-        subroutine f(n, xcur, fcur, rpar, ipar, itrmf)
-          !! User-supplied subroutine for evaluating the function
-          !! the zero of which is sought.
-          import :: r8
-          integer, intent(in)                   :: n
-            !! Dimension of the problem
-          real(r8), dimension(*), intent(in)    :: xcur
-            !! Array of length `n` containing the current \(x\) value
-          real(r8), dimension(*), intent(out)   :: fcur
-            !! Array of length `n` containing f(xcur) on output
-          real(r8), dimension(*), intent(inout) :: rpar
-            !! Parameter/work array
-          integer, dimension(*), intent(inout)  :: ipar
-            !! Parameter/work array
-          integer, intent(out)                  :: itrmf
-            !! Termination flag. 0 means normal termination, 1 means
-            !! failure to produce f(xcur)
-        end subroutine f
-
-        subroutine jacv(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
-          !! User-supplied subroutine for optionally evaluating
-          !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
-          !! of \(f\) and \(P\) is a right preconditioning operator. If
-          !! neither analytic \(J\vec{v}\) evaluations nor right
-          !! preconditioning is used, this can be a dummy subroutine;
-          !! if right preconditioning is used but not analytic
-          !! \(J\vec{v}\) evaluations, this need only evaluate
-          !! \(P^{-1}\vec{v}\).
-          import :: r8
-          integer, intent(in)                   :: n
-            !! Dimension of the problem
-          real(r8), dimension(*), intent(in)    :: xcur
-            !! Array of lenght `n` containing the current \(x\) value
-          real(r8), dimension(*), intent(in)    :: fcur
-            !! Array of lenght `n` containing the current \(f(x)\) value
-          integer, intent(in)                   :: ijob
-            !! Integer flat indicating which product is desired. 0
-            !! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
-          real(r8), dimension(*), intent(in)    :: v
-            !! An array of length `n` to be multiplied
-          real(r8), dimension(*), intent(out)   :: z
-            !! An array of length n containing the desired product on
-            !! output.
-          real(r8), dimension(*), intent(inout) :: rpar
-            !! Parameter/work array 
-          integer, dimension(*), intent(inout)  :: ipar
-            !! Parameter/work array
-          integer, intent(out)                  :: itrmjv
-            !! Termination flag. 0 indcates normal termination, 1
-            !! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
-            !! failure to produce \(P^{-1}\vec{v}\)
-        end subroutine jacv
-      end interface
-
+      procedure(f_intr)                     :: f
+        !! User-supplied subroutine for evaluating the function
+        !! the zero of which is sought.
+      procedure(jacv_intr)                  :: jacv
+        !! User-supplied subroutine for optionally evaluating
+        !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+        !! of \(f\) and \(P\) is a right preconditioning operator. If
+        !! neither analytic \(J\vec{v}\) evaluations nor right
+        !! preconditioning is used, this can be a dummy subroutine;
+        !! if right preconditioning is used but not analytic
+        !! \(J\vec{v}\) evaluations, this need only evaluate
+        !! \(P^{-1}\vec{v}\).
       real(r8), intent(in)                  :: ftol
         !! Stopping tolerance of the f-norm
       real(r8), intent(in)                  :: stptol
@@ -314,52 +384,162 @@ module nitsol_mod
         !!6
         !!:    in `nitbt`, failure to reach an acceptable step through
         !!     backtracking
-      
-      interface
-        function dinpr(n, x, sx, y, sy)
-          !! User-supplied function for calculating vector inner products.
-          !! This has the same interace as the BLAS routine
-          !! [ddot](http://www.netlib.org/lapack/explore-html/de/da4/group__double__blas__level1_ga75066c4825cb6ff1c8ec4403ef8c843a.html).
-          !! If the Euclidean inner product is desired then user can link
-          !! to a local BLAS library and provide the name `ddot` to `nitsol`.
-          !! `dinpr` must be declared as an external function that returns
-          !! a double precision in the calling program.
-          import :: r8
-          integer, intent(in)                :: n
-            !! The length of the vectors
-          real(r8), dimension(*), intent(in) :: x
-            !! The first input vector
-          integer, intent(in)                :: sx
-            !! The stride in memory between successive elements of `x`
-          real(r8), dimension(*), intent(in) :: y
-            !! The second input vector
-          integer, intent(in)                :: sy
-            !! The stride in memory between successive elements of `y`
-          real(r8)                           :: dinpr
-            !! Inner product of `x` and `y`
-        end function dinpr
-
-        function dnorm(n, x, sx)
-          !! User-supplied function for calculating vector norms. This
-          !! has the same interface as the BLAS routine dnrm2; if the
-          !! Euclidean norm is desired the user can link to a local
-          !! BLAS library and provide the name dnrm2 to nitsol.  dnorm
-          !! must be declared as an external function that returns a
-          !! double precision value in the calling program.
-          import :: r8
-          integer, intent(in)                :: n
-            !! The length of the array
-          real(r8), dimension(*), intent(in) :: x
-            !! The input vector
-          integer, intent(in)                :: sx
-            !! The stride in memory between consecutive elements of `x`
-          real(r8) :: dnorm
-            !! The vector norm of `x`
-        end function dnorm
-      end interface
-
+      procedure(dinpr_intr)                 :: dinpr
+        !! User-supplied function for calculating vector inner products.
+        !! This has the same interace as the BLAS routine
+        !! [ddot](http://www.netlib.org/lapack/explore-html/de/da4/group__double__blas__level1_ga75066c4825cb6ff1c8ec4403ef8c843a.html).
+        !! If the Euclidean inner product is desired then user can link
+        !! to a local BLAS library and provide the name `ddot` to `nitsol`.
+        !! `dinpr` must be declared as an external function that returns
+        !! a double precision in the calling program.
+      procedure(dnorm_intr)                 :: dnorm
+        !! User-supplied function for calculating vector norms. This
+        !! has the same interface as the BLAS routine dnrm2; if the
+        !! Euclidean norm is desired the user can link to a local
+        !! BLAS library and provide the name dnrm2 to nitsol.  dnorm
+        !! must be declared as an external function that returns a
+        !! double precision value in the calling program.
     end subroutine nitsol
+
+    subroutine nitgm2(n, xcur, fcur, step, eta, f, jacv, rpar, ipar,    &
+                      ijacv, irpre, iksmax, iresup, ifdord, nfe, njve,  &
+                      nrpre, nli, kdmax, kdmaxp1, vv, rr, svbig, svsml, &
+                      w, rwork, rsnrm, dinpr, dnorm, itrmks)
+      !* Author: Chris MacMackin
+      !  Date: March 2017
+      !
+      ! An interface to my modified versino of the
+      ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+      ! implementation of the generalised minimal residual method
+      ! ([GMRES](https://en.wikipedia.org/wiki/Generalized_minimal_residual_method))
+      ! for iteratively solving linear systems. It has been modified
+      ! so that the user provides a non-zero initial guess of the
+      ! solution.
+      !
+      import :: r8
+      implicit none
+      integer, intent(in)                            :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)             :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)             :: fcur
+        !! Array of length `n` containing current approximate solution
+      real(r8), dimension(n), intent(inout)          :: step
+        !! Vector of of length `n` containing trial step
+      real(r8), intent(in)                           :: eta
+        !! Relative residual reduction factor
+      procedure(f_intr)                              :: f
+        !! User-supplied subroutine for evaluating the function
+        !! the zero of which is sought.
+      procedure(jacv_intr)                           :: jacv
+        !! User-supplied subroutine for optionally evaluating
+        !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+        !! of \(f\) and \(P\) is a right preconditioning operator. If
+        !! neither analytic \(J\vec{v}\) evaluations nor right
+        !! preconditioning is used, this can be a dummy subroutine;
+        !! if right preconditioning is used but not analytic
+        !! \(J\vec{v}\) evaluations, this need only evaluate
+        !! \(P^{-1}\vec{v}\).
+      real(r8), dimension(*), intent(inout)          :: rpar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, dimension(*), intent(inout)           :: ipar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, intent(in)                            :: ijacv
+        !! Flag for determining method of \(J\vec{v}\) evaluation. 0
+        !! (default) indicates finite-difference evaluation, while 1
+        !! indicates analytic evaluation.
+      integer, intent(in)                            :: irpre
+        !! Flag for right preconditioning. 0 indicates no
+        !! preconditioning, while 1 inidcates right preconditioning.
+      integer, intent(in)                            :: iksmax
+        !! Maximum allowable number of GMRES iterations
+      integer, intent(in)                            :: iresup
+        !! Residual update flag. On GMRES restarts, the residual can
+        !! be updated using a linear combination (`iresup == 0`) or by
+        !! direct evaluation (`iresup == 1`). The first is cheap (one
+        !! n-vector saxpy) but may lose accuracy with extreme residual
+        !! reduction; the second retains accuracy better but costs one
+        !! \(J\vec{v}\) product.
+      integer, intent(in)                            :: ifdord
+        !! Order of the finite-difference formula (sometimes) used on
+        !! GMRES restarts when \(J\vec{v}\) products are evaluated
+        !! using finite- differences. When ijacv = 0 on input to
+        !! nitsol, ifdord is set to 1, 2, or 4 in nitsol; otherwise,
+        !! it is irrelevant. When ijacv = 0 on input to this
+        !! subroutine, the precise meaning is as follows:
+        !!                                                             
+        !! With GMRES, ifdord matters only if iresup = 1, in which case  
+        !! it determines the order of the finite-difference formula used 
+        !! in evaluating the initial residual at each GMRES restart      
+        !! (default 2). If iresup = 1 and ijacv = 0 on input to this     
+        !! subroutine, then ijacv is temporarily reset to -1 at each     
+        !! restart below to force a finite-difference evaluation of order
+        !! ifdord. NOTE: This only affects initial residuals at restarts;
+        !! first-order differences are always used within each GMRES     
+        !! cycle. Using higher-order differences at restarts only should 
+        !! give the same accuracy as if higher-order differences were    
+        !! used throughout; see K. Turner and H. F. Walker, "Efficient   
+        !! high accuracy solutions with GMRES(m)," SIAM J. Sci. Stat.    
+        !! Comput., 13 (1992), pp. 815--825.
+      integer, intent(inout)                         :: nfe
+        !! Number of function evaluations
+      integer, intent(inout)                         :: njve
+        !! Number of \(J\vec{v}\) evaluations
+      integer, intent(inout)                         :: nrpre
+        !! Number of \(P^{-1}\vec{v}\) evaluations
+      integer, intent(inout)                         :: nli
+        !! Number of linear iterations
+      integer, intent(in)                            :: kdmax
+        !! Maximum Krylov subspace dimension; default 10.
+      integer, intent(in)                            :: kdmaxp1
+        !! kdmax + 1
+      real(r8), dimension(n, kdmaxp1), intent(out)   :: vv
+        !! Matrix for storage of Krylov basis in GMRES; on return, the
+        !! residual vector is contained in the first column.
+      real(r8), dimension(kdmax, kdmax), intent(out) :: rr
+        !! Matrix for storage of triangular matrix in GMRES.
+      real(r8), dimension(kdmax), intent(out)        :: svbig
+        !! Vector for storage of estimate of singular vector of `rr`
+        !! with largest singular value.
+      real(r8), dimension(kdmax), intent(out)        :: svsml
+        !! Vector for storage of estimate of singular vector of `rr`
+        !! with smallest singular value.
+      real(r8), dimension(kdmax), intent(out)        :: w
+        !! Vector containing right-hand side of triangular system and
+        !! least-squares residual norm in GMRES.
+      real(r8), dimension(n), intent(out)            :: rwork
+        !! Work array
+      real(r8), intent(out)                          :: rsnrm
+        !! GMRES residual norm on return
+      procedure(dinpr_intr)                          :: dinpr
+        !! Inner-product routine, either user-supplied or BLAS `ddot`.
+      procedure(dnorm_intr)                          :: dnorm
+        !! Norm routine, either user supplied or BLAS dnrm2.
+      integer, intent(out)                           :: itrmks
+        !! Termination flag. Values have the following meanings:
+        !!
+        !!0
+        !!:    normal termination: acceptable step found
+        !!
+        !!1
+        !!:    \(J\vec{v}\)  failure in `nitjv`
+        !!
+        !!2
+        !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+        !!
+        !!3
+        !!:    Acceptable step not found in `iksmax` GMRES iterations
+        !!
+        !!4
+        !!:    Insignificant residual norm reduction of a cycle of `kdmax` 
+        !!     steps (stagnation) before an acceptable step has been found.
+        !!
+        !!5
+        !!:    Dangerous ill-conditioning detected before an acceptable 
+        !!     step has been found.
+    end subroutine nitgm2
   end interface
+
 
   interface
     function ddot(n, x, sx, y, sy)
@@ -409,16 +589,16 @@ contains
     ! 
     integer, intent(in)                   :: n
       ! Dimension of the problem
-    real(r8), dimension(*), intent(in)    :: xcur
-      ! Array of lenght `n` containing the current \(x\) value
-    real(r8), dimension(*), intent(in)    :: fcur
-      ! Array of lenght `n` containing the current \(f(x)\) value
+    real(r8), dimension(n), intent(in)    :: xcur
+      ! Array of length `n` containing the current \(x\) value
+    real(r8), dimension(n), intent(in)    :: fcur
+      ! Array of length `n` containing the current \(f(x)\) value
     integer, intent(in)                   :: ijob
-      ! Integer flat indicating which product is desired. 0
+      ! Integer flag indicating which product is desired. 0
       ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
-    real(r8), dimension(*), intent(in)    :: v
+    real(r8), dimension(n), intent(in)    :: v
       ! An array of length `n` to be multiplied
-    real(r8), dimension(*), intent(out)   :: z
+    real(r8), dimension(n), intent(out)   :: z
       ! An array of length n containing the desired product on
       ! output.
     real(r8), dimension(*), intent(inout) :: rpar
@@ -430,6 +610,225 @@ contains
       ! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
       ! failure to produce \(P^{-1}\vec{v}\)
   end subroutine dummy_jacv
+
+
+  subroutine dummy_f(n, xcur, fcur, rpar, ipar, itrmf)
+    !* Author: Chris MacMackin
+    !  Date: March 2017
+    !
+    ! A dummy subroutine which does not calculate the function.
+    ! 
+    integer, intent(in)                   :: n
+      !! Dimension of the problem
+    real(r8), dimension(n), intent(in)    :: xcur
+      !! Array of length `n` containing the current \(x\) value
+    real(r8), dimension(n), intent(out)   :: fcur
+      !! Array of length `n` containing f(xcur) on output
+    real(r8), dimension(*), intent(inout) :: rpar
+      !! Parameter/work array
+    integer, dimension(*), intent(inout)  :: ipar
+      !! Parameter/work array
+    integer, intent(out)                  :: itrmf
+      !! Termination flag. 0 means normal termination, 1 means
+      !! failure to produce f(xcur)
+  end subroutine dummy_f
+
+
+  subroutine gmres_solve(solution, lhs, rhs, resid_norm, flag, precond, tol, &
+                         rpar, ipar, resid_update, iter_max, krylov_dim,     &
+                         inner_prod, norm)
+    !* Author: Chris MacMackin
+    !  Date: March 2017
+    !
+    ! A wraper for the
+    ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+    ! implementation of the generalised minimal residual method
+    ! ([GMRES](https://en.wikipedia.org/wiki/Generalized_minimal_residual_method))
+    ! for iteratively solving linear systems. This provides a more
+    ! general interface not specifically intended for use with Newton
+    ! iteration. It also uses Fortran 90 features to provide a more
+    ! convenient call signature.
+    !
+    real(r8), dimension(:), intent(inout)           :: solution
+      !! On input, an initial guess of the solution to the linear
+      !! system. On output, the iteratively determined solution.
+    procedure(mat_mult)                             :: lhs
+      !! The linear operator on the left hand side of the linear
+      !! system.
+    real(r8), dimension(:), intent(in)              :: rhs
+      !! The right hand side of the linear system being solved
+    real(r8), intent(out)                           :: resid_norm
+      !! GMRES residual norm on return
+    integer, intent(out)                            :: flag
+      !! Termination flag. Values have the following meanings:
+      !!
+      !!0
+      !!:    normal termination: acceptable step found
+      !!
+      !!1
+      !!:    \(J\vec{v}\)  failure in `nitjv`
+      !!
+      !!2
+      !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+      !!
+      !!3
+      !!:    Acceptable step not found in `iksmax` GMRES iterations
+      !!
+      !!4
+      !!:    Insignificant residual norm reduction of a cycle of `kdmax` 
+      !!     steps (stagnation) before an acceptable step has been found.
+      !!
+      !!5
+      !!:    Dangerous ill-conditioning detected before an acceptable 
+      !!     step has been found.
+    real(r8), intent(in), optional                  :: tol
+      !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
+    procedure(mat_mult), optional                   :: precond
+      !! A right-preconditioner which may be used to improve
+      !! convergence of the solution.
+    real(r8), dimension(*), intent(inout), optional :: rpar
+      !! Parameter/work array passed to the `lhs` and `precond` routines.
+    integer, dimension(*), intent(inout), optional  :: ipar
+      !! Parameter/work array passed to the `lhs` and `precond` routines
+    integer, intent(in), optional                   :: resid_update
+      !! Residual update flag. On GMRES restarts, the residual can
+      !! be updated using a linear combination (`iresup == 0`) or by
+      !! direct evaluation (`iresup == 1`). The first is cheap (one
+      !! n-vector saxpy) but may lose accuracy with extreme residual
+      !! reduction; the second retains accuracy better but costs one
+      !! \(J\vec{v}\) product. Default is 0.
+    integer, intent(in), optional                   :: iter_max
+      !! Maximum allowable number of GMRES iterations. Default is
+      !! 1000.
+    integer, intent(in), optional                   :: krylov_dim
+      !! Maximum Krylov subspace dimension; default 10.    
+    procedure(dinpr_intr), optional                 :: inner_prod
+      !! Inner-product routine, either user-supplied or BLAS `ddot`.
+    procedure(dnorm_intr), optional                 :: norm
+      !! Norm routine, either user supplied or BLAS dnrm2.
+    
+    integer  :: npoints, preflag, resup, itmax, kdim, nfe, njve, nrpre, nli
+    real(r8) :: eta
+    procedure(dinpr_intr), pointer :: dinpr
+    procedure(dnorm_intr), pointer :: dnorm
+    real(r8), dimension(:), allocatable, save :: xcur, svbig, svsml, w, rwork
+    real(r8), dimension(:,:), allocatable, save :: vv, rr
+
+    npoints = size(solution)
+    if (present(precond)) then
+       preflag = 1
+    else
+       preflag = 0
+    end if
+    if (present(tol)) then
+      eta = tol
+    else
+      eta = 1.e-8_r8 * npoints
+    end if
+    if (present(resid_update)) then
+      resup = resid_update
+    else
+      resup = 0
+    end if
+    if (present(iter_max)) then
+      itmax = iter_max
+    else
+      itmax = 1000
+    end if
+    if (present(krylov_dim)) then
+      kdim = krylov_dim
+    else
+      kdim = 10
+    end if
+    if (present(inner_prod)) then
+      dinpr => inner_prod
+    else
+      dinpr => ddot
+    end if
+    if (present(norm)) then
+      dnorm => norm
+    else
+      dnorm => dnrm2
+    end if
+
+    xcur = solution
+
+    if (allocated(vv)) then
+      if (any(shape(vv) /= [npoints, kdim+1])) then
+        deallocate(vv)
+        allocate(vv(npoints, kdim+1))
+      end if
+      if (size(svbig) /= kdim) then
+        deallocate(rr)
+        deallocate(svbig)
+        deallocate(svsml)
+        deallocate(w)
+        allocate(rr(kdim, kdim))
+        allocate(svbig(kdim))
+        allocate(svsml(kdim))
+        allocate(w(kdim))
+      end if
+      if (size(rwork) /= npoints) then
+        deallocate(rwork)
+        allocate(rwork(npoints))
+      end if
+    else
+      allocate(vv(npoints, kdim+1))
+      allocate(rr(kdim, kdim))
+      allocate(svbig(kdim))
+      allocate(svsml(kdim))
+      allocate(w(kdim))
+      allocate(rwork(npoints))
+    end if
+
+    call nitgm2(npoints, xcur, rhs, solution, eta, dummy_f, jacv, &
+                rpar, ipar, 1, preflag, iter_max, resup, 1, nfe, njve, &
+                nrpre, nli, kdim, kdim+1, vv, rr, svbig, svsml, w,     &
+                rwork, resid_norm, dinpr, dnorm, flag)
+
+  contains
+    
+    subroutine jacv(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! A wrapper on the user-provided routines for the linear
+      !! operator and preconditioner, to put them in the form NITSOL
+      !! expects.
+      !! 
+      integer, intent(in)                   :: n
+        ! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        ! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)    :: fcur
+        ! Array of length `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        ! Integer flag indicating which product is desired. 0
+        ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(n), intent(in)    :: v
+        ! An array of length `n` to be multiplied
+      real(r8), dimension(n), intent(out)   :: z
+        ! An array of length n containing the desired product on
+        ! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        ! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        ! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        ! Termination flag. 0 indcates normal termination, 1
+        ! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
+        ! failure to produce \(P^{-1}\vec{v}\)
+      logical :: success
+      itrmjv = 0
+      if (ijob == 0) then
+        z = lhs(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 1
+      else if (ijob == 1) then
+        z = precond(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 2
+      else
+        error stop ('`ijob` not equal to 0 or 1.')
+      end if
+    end subroutine jacv
+
+  end subroutine  gmres_solve
 
 !  function scaled_norm(n, x, sx)
 !    !* Author: Chris MacMackin
