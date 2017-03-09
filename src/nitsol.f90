@@ -634,7 +634,7 @@ contains
   end subroutine dummy_f
 
 
-  subroutine gmres_solve(solution, lhs, rhs, resid_norm, flag, precond, tol, &
+  subroutine gmres_solve(solution, lhs, rhs, resid_norm, flag, tol, precond, &
                          rpar, ipar, resid_update, iter_max, krylov_dim,     &
                          inner_prod, norm)
     !* Author: Chris MacMackin
@@ -781,9 +781,9 @@ contains
       allocate(rwork(npoints))
     end if
 
-    call nitgm2(npoints, xcur, rhs, solution, eta, dummy_f, jacv, &
-                rpar, ipar, 1, preflag, iter_max, resup, 1, nfe, njve, &
-                nrpre, nli, kdim, kdim+1, vv, rr, svbig, svsml, w,     &
+    call nitgm2(npoints, xcur, -rhs, solution, eta, dummy_f, jacv,  &
+                rpar, ipar, 1, preflag, itmax, resup, 1, nfe, njve, &
+                nrpre, nli, kdim, kdim+1, vv, rr, svbig, svsml, w,  &
                 rwork, resid_norm, dinpr, dnorm, flag)
 
   contains

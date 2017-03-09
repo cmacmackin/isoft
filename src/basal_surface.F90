@@ -227,9 +227,9 @@ contains
       !! returns the residual for the basal surface.
       integer, intent(in)                   :: n
         !! Dimension of the problem
-      real(r8), dimension(*), intent(in)    :: xcur
+      real(r8), dimension(n), intent(in)    :: xcur
         !! Array of length `n` containing the current \(x\) value
-      real(r8), dimension(*), intent(out)   :: fcur
+      real(r8), dimension(n), intent(out)   :: fcur
         !! Array of length `n` containing f(xcur) on output
       real(r8), dimension(*), intent(inout) :: rpar
         !! Parameter/work array

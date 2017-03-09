@@ -4,7 +4,7 @@ c This is nitgm2, a copy of the GMRES routine in the NITSOL package. It
 c has been modified so that it will take an initial guess of the solution.
 c
 c ------------------------------------------------------------------------
-      subroutine nitgm (n, xcur, fcur, step, eta, f, jacv, rpar, 
+      subroutine nitgm2 (n, xcur, fcur, step, eta, f, jacv, rpar, 
      $     ipar, ijacv, irpre, iksmax, iresup, ifdord, nfe, njve,  
      $     nrpre, nli, kdmax, kdmaxp1, vv, rr, svbig, svsml, w, rwork, 
      $     rsnrm, dinpr, dnorm, itrmks)
@@ -287,10 +287,10 @@ c
 c*************************************************************************
 CC      call dcopy(n, fcur, 1, vv(1,1), 1)
       itask = 0
-      if (ijacv .eq. 0) ijacv = -1 
+      if (ijacv .eq. 0) ijacv = -1
       call nitjv(n, xcur, fcur, f, jacv, rpar, ipar, ijacv, 
      $     ifdord, itask, nfe, njve, nrpre, step, vv(1,1), 
-     $     rwork, vv(1,kdp1), dnorm, itrmjv)
+     $     rwork, vv(1,2), dnorm, itrmjv)
       if (ijacv .eq. -1) ijacv = 0
       if (itrmjv .gt. 0) then 
          itrmks = 1

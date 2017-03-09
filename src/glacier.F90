@@ -356,9 +356,9 @@ contains
       !! returns the residual for the glacier.
       integer, intent(in)                   :: n
         !! Dimension of the problem
-      real(r8), dimension(*), intent(in)    :: xcur
+      real(r8), dimension(n), intent(in)    :: xcur
         !! Array of length `n` containing the current \(x\) value
-      real(r8), dimension(*), intent(out)   :: fcur
+      real(r8), dimension(n), intent(out)   :: fcur
         !! Array of length `n` containing f(xcur) on output
       real(r8), dimension(*), intent(inout) :: rpar
         !! Parameter/work array
@@ -385,16 +385,16 @@ contains
       !! acts as a preconditioner.
       integer, intent(in)                   :: n
         ! Dimension of the problem
-      real(r8), dimension(*), intent(in)    :: xcur
+      real(r8), dimension(n), intent(in)    :: xcur
         ! Array of lenght `n` containing the current $x$ value
-      real(r8), dimension(*), intent(in)    :: fcur
+      real(r8), dimension(n), intent(in)    :: fcur
         ! Array of lenght `n` containing the current \(f(x)\) value
       integer, intent(in)                   :: ijob
         ! Integer flat indicating which product is desired. 0
         ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
-      real(r8), dimension(*), intent(in)    :: v
+      real(r8), dimension(n), intent(in)    :: v
         ! An array of length `n` to be multiplied
-      real(r8), dimension(*), intent(out)   :: z
+      real(r8), dimension(n), intent(out)   :: z
         ! An array of length n containing the desired product on
         ! output.
       real(r8), dimension(*), intent(inout) :: rpar

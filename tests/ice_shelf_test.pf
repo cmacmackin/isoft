@@ -35,7 +35,7 @@ module ice_shelf_test
   use nitsol_mod
   implicit none
 
-  integer, parameter :: resolution = 30
+  integer, parameter :: resolution = 50
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: chi_val = 4._r8

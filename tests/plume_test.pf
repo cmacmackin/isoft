@@ -272,7 +272,7 @@ contains
     @assertEqual(this%plume1%state_vector(),this%plume2%state_vector(),message='State vector not updated.')
   end subroutine test_update
 
-  @Test
+  !@Test
   subroutine test_solve(this)
     !! Tests that the correct solution will be found for a plume.
     class(test_plume), intent(inout) :: this
