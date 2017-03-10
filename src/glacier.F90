@@ -334,6 +334,7 @@ contains
                       ' nonlinear iterations and '//str(info(1))//           &
                       ' function calls.')
 #endif
+    call this%update(state)
 
     select case(flag)
     case(0)

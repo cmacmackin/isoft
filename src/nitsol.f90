@@ -663,16 +663,16 @@ contains
       !! Termination flag. Values have the following meanings:
       !!
       !!0
-      !!:    normal termination: acceptable step found
+      !!:    normal termination: acceptable solution found
       !!
       !!1
-      !!:    \(J\vec{v}\)  failure in `nitjv`
+      !!:    \(J\vec{v}\)  failure
       !!
       !!2
-      !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+      !!:    \(P^{-1}\vec{v}\) failure
       !!
       !!3
-      !!:    Acceptable step not found in `iksmax` GMRES iterations
+      !!:    Acceptable solution not found in `iter_max` GMRES iterations
       !!
       !!4
       !!:    Insignificant residual norm reduction of a cycle of `kdmax` 
