@@ -241,19 +241,10 @@ contains
     rhs = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
            this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
     actual = this%shelf1%precondition([old_shelf],melt,drag,1.0_r8,rhs)
-!    print*,''
-   ! print*,(expected-actual)/(expected+1.e-10_r8)
-!    print*,'--------------'
-    !print*,expected
-    !@assertEqual(expected,actual,message='Preconditioner returns incorrect result',tolerance=2.e-2_r8)
     delta = this%shelf1%precondition([old_shelf],melt,drag,1.0_r8,expected)
-!    print*,delta
     call this%shelf3%update(this%shelf1%state_vector() + eps*delta)
     actual = (this%shelf3%residual([old_shelf],melt,drag,1.0_r8) - &
               this%shelf1%residual([old_shelf],melt,drag,1.0_r8))/eps
-    !print*,actual
-!    print*,'--------------'
-!    print*,((expected-actual)/(expected+1.e-10_r8))
     @assertEqual(expected,actual,message='Preconditioner returns incorrect result', tolerance=2.e-2_r8)
   end subroutine test_preconditioner
 
@@ -310,8 +301,6 @@ contains
     iplvl = 0
     i = -1
     do while(t < time)
-      print*,t
-      !print*,'***************************************************************************'
       i = i + 1
       call this%shelf4%write_data(hfile,'shelf'//str(i),herr)
       shelf_array(1) = this%shelf4

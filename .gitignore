@@ -12,3 +12,4 @@ doc/
 a.out
 *.x
 *.d
+tests/*.F90
