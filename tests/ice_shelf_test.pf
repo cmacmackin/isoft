@@ -40,7 +40,7 @@ module ice_shelf_test
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: chi_val = 4._r8
 
-  real(r8), parameter :: perturbation = 2.e-1_r8
+  real(r8), parameter :: perturbation = 2.e-3_r8
 
   @TestCase
   type, extends(testcase) :: test_shelf

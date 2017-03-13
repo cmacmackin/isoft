@@ -29,7 +29,7 @@ module nitsol_test
   use f95_lapack
   implicit none
 
-  integer, parameter  :: points = 20
+  integer, parameter  :: points = 10
   integer, parameter  :: n_tot = 3*points
   integer, parameter  :: kdmax = 20, nnimax = 200
   real(r8), parameter :: lower_bound = -1.0_r8, upper_bound = 0.0_r8
