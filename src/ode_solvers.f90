@@ -117,17 +117,17 @@ contains
     ! \qquad\sum_{s=0}^{n-1}\vec{f}_{\vec{u}^{(s)}}(\vec{u}_r(x),
     ! \vec{u}^{(1)}_r(x), \ldots, \vec{u}^{n-1}_r(x),
     ! x)(\vec{u}^{(s)}_{r+1}(x) - \vec{u}^{(s)}_r(x)). $$ The boundary
-    ! conditions are iterated according to $$ \qquad \sum_{s=0}^{n-1}
+    ! conditions are iterated according to $$ \sum_{s=0}^{n-1}
     ! g_{k,\vec{u}^{(s)}}(\vec{u}_r(0), \vec{u}^{(1)}_r(0), \ldots,
     ! \vec{u}^{n-1}_r(0), x)\cdot(\vec{u}^{(s)}_{r+1}(0) -
-    ! \vec{u}^{(s)}_r(0)) = 0, k=1,\ldots,l$$ and $$ \qquad
-    ! \sum_{s=0}^{n-1} g_{k,\vec{u}^{(s)}}(\vec{u}_r(b),
-    ! \vec{u}^{(1)}_r(b), \ldots, \vec{u}^{n-1}_r(b),
-    ! x)\cdot(\vec{u}^{(s)}_{r+1}(b) - \vec{u}^{(s)}_r(b)) = 0,
-    ! k=l+1,\ldots,mn.$$ Here, \(\vec{f}_{\vec{u}^{(s)}}\) is the
-    ! derivative of \(\vec{f}\) with respect to \(\vec{u}^{(s)}\) and
-    ! is a tensor, while \(g_{k,\vec{u}^{(s)}}\) is the derivative of
-    ! \(g_k\) with respect to \(\vec{u}^{(s)}\) and is a vector.
+    ! \vec{u}^{(s)}_r(0)) = 0, k=1,\ldots,l$$ and $$ \sum_{s=0}^{n-1}
+    ! g_{k,\vec{u}^{(s)}}(\vec{u}_r(b), \vec{u}^{(1)}_r(b), \ldots,
+    ! \vec{u}^{n-1}_r(b), x)\cdot(\vec{u}^{(s)}_{r+1}(b) -
+    ! \vec{u}^{(s)}_r(b)) = 0, k=l+1,\ldots,mn.$$ Here,
+    ! \(\vec{f}_{\vec{u}^{(s)}}\) is the derivative of \(\vec{f}\)
+    ! with respect to \(\vec{u}^{(s)}\) and is a tensor, while
+    ! \(g_{k,\vec{u}^{(s)}}\) is the derivative of \(g_k\) with
+    ! respect to \(\vec{u}^{(s)}\) and is a vector.
     ! 
     ! The user must provide functions for \(L\) and
     ! \(\vec{f}\). Currently this implementation only handles linear
@@ -191,8 +191,11 @@ contains
 
     integer :: npoints, itmax, gitmax, kdim
     real(r8) :: eta
+    real(r8), parameter :: epsilon = 1.e-7
 
+    integer :: i
     real(r8), dimension(size(solution),order) :: u, u_prev
+    real(r8), dimension(size(solution))       :: f_prev
 
     if (.not. present(differentiate) .and. order > 1) then
       flag = 3
@@ -220,8 +223,75 @@ contains
     else
       kdim = 10
     end if
+
+    u_prev = get_derivs(solution)
+
+    f_prev = f(u_prev)
     
-    
+
+  contains
+
+    function get_derivs(v)
+      !! Calculates the necessary number of derivatives and assembles
+      !! them in 2-D array.
+      real(r8), dimension(:), intent(in) :: v
+      real(r8), dimension(size(v), order) :: get_derivs
+      integer :: j
+      get_derivs(:,1) = solution
+      do j = 2, order
+        get_derivs(:,j) = differentiate(v, i-1)
+      end do
+    end function get_derivs
+
+    function lin_op(v, xcur, rhs, rpar, ipar, success)
+      !! The linear operator for the quasilinearised system.
+      real(r8), dimension(:), intent(in)    :: v
+        !! The vector to be operated upon
+      real(r8), dimension(:), intent(in)    :: xcur
+        !! Array containing the current estimate of the independent
+        !! variables in the linear system. This may not be needed, but
+        !! is provided just in case.
+      real(r8), dimension(:), intent(in)    :: rhs
+        !! Array containing the right hand side of the linear
+        !! system. This may not be needed, but is provided just in
+        !! case.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      logical, intent(out)                  :: success
+        !! Indicates whether operation was completed succesfully
+      real(r8), dimension(size(xcur))       :: lin_op
+        !! Result of the operation
+      real(r8), dimension(size(xcur),order) :: v_derivs
+      v_derivs = get_derivs(v)
+      lin_op = L(v) - (f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
+      ! FIGURE OUT BOUNDARY CONDITIONS!
+    end function lin_op
+
+    function preconditioner(v, xcur, rhs, rpar, ipar, success)
+      !! The preconditioner for the quasilinearised system.
+      real(r8), dimension(:), intent(in)    :: v
+        !! The vector to be preconditioned
+      real(r8), dimension(:), intent(in)    :: xcur
+        !! Array containing the current estimate of the independent
+        !! variables in the linear system. This may not be needed, but
+        !! is provided just in case.
+      real(r8), dimension(:), intent(in)    :: rhs
+        !! Array containing the right hand side of the linear
+        !! system. This may not be needed, but is provided just in
+        !! case.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      logical, intent(out)                  :: success
+        !! Indicates whether operation was completed succesfully
+      real(r8), dimension(size(xcur))       :: preconditioner
+        !! Result of the operation
+      preconditioner = precond(v, u_prev, L, f, L(u_prev(:,1)), f_prev)
+      success = .true.
+    end function preconditioner
 
   end subroutine quasilinear_solve
 
