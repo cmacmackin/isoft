@@ -74,6 +74,9 @@ includes = set()
 
 src = open(filename,'r')
 for line in src:
+  if os.path.splitext(filename)[1] == '.f' and \
+     (line[0] == 'c' or line[0] == '*' or line[0] == '!'):
+    continue
   use = USE_RE.search(line)
   if use:
     if not use.group(1) == 'intrinsic' and not ignore_re.search(use.group(2)):
