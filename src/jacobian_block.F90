@@ -230,8 +230,8 @@ contains
     call source_field%allocate_scalar_field(this%contents)
     call source_field%allocate_scalar_field(this%derivative)
     this%contents = source_field
-    this%derivative = this%contents%d_dx(this%direction)
     this%direction = direction
+    this%derivative = this%contents%d_dx(this%direction)
     if (present(extra_derivative)) this%extra_derivative = extra_derivative
     if (present(boundary_locs)) then
       this%boundary_locs = boundary_locs

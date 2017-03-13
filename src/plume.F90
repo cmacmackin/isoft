@@ -415,7 +415,7 @@ contains
               delta => this%delta, nu => this%nu, mu => this%mu, &
               epsilon => this%epsilon, r => this%r_val)
 
-      b = -h/r
+      b = h/r
       U = this%velocity%component(1)
       m = this%melt_formulation%melt_rate()
       rho = this%eos%water_density(this%temperature, this%salinity)
