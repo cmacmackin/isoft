@@ -34,7 +34,9 @@ module plume_boundary_mod
   ! specify the boundary conditions for plume types.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field, vector_field
+  use factual_mod, only: scalar_field, vector_field, uniform_scalar_field, &
+                         uniform_vector_field
+  use boundary_types_mod, only: free_boundary
   implicit none
   private
   
@@ -44,115 +46,102 @@ module plume_boundary_mod
     !
     ! A type in which procedures for getting the boundary conditions
     ! of plumes are to be specified. The descendent types can contain
-    ! whatever data is needed to compute the result. It provides the
-    ! routine [[plume_boundary(type):get_boundaries_residual]] to
-    ! return an array with the residuals representing deviation from
-    ! satisfying the conditions. This can then be appended to a
-    ! [[plume(type)]]'s residual array.
-    !
-    ! When specifying boundary conditions in this way, it becomes
-    ! necessary not to include the residual of the plume data at some
-    ! location(s). Typically this would be adjacent to the boundaries
-    ! being prescribed. In order to accomplish this, routines are
-    ! provided which return arrays indicating at which boundaries data
-    ! should be omitted and how much. These should be passed as
-    ! arguments for the field methods to get and set the field's raw
-    ! data.
+    ! whatever data is needed to compute the result.
     !
     ! This class effectively provides free boundary conditions. It's 
     ! type-bound procedures should be overridden to provide case-specific
     ! conditions.
     !
   contains
-    procedure :: thickness_lower_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the thickness
-      !! field.
-    procedure :: thickness_upper_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_upper_bound`/`provide_upper_bound` argument when
-      !! getting or setting the raw representation of the thickness
-      !! field.
-    procedure :: velocity_lower_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the velocity
-      !! field.
-    procedure :: velocity_upper_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_upper_bound`/`provide_upper_bound` argument when
-      !! getting or setting the raw representation of the velocity
-      !! field.
-    procedure :: temperature_lower_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the temperature
-      !! field.
-    procedure :: temperature_upper_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_upper_bound`/`provide_upper_bound` argument when
-      !! getting or setting the raw representation of the temperature
-      !! field.
-    procedure :: salinity_lower_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_lower_bound`/`provide_lower_bound` argument when
-      !! getting or setting the raw representation of the salinity
-      !! field.
-    procedure :: salinity_upper_bound => bound_array
-      !! Returns a 1D array which should be passed as the
-      !! `exclude_upper_bound`/`provide_upper_bound` argument when
-      !! getting or setting the raw representation of the salinity
-      !! field.
-    procedure :: boundary_residuals
-      !! Returns an array consisting of the difference between the required
-      !! boundary values and those which actually exist. This can then be
-      !! appended to a plume's state vector
+    procedure :: thickness_bound_info => bound_info
+      !! Indicates the type and depth of the thickness boundary at
+      !! different locations.
+    procedure :: velocity_bound_info => bound_info
+      !! Indicates the type and depth of the thickness boundary at
+      !! different locations.
+    procedure :: temperature_bound_info => bound_info
+      !! Indicates the type and depth of the thickness boundary at
+      !! different locations.
+    procedure :: salinity_bound_info => bound_info
+      !! Indicates the type and depth of the thickness boundary at
+      !! different locations.
+    procedure :: thickness_bound => scalar_bound
+      !! Produces a field containing the boundary conditions for plume
+      !! thickness at the specified location.
+    procedure :: velocity_bound => vector_bound
+      !! Produces a field containing the boundary conditions for plume
+      !! velocity at the specified location.
+    procedure :: temperature_bound => scalar_bound
+      !! Produces a field containing the boundary conditions for plume
+      !! temperature at the specified location.
+    procedure :: salinity_bound => scalar_bound
+      !! Produces a field containing the boundary conditions for plume
+      !! salinity at the specified location.
   end type plume_boundary
 
 contains
 
-  pure function bound_array(this)
+  subroutine bound_info(this, location, bound_type, bound_depth)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: March 2017
     !
-    ! Default implementation of the method getting lower and upper
-    ! boundary information, which is then passed to the methods for
-    ! getting and setting raw representations of fields. It returns a
-    ! 1D array of length 2, indicating free boundaries (the raw data
-    ! should represent all cells contained in the field, not excluding
-    ! any near the boundaries).
+    ! Provides information about the type of boundary, and the number
+    ! of layers of data-points needed to describe it.
     !
     class(plume_boundary), intent(in) :: this
-    integer, dimension(2) :: bound_array
-    bound_array = 0
-  end function bound_array
+    integer, intent(in)               :: location
+      !! Which boundary information is to be provided for.  The
+      !! boundary will be the one normal to dimension of number
+      !! `abs(boundary)`. If the argument is negative, then the lower
+      !! boundary is returned. If positive, then the upper boundary is
+      !! returned.
+    integer, intent(out)              :: bound_type
+      !! An integer representing what sort of boundary condition is
+      !! used. The integer value corresponding to each boundary type is
+      !! specified in the [[boundary_types_mod]].
+    integer, intent(out)              :: bound_depth
+      !! The number of layers of data-points needed to specify the
+      !! boundary condition.
+    bound_type = free_boundary
+    bound_depth = 0
+  end subroutine bound_info
 
-  function boundary_residuals(this, thickness, velocity, temperature, &
-                              salinity, t) result(residuals)
+  function scalar_bound(this, location)
     !* Author: Chris MacMackin
-    !  Date: September 2016
+    !  Date: March 2017
     !
-    ! Default implementation of the [[plume_boundary(type):boundary_residuals]]
-    ! method. It returns a zero-length array, effectively indicating free
-    ! boundaries.
+    ! Returns a field containing the boundary values for the specified
+    ! boundary location.
     !
-    class(plume_boundary), intent(in)   :: this
-    class(scalar_field), intent(in)     :: thickness
-      !! A field containing the thickness of the plume
-    class(vector_field), intent(in)     :: velocity
-      !! A field containing the flow velocity of the plume
-    class(scalar_field), intent(in)     :: temperature
-      !! The field containing the temperature of the plume
-    class(scalar_field), intent(in)     :: salinity
-      !! The field containing the salinity of the plume
-    real(r8), intent(in)                :: t
-      !! The time at which the boundary conditions are to be calculated.
-    real(r8), allocatable, dimension(:) :: residuals
-      !! An array containing the difference between the required boundary
-      !! values and those which are actually present.
-    allocate(residuals(0))
-    return
-  end function boundary_residuals
+    class(plume_boundary), intent(in) :: this
+    integer, intent(in)               :: location
+      !! Which boundary information is to be provided for.  The
+      !! boundary will be the one normal to dimension of number
+      !! `abs(boundary)`. If the argument is negative, then the lower
+      !! boundary is returned. If positive, then the upper boundary is
+      !! returned.
+    class(scalar_field), allocatable :: scalar_bound
+    allocate(uniform_scalar_field :: scalar_bound)
+    scalar_bound = uniform_scalar_field(0.0_r8)
+  end function scalar_bound
+
+  function vector_bound(this, location)
+    !* Author: Chris MacMackin
+    !  Date: March 2017
+    !
+    ! Returns a field containing the boundary values for the specified
+    ! boundary location.
+    !
+    class(plume_boundary), intent(in) :: this
+    integer, intent(in)               :: location
+      !! Which boundary information is to be provided for.  The
+      !! boundary will be the one normal to dimension of number
+      !! `abs(boundary)`. If the argument is negative, then the lower
+      !! boundary is returned. If positive, then the upper boundary is
+      !! returned.
+    class(vector_field), allocatable  :: vector_bound
+    allocate(uniform_vector_field :: vector_bound)
+    vector_bound = uniform_vector_field([0.0_r8,0.0_r8])
+  end function vector_bound
 
 end module plume_boundary_mod

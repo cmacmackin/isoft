@@ -48,10 +48,13 @@ module equation_of_state_mod
   contains
     procedure(get_property), deferred :: water_density
       !! Returns the water density for the given temperature and salinity.
+    procedure(get_property_dx), deferred :: water_density_derivative
+      !! Returns the derivative of the water density for the given
+      !! temperature and salinity.
  end type equation_of_state
 
   abstract interface
-    pure function get_property(this, temperature, salinity) result(density)
+    function get_property(this, temperature, salinity) result(density)
       import :: r8
       import :: equation_of_state
       import :: scalar_field
@@ -63,6 +66,30 @@ module equation_of_state_mod
       class(scalar_field), allocatable     :: density
         !! A field containing the density of the water
     end function get_property
+
+    function get_property_dx(this, temperature, d_temperature, salinity, &
+                             d_salinity, dir) result(d_density)
+      import :: r8
+      import :: equation_of_state
+      import :: scalar_field
+      class(equation_of_state), intent(in) :: this
+      class(scalar_field), intent(in)      :: temperature
+        !! A field containing the temperature of the water
+      class(scalar_field), intent(in)      :: d_temperature
+        !! A field containing the derivative of the temperature of the
+        !! water, in teh same direction as `dir`
+      class(scalar_field), intent(in)      :: salinity
+        !! A field containing the salinity of the water
+      class(scalar_field), intent(in)      :: d_salinity
+        !! A field containing the derivative of the salinity of the
+        !! water, in the same direction as `dir`
+      integer, intent(in)                  :: dir
+        !! The direction in which to take the derivative
+      class(scalar_field), allocatable     :: d_density
+        !! A field containing the derivative of the density of the
+        !! water in direction `dir`
+    end function get_property_dx
+
   end interface
 
 end module equation_of_state_mod

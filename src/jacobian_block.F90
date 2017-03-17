@@ -390,6 +390,7 @@ contains
                                                  cached_dx2_ud, &
                                                  cached_dx2_dc
     real(r8), dimension(:), allocatable       :: cont, deriv
+    real(r8), dimension(:,:), allocatable     :: domain
     integer                                   :: i, pos
 
     call rhs%guard_temp()
@@ -401,9 +402,12 @@ contains
 #endif
       factor = 'N'
       n = this%contents%raw_size()
+      domain = this%contents%domain()
       ! Try to use cached copy of inverse grid spacing, if available and suitable 
       if (allocated(cached_field_type)) then
         use_cached = same_type_as(this%contents, cached_field_type) .and. &
+                     abs(domain(1,1) - minval(cached_dx_c)) < 1e-10 .and. &
+                     abs(domain(1,2) - maxval(cached_dx_c)) < 1e-10 .and. &
                      n==size(cached_dx_c)
       else
         use_cached = .false.

@@ -64,6 +64,7 @@ module linear_eos_mod
       !! The haline contraction coefficient, \(\beta_S\).
   contains
     procedure :: water_density => linear_water_density
+    procedure :: water_density_derivative => linear_water_deriv
   end type linear_eos
 
   interface linear_eos
@@ -94,7 +95,7 @@ contains
     this%beta_s  = beta_s
   end function constructor
 
-  pure function linear_water_density(this, temperature, salinity) result(density)
+  function linear_water_density(this, temperature, salinity) result(density)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -115,5 +116,37 @@ contains
     call temperature%clean_temp(); call salinity%clean_temp()
     call density%set_temp()
   end function linear_water_density
+
+  function linear_water_deriv(this, temperature, d_temperature, salinity, &
+                             d_salinity, dir) result(d_density)
+    !* Author: Chris MacMackin
+    !  Date: November 2016
+    !
+    ! Calculates the density of the water from the temperature and
+    ! salinity, using a linear equatino of state, $$ \rho =
+    ! \rho_0[1-\beta_T(T-T_0) + \beta_S(S-S_0)]. $$
+    class(linear_eos), intent(in)    :: this
+    class(scalar_field), intent(in)  :: temperature
+      !! A field containing the temperature of the water
+    class(scalar_field), intent(in)  :: d_temperature
+      !! A field containing the derivative of the temperature of the
+      !! water, in teh same direction as `dir`
+    class(scalar_field), intent(in)  :: salinity
+      !! A field containing the salinity of the water
+    class(scalar_field), intent(in)  :: d_salinity
+      !! A field containing the derivative of the salinity of the
+      !! water, in the same direction as `dir`
+    integer, intent(in)              :: dir
+      !! The direction in which to take the derivative
+    class(scalar_field), allocatable :: d_density
+      !! A field containing the density of the water
+    call temperature%guard_temp(); call salinity%guard_temp()
+    call d_temperature%guard_temp(); call d_salinity%guard_temp()
+    call salinity%allocate_scalar_field(d_density)
+    d_density = this%ref_rho*(this%beta_s*d_salinity - this%beta_t*d_temperature)
+    call temperature%clean_temp(); call salinity%clean_temp()
+    call d_temperature%clean_temp(); call d_salinity%clean_temp()
+    call d_density%set_temp()
+  end function linear_water_deriv
 
 end module linear_eos_mod
