@@ -48,9 +48,9 @@ module equation_of_state_mod
   contains
     procedure(get_property), deferred :: water_density
       !! Returns the water density for the given temperature and salinity.
-    procedure(get_property_dx), deferred :: water_density_derivative
-      !! Returns the derivative of the water density for the given
-      !! temperature and salinity.
+!    procedure(get_property_dx), deferred :: water_density_derivative
+!      !! Returns the derivative of the water density for the given
+!      !! temperature and salinity.
  end type equation_of_state
 
   abstract interface

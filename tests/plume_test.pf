@@ -37,6 +37,7 @@ module plume_test
   use uniform_ambient_mod, only: ambient => uniform_ambient_conditions
   use simple_plume_boundary_mod, only: boundary => simple_plume_boundary
   use linear_eos_mod, only: linear_eos
+  use prescribed_eos_mod, only: prescribed_eos
   implicit none
 
   integer, parameter  :: resolution = 10
@@ -47,16 +48,19 @@ module plume_test
   real(r8), parameter :: beta = 0.024
   real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
   real(r8), parameter :: r = 1.12_r8
-  
-  real(r8), parameter :: perturbation = 1.e-5_r8
+  real(r8), parameter :: length = 2.5_r8
+
+
+  real(r8), parameter :: offset = 0.1_r8
+  real(r8), parameter :: perturbation = 1.e-2_r8
 
   @TestCase
   type, extends(testcase), public :: test_plume
     type(plume) :: plume1, plume2, plume3
     integer     :: nodes = resolution
-    real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
+    real(r8)    :: lower1 = 0.0_r8, upper1 = length
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
-    real(r8)    :: delta = 0.0_r8, nu = 0.0_r8
+    real(r8)    :: delta = 0.0_r8, nu = 1.0e-2_r8
     real(r8)    :: mu = 0.0_r8, epsilon = 0.0_r8
   contains
     procedure :: setup
@@ -80,7 +84,7 @@ contains
   pure function thickness1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness1
-    thickness1 = depth1([0.0_r8]) - depth1(location) + 1.e-16_r8
+    thickness1 = depth1([0._r8]) - depth1([offset]) + location(1)!depth1([0.0_r8]) - depth1(location+offset)
   end function thickness1
 
   pure function thickness2(location)
@@ -112,7 +116,8 @@ contains
   pure function salinity1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity1
-    salinity1 = q_g**(2.0/3.0)/thickness1(location)
+    real(r8) :: sal_st
+    salinity1 = 1.0/thickness1([0._r8]) + 1.3*location(1)*(location(1) - 2*length)
   end function salinity1
 
   pure function salinity2(location)
@@ -131,17 +136,14 @@ contains
   pure function temp1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: temp1
-    if (location(1) == 0.0_r8) then
-      temp1 = (beta+1.0_r8)*big_x*r/(big_x+1.0_r8)
-    else
-      temp1 = (beta + 1.0_r8) * location(1) / thickness1(location)
-    end if
+    real(r8), parameter :: temp_st = (beta+1.0_r8)*big_x*r/(big_x+1.0_r8)
+    temp1 = temp_st - 0.25*location(1)*(location(1) - 2*length)
   end function temp1
 
   pure function temp2(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: temp2
-    if (location(1) == -1.0_r8) then
+    if (location(1) == 0.0_r8) then
       temp2 = (beta+1.0_r8)*big_x*r/(big_x+1.0_r8)
     else
       temp2 = (beta + 1.0_r8) * location(1) / thickness2(location)
@@ -169,8 +171,8 @@ contains
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
     allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
-    allocate(bound, source=boundary(0.0_r8,[q_g**(1.0/3.0),0._r8], &
-                                    salinity1([0.0_r8]),temp1([0.0_r8])))
+    allocate(bound, source=boundary(thickness1([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
+                                    temp1([0.0_r8]),salinity1([0.0_r8])))
     domain1(1,:) = [this%lower1, this%upper1]
     domain2(1,:) = [this%lower2, this%upper2]
     vel = cheb1d_vector_field(this%nodes,velocity,domain1(1,1),domain1(1,2))
@@ -183,9 +185,11 @@ contains
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
-    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
-    allocate(bound, source=boundary(0.0_r8,[q_g**(1.0/3.0),0._r8], &
-                                    salinity1([0.0_r8]),temp1([0.0_r8])))
+    tmp = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
+    allocate(prescribed_eos :: eos)
+    eos = prescribed_eos(1.0_r8, -1.0_r8, tmp)
+    allocate(bound, source=boundary(thickness1([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
+                                    temp1([0.0_r8]),salinity1([0.0_r8])))
     call this%plume3%initialise(domain1, [this%nodes], thickness3, velocity3,  &
                                 temp3, salinity3, ent, mel, amb, eos, bound,  &
                                 this%delta, this%nu, this%mu, this%epsilon)
@@ -230,23 +234,6 @@ contains
   end subroutine test_water_density
 
   @Test
-  subroutine test_residual(this)
-    !! Test the residual for the analytical steady state XXX
-    class(test_plume), intent(inout) :: this
-    real(r8), dimension(:), allocatable :: actual, expected
-    type(cheb1d_scalar_field) :: thickness
-    real(r8) :: density, temperature
-    thickness = r * cheb1d_scalar_field(this%nodes, depth1, this%lower1, this%upper1)
-    density = 1.0_r8 / r
-    temperature = 0.0_r8
-    actual = this%plume1%residual(thickness, density, temperature)
-    print*,actual
-    allocate(expected(size(actual)))
-    expected = 0.0_r8
-    @assertEqual(expected,actual,message='Non-zero residual returned',tolerance=1.e-9_r8)
-  end subroutine test_residual
-
-  @Test
   subroutine test_update(this)
     !! Test two plumes have the same state vectors after one is updated
     !! with the state vector of the other.
@@ -258,7 +245,7 @@ contains
     @assertEqual(this%plume1%state_vector(),this%plume2%state_vector(),message='State vector not updated.')
   end subroutine test_update
 
-  !@Test
+  @Test
   subroutine test_solve(this)
     !! Tests that the correct solution will be found for a plume.
     class(test_plume), intent(inout) :: this
@@ -270,12 +257,11 @@ contains
     density = 1.0_r8 / r
     temperature = 0.0_r8
     time = 1.0_r8
-    expected=this%plume3%residual(thickness, density, temperature)
-    !print*,expected
-    call this%plume3%solve(thickness, density, temperature, time)
     expected = this%plume1%state_vector()
+    call this%plume1%solve(thickness, density, temperature, time)
     actual = this%plume3%state_vector()
-    @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-9_r8)
+    print*,actual
+    @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-3_r8)
   end subroutine test_solve
 
 end module plume_test

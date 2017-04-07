@@ -72,7 +72,7 @@ contains
     this%coefficient = coefficient
   end function constructor
 
-  pure function jenkins1991_rate(this, velocity, thickness, depth, time) &
+  function jenkins1991_rate(this, velocity, thickness, depth, time) &
                                                 result(entrainment)
     !* Author: Christopher MacMackin
     !  Date: October 2016
@@ -113,8 +113,9 @@ contains
     call velocity%guard_temp(); call thickness%guard_temp(); call depth%guard_temp()
     call depth%allocate_scalar_field(entrainment)
     call depth%allocate_vector_field(tmp)
+    entrainment = velocity%norm()
     tmp = .grad. depth
-    entrainment = tmp%norm() ! Needed due to ICE when try to put aqll on one line. TODO: Create minimal example and submit bug report.
+    entrainment = tmp%norm() ! Needed due to ICE when try to put all on one line. TODO: Create minimal example and submit bug report.
     entrainment = this%coefficient * entrainment * velocity%norm()
     call velocity%clean_temp(); call thickness%clean_temp(); call depth%clean_temp()
     call entrainment%set_temp()

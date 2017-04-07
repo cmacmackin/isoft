@@ -676,11 +676,12 @@ contains
       !!
       !!4
       !!:    Insignificant residual norm reduction of a cycle of `kdmax` 
-      !!     steps (stagnation) before an acceptable step has been found.
+      !!     steps (stagnation) before an acceptable solution has been 
+      !!     found.
       !!
       !!5
       !!:    Dangerous ill-conditioning detected before an acceptable 
-      !!     step has been found.
+      !!     solution has been found.
     real(r8), intent(in), optional                  :: tol
       !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
     procedure(mat_mult), optional                   :: precond

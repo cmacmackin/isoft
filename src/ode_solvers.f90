@@ -28,7 +28,7 @@ module ode_solvers_mod
   ! Provides routines to solve systems of ODEs.
   !
   use iso_fortran_env, only: r8 => real64
-  use nitsol_mod, only: gmres_solve, dnrm2
+  use nitsol_mod, only: gmres_solve, dnrm2, iplvl
   implicit none
 
   abstract interface
@@ -193,10 +193,14 @@ contains
     real(r8) :: eta
     real(r8), parameter :: epsilon = 1.e-7
 
-    integer :: i, stagnant_iters, gmres_flag
+    integer :: i, stagnant_iters, gmres_flag, j
     real(r8) :: old_resid, gmres_norm
     real(r8), dimension(size(solution),order) :: u, u_prev
-    real(r8), dimension(size(solution))       :: f_prev, rhs
+    real(r8), dimension(size(solution))       :: f_prev, rhs, thing
+    logical :: tmp
+    real(r8), dimension(2) :: rtmp
+    integer, dimension(2) :: itmp
+    
 
     if (.not. present(differentiate) .and. order > 1) then
       flag = 3
@@ -233,6 +237,9 @@ contains
     resid_norm = dnrm2(npoints, f_prev, 1)
     old_resid = 5*resid_norm
     
+    iplvl = 5
+      thing = lin_op(solution, solution, rhs, rtmp, itmp, tmp)
+      thing = lin_op([(1._r8, j=1,size(solution))], solution, rhs, rtmp, itmp, tmp)
     do while(resid_norm > eta)
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -247,6 +254,8 @@ contains
         return
       end if
 
+      print*,i,eta
+      print*,resid_norm,gmres_norm
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        1e-2_r8*eta, preconditioner, iter_max=gitmax,  &
@@ -260,6 +269,7 @@ contains
       f_prev = f(u_prev)
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     end do
+    iplvl = 0
 
     flag = 0
     
@@ -299,6 +309,9 @@ contains
         !! Result of the operation
       real(r8), dimension(size(xcur),order) :: v_derivs
       v_derivs = get_derivs(v)
+      print*,'--------------------------------------'
+      print*,L(v)
+      print*,(f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
       lin_op = L(v) - (f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
       success = .true.
     end function lin_op

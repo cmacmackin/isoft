@@ -30,7 +30,7 @@ module finite_difference_block_mod
   ! which use a spectral discretisation.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: abstract_field, scalar_field, vector_field
+  use factual_mod!, only: abstract_field, scalar_field, vector_field
   use boundary_types_mod, only: dirichlet, neumann, free_boundary
   use f95_lapack, only: la_gtsvx
   use penf, only: str
@@ -118,7 +118,8 @@ contains
     ! conditions are treated.
     !
     class(abstract_field), intent(in)           :: template
-      !! A scalar field (\(F\)) making up this block of the Fin_diff
+      !! A scalar field with the same grid as any fields bassed as
+      !! arguments to the [[fin_diff_block(type):solve_for]] method.
     integer, dimension(:), optional, intent(in) :: boundary_locs
       !! The locations in the raw representation of `rhs` for which
       !! boundary conditions are specified. Defaults to there being
@@ -299,11 +300,16 @@ contains
     !
     ! @Warning Currently this is only implemented for a 1-D field.
     !
-    class(fin_diff_block), intent(inout) :: this
-    class(vector_field), intent(in)      :: rhs
+    ! @Bug For some reason, calls to the `vector_dimensions()` method
+    ! produce a segfault when `rhs` is
+    ! `class(vector_field)`. Everything works fine if it is
+    ! `class(cheb1d_vector_field)`, so this is used as a workaround.
+    !
+    class(fin_diff_block), intent(inout)   :: this
+    class(cheb1d_vector_field), intent(in) :: rhs
       !! The right hand side of the linear(ised) system.
-    class(vector_field), allocatable     :: solution
-    real(r8), dimension(:), allocatable  :: sol_vector
+    class(vector_field), allocatable       :: solution
+    real(r8), dimension(:), allocatable    :: sol_vector
 
     integer                          :: flag, n, i
     class(scalar_field), allocatable :: component
@@ -316,10 +322,10 @@ contains
  
     call rhs%guard_temp()
     allocate(sol_vector(rhs%raw_size()))
+    n = size(this%diagonal)
     ! Allocate the arrays used to hold the factorisation of the
     ! tridiagonal matrix
     if (.not. allocated(this%pivots)) then
-      n = size(this%diagonal)
       allocate(this%l_multipliers(n-1))
       allocate(this%u_diagonal(n))
       allocate(this%u_superdiagonal1(n-1))
@@ -335,7 +341,7 @@ contains
       if (i > 1) factor = 'F'
       component = rhs%component(i)
       call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal, &
-                    component%raw(), sol_vector((i-1)*m+1:i*m),            &
+                    component%raw(), sol_vector((i-1)*n+1:i*n),            &
                     this%l_multipliers, this%u_diagonal,                   &
                     this%u_superdiagonal1, this%u_superdiagonal2,          &
                     this%pivots, factor, 'N', forward_err, backward_err,   &

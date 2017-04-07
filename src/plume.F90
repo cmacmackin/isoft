@@ -899,17 +899,29 @@ contains
     real(r8), intent(in)  :: time
       !! The time to which the basal surface should be solved
     
-    real(r8), dimension(:), allocatable :: solution
+    real(r8), dimension(:), allocatable :: solution, backup
     real(r8) :: residual
-    integer :: flag
+    integer :: flag, i
 
     call ice_thickness%guard_temp()
     this%time = time
 
-    solution = this%state_vector()
-    call quasilinear_solve(L, f, solution, 1, residual, flag, &
-                           precond=preconditioner)
-    call this%update(solution)
+    backup = this%state_vector()
+!    do i = 1, 10
+      solution = backup
+      call quasilinear_solve(L, f, solution, 1, residual, flag, &
+                           precond=preconditioner, krylov_dim=100, gmres_iter_max=i)
+!      call this%update(solution)
+ !     print*,i,'iterations'
+  !    print*,this%state_vector()
+   ! end do
+    !error stop
+    if (flag /= 0) then
+      print*,flag
+      call this%update(solution)
+      print*,this%state_vector()
+      error stop ('QLM solver returned with nonzero status flag.')
+    end if
     
     call ice_thickness%clean_temp()
 
@@ -925,6 +937,7 @@ contains
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
 
+      !print*,this%state_vector()
       call this%update(v)
       
       ! Thickness
@@ -966,7 +979,7 @@ contains
         call vector_tmp%set_boundary(1, bdepth_u, &
                                      this%velocity%get_boundary(1, bdepth_u))
       end if
-      st = en
+      st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
 
@@ -985,7 +998,7 @@ contains
         error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                     'velocity boundaries.')
       end if
-      st = en
+      st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
 
@@ -1001,7 +1014,7 @@ contains
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%temperature%get_boundary(1, bdepth_u))
       end if
-      st = en
+      st = en + 1
       en = st + this%temperature_size - 1
       L(st:en) = scalar_tmp%raw()
 
@@ -1020,7 +1033,7 @@ contains
         error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                     'temperature boundaries.')
       end if
-      st = en
+      st = en + 1
       en = st + this%temperature_size - 1
       L(st:en) = scalar_tmp%raw()
 
@@ -1036,7 +1049,7 @@ contains
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%salinity%get_boundary(1, bdepth_u))
       end if
-      st = en
+      st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
 
@@ -1055,7 +1068,7 @@ contains
         error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                     'salinity boundaries.')
       end if
-      st = en
+      st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
     end function L
@@ -1072,21 +1085,21 @@ contains
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
-      type(cheb1d_scalar_field) :: b, D_x, U, U_x, m, rho, rho_x, e, S_a, &
+      type(cheb1d_scalar_field) :: b, D_x, U, U_x, m, rho, e, S_a, &
                                    T_a, rho_a
 
       call this%update(v(:,1))
 
       ! Use same or similar notation for variables as used in equations
-      associate(D => this%thickness, Uvec => this%velocity,      &
+      associate(D => this%thickness, Uvec => this%velocity,     &
                 Uvec_x => this%velocity_dx, S => this%salinity, &
-                S_x => this%salinity_dx, T => this%temperature,  &
+                S_x => this%salinity_dx, T => this%temperature, &
                 T_x => this%temperature_dx, mf => this%melt_formulation, &
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
                 mu => this%mu, epsilon => this%epsilon, r => this%r_val, &
                 bounds => this%boundaries)
   
-        b = h/r
+        b = -h/r
         call mf%solve_for_melt(Uvec, b, T, S, D, time)
 
         ! FIXME: Alter this so that can take advantage of
@@ -1095,7 +1108,6 @@ contains
         U_x = this%velocity_dx%component(1)
         m = mf%melt_rate()
         rho = this%eos%water_density(T, S)
-        rho_x = this%eos%water_density_derivative(T,T_x,S,S_x,1)
         e = this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
         call S_a%assign_meta_data(m)
         call T_a%assign_meta_data(m)
@@ -1103,14 +1115,15 @@ contains
         S_a = this%ambient_conds%ambient_salinity(b,this%time)
         T_a = this%ambient_conds%ambient_temperature(b,this%time)
         rho_a = this%eos%water_density(T_a, S_a)
-        
+
         ! Thickness
         call bounds%thickness_bound_info(-1, btype_l, bdepth_l)
         call bounds%thickness_bound_info(1, btype_u, bdepth_u)
-        D_x = (e + m - D*U_x)/U
+        scalar_tmp = (e + m - D*U_x)/U
+        D_x = scalar_tmp
         select case(btype_l)
         case(dirichlet)
-          call D_x%set_boundary(-1, bdepth_l, bounds%thickness_bound(-1))
+          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%thickness_bound(-1))
         case(free_boundary)
           continue
         case default
@@ -1118,7 +1131,7 @@ contains
         end select
         select case(btype_u)
         case(dirichlet)
-          call D_x%set_boundary(1, bdepth_u, bounds%thickness_bound(1))
+          call scalar_tmp%set_boundary(1, bdepth_u, bounds%thickness_bound(1))
         case(free_boundary)
           continue
         case default
@@ -1127,7 +1140,7 @@ contains
         end select
         st = 1
         en = st + this%thickness_size - 1
-        f(st:en) = D_x%raw()
+        f(st:en) = scalar_tmp%raw()
       
         ! Velocity
         call bounds%velocity_bound_info(-1, btype_l, bdepth_l)
@@ -1139,15 +1152,15 @@ contains
         if (btype_u == dirichlet) then
           call vector_tmp%set_boundary(1, bdepth_u, bounds%velocity_bound(1))
         end if
-        st = en
+        st = en + 1
         en = st + this%velocity_size - 1
         f(st:en) = vector_tmp%raw()
 
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
         vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec + &
                       mu*Uvec%norm()*Uvec - nu*D_x*Uvec_x -  &
-                      D*(rho_a - rho)*(.grad.(b - delta*D))  &
-                      - 0.5_r8*delta*D**2*(.grad. rho))/(nu*D)
+                      D*(rho_a - rho)*(.grad.(b - delta*D)) - &
+                      0.5_r8*delta*D**2*(.grad. rho))/(nu*D)
         if (btype_l == neumann) then
           call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
@@ -1160,7 +1173,7 @@ contains
           error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                       'velocity boundaries.')
         end if
-        st = en
+        st = en + 1
         en = st + this%velocity_size - 1
         f(st:en) = vector_tmp%raw()
 
@@ -1174,16 +1187,16 @@ contains
         if (btype_u == dirichlet) then
           call scalar_tmp%set_boundary(1, bdepth_u, bounds%temperature_bound(1))
         end if
-        st = en
+        st = en + 1
         en = st + this%temperature_size - 1
         f(st:en) = scalar_tmp%raw()
 
         if (mf%has_heat_terms()) then
           scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
-                       - nu*D_x*T_x)/(nu*D)
+                       - nu*D_x*T_x - mf%heat_equation_terms())/(nu*D)
         else
           scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
-                       - nu*D_x*T_x - mf%heat_equation_terms())/(nu*D)
+                       - nu*D_x*T_x)/(nu*D)
         end if
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
@@ -1197,7 +1210,7 @@ contains
           error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                       'temperature boundaries.')
         end if
-        st = en
+        st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
@@ -1211,16 +1224,16 @@ contains
         if (btype_u == dirichlet) then
           call scalar_tmp%set_boundary(1, bdepth_u, bounds%salinity_bound(1))
         end if
-        st = en
+        st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
         if (mf%has_salt_terms()) then
           scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
-                       - nu*D_x*S_x)/(nu*D)
+                       - nu*D_x*S_x - mf%salt_equation_terms())/(nu*D)
         else
           scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
-                       - nu*D_x*S_x - mf%salt_equation_terms())/(nu*D)
+                       - nu*D_x*S_x)/(nu*D)
         end if
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
@@ -1234,7 +1247,7 @@ contains
           error stop ('Plume can only handle Dirichlet, Neumann or free '// &
                       'salinity boundaries.')
         end if
-        st = en
+        st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
       end associate
@@ -1283,35 +1296,35 @@ contains
       preconditioner(st:en) = v_plume%thickness%raw()
 
       v_plume%velocity = this%velocity_precond%solve_for(v_plume%velocity)
-      st = en
+      st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity%raw()
 
       v_plume%velocity_dx = &
            this%velocity_dx_precond%solve_for(v_plume%velocity_dx)
-      st = en
+      st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity_dx%raw()
 
       v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature)
-      st = en
+      st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature%raw()
 
       v_plume%temperature_dx = &
            this%temperature_dx_precond%solve_for(v_plume%temperature_dx)
-      st = en
+      st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
 
       v_plume%salinity = this%salinity_precond%solve_for(v_plume%salinity)
-      st = en
+      st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity%raw()
 
       v_plume%salinity_dx = &
            this%salinity_dx_precond%solve_for(v_plume%salinity_dx)
-      st = en
+      st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
     end function preconditioner

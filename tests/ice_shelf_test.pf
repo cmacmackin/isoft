@@ -59,7 +59,7 @@ contains
   pure function thickness1(location) result(thickness)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    real(r8), dimension(2) :: vel
+    real(r8), dimension(1) :: vel
     vel = velocity1(location)
     thickness = (1._r8 - location(1)/big_x)/vel(1)
   end function thickness1
