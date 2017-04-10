@@ -153,7 +153,6 @@ module plume_mod
     procedure :: basal_melt => plume_melt
     procedure :: basal_drag_parameter => plume_drag_parameter
     procedure :: water_density => plume_water_density
-    procedure :: residual => plume_residual
     procedure :: update => plume_update
     procedure :: set_time => plume_set_time
     procedure :: data_size => plume_data_size
@@ -597,127 +596,6 @@ contains
     density = 1.0_r8
   end function plume_water_density
 
-   
-  function plume_residual(this, ice_thickness, ice_density, ice_temperature) &
-                                                            result(residual)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !  Deprecated: True
-    !
-    ! Using the current state of the plume, this computes the residual
-    ! of the system of equations which is used to describe the it.
-    ! The residual takes the form of a 1D array, with each element 
-    ! respresenting the residual for one of the equations in the system.
-    !
-    ! @Note This is no longer used, as the plume is instead solved
-    ! using a quaslinearisation method.
-    !
-    class(plume), intent(inout)         :: this
-    class(scalar_field), intent(in)     :: ice_thickness
-      !! Thickness of the ice above the plume.
-    real(r8), intent(in)      :: ice_density
-      !! The density of the ice above the plume, assumed uniform.
-    real(r8), intent(in)      :: ice_temperature
-      !! The temperature of the ice above the plume, assumed uniform.
-    real(r8), dimension(:), allocatable :: residual
-      !! The residual of the system of equations describing the plume.
-    type(cheb1d_scalar_field) :: scalar_tmp
-    type(cheb1d_vector_field) :: vector_tmp
-    type(cheb1d_scalar_field) :: b, U, m, rho, e, S_a, T_a, rho_a
-    integer :: start, finish
-    integer, dimension(:), allocatable :: lower, upper
-    
-    call ice_thickness%guard_temp()
-
-!    allocate(residual(this%data_size()))
-!    residual = 0.0_r8
-!    call this%melt_formulation%solve_for_melt(this%velocity, ice_thickness/this%r_val, &
-!                                              this%temperature, this%salinity,        &
-!                                              this%thickness, this%time)
-!    start = 1
-!
-!    ! Use same or similar notation for variables as used in equations
-!    associate(D => this%thickness, Uvec => this%velocity, &
-!              S => this%salinity, &
-!              T => this%temperature, &
-!              mf => this%melt_formulation, h => ice_thickness, &              
-!              delta => this%delta, nu => this%nu, mu => this%mu, &
-!              epsilon => this%epsilon, r => this%r_val)
-!
-!      b = h/r
-!      U = this%velocity%component(1)
-!      m = this%melt_formulation%melt_rate()
-!      rho = this%eos%water_density(this%temperature, this%salinity)
-!      e = this%entrainment_formulation%entrainment_rate(this%velocity, this%thickness, &
-!                                                        b,this%time)
-!      call S_a%assign_meta_data(m)
-!      call T_a%assign_meta_data(m)
-!      call rho_a%assign_meta_data(m)
-!      S_a = this%ambient_conds%ambient_salinity(b,this%time)
-!      T_a = this%ambient_conds%ambient_temperature(b,this%time)
-!      rho_a = this%eos%water_density(T_a, S_a)
-!
-!      ! Continuity equation
-!      scalar_tmp = e + epsilon*m - .div.(D*Uvec)
-!
-!      lower = this%boundaries%thickness_lower_bound()
-!      upper = this%boundaries%thickness_upper_bound()
-!      finish = start + scalar_tmp%raw_size(lower,upper) - 1
-!      residual(start:finish) = scalar_tmp%raw(lower,upper)
-!      start = finish + 1
-!
-!      ! Momentum equation, x-component
-!      scalar_tmp = .div.(D*.grad.U) ! Needed due to stupid
-!                                    ! compiler issue. Works when
-!                                    ! tested with trunk.
-!      scalar_tmp = scalar_tmp*nu + &
-!                   D*(rho_a - rho)*(this%delta*D%d_dx(1) - b%d_dx(1)) &
-!                   - mu*Uvec%norm()*U + 0.5_r8*delta*(D**2)*rho%d_dx(1) &
-!                   - .div.(D*Uvec*U)
-!
-!      lower = this%boundaries%velocity_lower_bound()
-!      upper = this%boundaries%velocity_upper_bound()
-!      finish = start + scalar_tmp%raw_size(lower,upper) - 1
-!      residual(start:finish) = scalar_tmp%raw(lower,upper)
-!      start = finish + 1
-!
-!      ! Salinity equation
-!      scalar_tmp = .div.(D*.grad.S)
-!      if (mf%has_salt_terms()) then
-!        scalar_tmp = scalar_tmp*nu + e*S_a + mf%salt_equation_terms() &
-!                   - .div.(D*Uvec*S)
-!      else
-!        scalar_tmp = scalar_tmp*nu + e*S_a - .div.(D*Uvec*S)
-!      end if
-!
-!      lower = this%boundaries%salinity_lower_bound()
-!      upper = this%boundaries%salinity_upper_bound()
-!      finish = start + scalar_tmp%raw_size(lower,upper) - 1
-!      residual(start:finish) = scalar_tmp%raw(lower,upper)
-!      start = finish + 1
-!
-!      ! Temperature equation
-!      scalar_tmp = D*T
-!      scalar_tmp = .div.(D*.grad.T)
-!      if (mf%has_heat_terms()) then
-!        scalar_tmp = scalar_tmp*nu + e*T_a + mf%heat_equation_terms() &
-!                   - .div.(D*Uvec*T)
-!      else
-!        scalar_tmp = scalar_tmp*nu + e*T_a - .div.(D*Uvec*T)
-!      end if
-!
-!      lower = this%boundaries%temperature_lower_bound()
-!      upper = this%boundaries%temperature_upper_bound()
-!      finish = start + scalar_tmp%raw_size(lower,upper) - 1
-!      residual(start:finish) = scalar_tmp%raw(lower,upper)
-!
-!      ! Boundary conditions
-!      residual(finish+1:) = this%boundaries%boundary_residuals(D,Uvec,T,S,this%time)
-!    end associate
-
-    call ice_thickness%clean_temp()
-  end function plume_residual
-
 
   subroutine plume_update(this, state_vector)
     !* Author: Christopher MacMackin
@@ -907,7 +785,7 @@ contains
     this%time = time
 
     solution = this%state_vector()
-    call quasilinear_solve(L, f, solution, 1, residual, flag, 1.e-6_r8*size(solution), &
+    call quasilinear_solve(L, f, solution, 1, residual, flag, 1.e-12_r8*size(solution), &
                            precond=preconditioner, krylov_dim=100)!, gmres_iter_max=i)
     if (flag /= 0) then
       call this%update(solution)

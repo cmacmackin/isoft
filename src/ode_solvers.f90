@@ -190,7 +190,7 @@ contains
       !! but require more memory.
 
     integer :: npoints, itmax, gitmax, kdim
-    real(r8) :: eta
+    real(r8) :: eta, gmres_eta
     real(r8), parameter :: epsilon = 5.e-8
 
     integer :: i, stagnant_iters, gmres_flag
@@ -231,7 +231,7 @@ contains
 
     u_prev = get_derivs(solution)
     f_prev = f(u_prev)
-    resid_norm = dnrm2(npoints, f_prev, 1)
+    resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     old_resid = 5*resid_norm
     
     iplvl = 5
@@ -250,8 +250,9 @@ contains
       end if
 
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
+      gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
-                       1e-2_r8*eta, preconditioner, iter_max=gitmax,  &
+                       gmres_eta, preconditioner, iter_max=gitmax,  &
                        krylov_dim=kdim)
       if (gmres_flag /= 0) then
         flag = -gmres_flag

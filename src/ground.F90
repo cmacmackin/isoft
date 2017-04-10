@@ -52,12 +52,12 @@ module ground_mod
     procedure :: basal_melt => ground_melt
     procedure :: basal_drag_parameter => ground_drag_parameter
     procedure :: water_density => ground_water_density
-    procedure :: residual => ground_residual
     procedure :: update => ground_update
     procedure :: set_time => ground_set_time
     procedure :: data_size => ground_data_size
     procedure :: state_vector => ground_state_vector
     procedure :: write_data => ground_write_data
+    procedure :: solve => ground_solve
   end type ground
 
   interface ground
@@ -75,6 +75,7 @@ contains
     type(ground) :: this
   end function constructor
 
+
   function ground_melt(this) result(melt)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -86,6 +87,7 @@ contains
     class(scalar_field), allocatable :: melt
       !! The melt rate at the base of the ice sheet.
   end function ground_melt
+
 
   function ground_drag_parameter(this) result(drag)
     !* Author: Christopher MacMackin
@@ -103,6 +105,7 @@ contains
       !! ice sheet.
   end function ground_drag_parameter
 
+
   function ground_water_density(this) result(density)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -117,27 +120,7 @@ contains
     real(r8)                  :: density
       !! The density of any water at the base of the ice sheet.
   end function ground_water_density
-   
-  function ground_residual(this, ice_thickness, ice_density, ice_temperature) &
-                                                             result(residual)
-    !* Author: Christopher MacMackin
-    !  Date: April 2016
-    !
-    ! Using the current state of the ground, this computes the residual
-    ! of the system of equatiosn which is used to describe the ground.
-    ! The residual takes the form of a 1D array, with each element 
-    ! respresenting the residual for one of the equations in the system.
-    !
-    class(ground), intent(inout)        :: this
-    class(scalar_field), intent(in)     :: ice_thickness
-      !! Thickness of the ice above the ground.
-    real(r8), intent(in)                :: ice_density
-      !! The density of the ice above the ground, assumed uniform.
-    real(r8), intent(in)                :: ice_temperature
-      !! The temperature of the ice above the ground, assumed uniform.
-    real(r8), dimension(:), allocatable :: residual
-      !! The residual of the system of equations describing the ground.
-  end function ground_residual
+
 
   subroutine ground_update(this, state_vector)
     !* Author: Christopher MacMackin
@@ -153,6 +136,7 @@ contains
       !! ground.
   end subroutine ground_update
 
+
   subroutine ground_set_time(this, time)
     !* Author: Christopher MacMackin
     !  Date: November 2016
@@ -164,6 +148,7 @@ contains
     real(r8), intent(in)         :: time
       !! The time at which the ground is in the present state.
   end subroutine ground_set_time
+
 
   pure function ground_data_size(this)
     !* Author: Christopher MacMackin
@@ -179,6 +164,7 @@ contains
       !! The number of elements in the ground's state vector.
   end function ground_data_size
 
+
   pure function ground_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -190,6 +176,7 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ground.
   end function ground_state_vector
+
 
   subroutine ground_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
@@ -224,5 +211,25 @@ contains
       write(*,*) '         Possible bad IO'
     end if
   end subroutine ground_write_data
+
+
+  subroutine ground_solve(this, ice_thickness, ice_density, &
+                         ice_temperature, time)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Solves the state of the ground for the specified ice properties,
+    ! at the specified time.
+    !
+    class(ground), intent(inout)    :: this
+    class(scalar_field), intent(in) :: ice_thickness
+      !! Thickness of the ice above the basal surface
+    real(r8), intent(in)            :: ice_density
+      !! The density of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)            :: ice_temperature
+      !! The temperature of the ice above the basal surface, assumed uniform
+    real(r8), intent(in)            :: time
+      !! The time to which the basal surface should be solved
+  end subroutine ground_solve
 
 end module ground_mod

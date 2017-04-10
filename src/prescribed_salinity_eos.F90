@@ -35,7 +35,7 @@ module prescribed_eos_mod
   ! debugging the plume model.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field
+  use factual_mod, only: scalar_field, uniform_scalar_field
   use equation_of_state_mod, only: equation_of_state
   implicit none
   private
@@ -94,8 +94,14 @@ contains
     class(scalar_field), allocatable  :: density
       !! A field containing the density of the water
     call temperature%guard_temp(); call salinity%guard_temp()
-    allocate(density, mold=this%density)
-    density = this%density
+    if (temperature == uniform_scalar_field(0._r8) .and. &
+        salinity == uniform_scalar_field(0._r8)) then
+      allocate(uniform_scalar_field :: density)
+      density = uniform_scalar_field(1._r8)
+    else
+      allocate(density, mold=this%density)
+      density = this%density
+    end if
     call temperature%clean_temp(); call salinity%clean_temp()
     call density%set_temp()
   end function prescribed_water_density

@@ -38,12 +38,13 @@ module plume_test
   use simple_plume_boundary_mod, only: boundary => simple_plume_boundary
   use linear_eos_mod, only: linear_eos
   use prescribed_eos_mod, only: prescribed_eos
+  use specfun_mod, only: ei
   implicit none
 
   integer, parameter  :: resolution = 10
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
-  real(r8), parameter :: q_g = 1.0_r8
+  real(r8), parameter :: q_g = 8.0_r8
   real(r8), parameter :: eps_m = 6.9e-4_r8
   real(r8), parameter :: beta = 0.024
   real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
@@ -109,7 +110,7 @@ contains
   pure function velocity3(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8), dimension(:), allocatable :: velocity3
-    velocity3 = (1._r8 + perturbation*cos(2*location(1)/big_x)) &
+    velocity3 = (1._r8 + perturbation*sin(2*location(1)/big_x)) &
               * velocity(location)
   end function velocity3
 
@@ -188,10 +189,11 @@ contains
     tmp = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
     allocate(prescribed_eos :: eos)
     eos = prescribed_eos(1.0_r8, -1.0_r8, tmp)
+    !allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
     allocate(bound, source=boundary(thickness1([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
                                     temp1([0.0_r8]),salinity1([0.0_r8])))
-    call this%plume3%initialise(domain1, [this%nodes], thickness3, velocity3,  &
-                                temp3, salinity3, ent, mel, amb, eos, bound,  &
+    call this%plume3%initialise(domain1, [this%nodes], thickness1, velocity,  &
+                                temp1, salinity1, ent, mel, amb, eos, bound,  &
                                 this%delta, this%nu, this%mu, this%epsilon)
   end subroutine setup
 
@@ -258,8 +260,8 @@ contains
     temperature = 0.0_r8
     time = 1.0_r8
     expected = this%plume1%state_vector()
-    call this%plume1%solve(thickness, density, temperature, time)
-    actual = this%plume1%state_vector()
+    call this%plume3%solve(thickness, density, temperature, time)
+    actual = this%plume3%state_vector()
     print*,actual
     @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-3_r8)
   end subroutine test_solve
