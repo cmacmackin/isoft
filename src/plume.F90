@@ -899,27 +899,18 @@ contains
     real(r8), intent(in)  :: time
       !! The time to which the basal surface should be solved
     
-    real(r8), dimension(:), allocatable :: solution, backup
+    real(r8), dimension(:), allocatable :: solution
     real(r8) :: residual
     integer :: flag, i
 
     call ice_thickness%guard_temp()
     this%time = time
 
-    backup = this%state_vector()
-!    do i = 1, 10
-      solution = backup
-      call quasilinear_solve(L, f, solution, 1, residual, flag, &
-                           precond=preconditioner, krylov_dim=100, gmres_iter_max=i)
-!      call this%update(solution)
- !     print*,i,'iterations'
-  !    print*,this%state_vector()
-   ! end do
-    !error stop
+    solution = this%state_vector()
+    call quasilinear_solve(L, f, solution, 1, residual, flag, 1.e-6_r8*size(solution), &
+                           precond=preconditioner, krylov_dim=100)!, gmres_iter_max=i)
     if (flag /= 0) then
-      print*,flag
       call this%update(solution)
-      print*,this%state_vector()
       error stop ('QLM solver returned with nonzero status flag.')
     end if
     

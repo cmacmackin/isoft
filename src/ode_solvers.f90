@@ -191,15 +191,12 @@ contains
 
     integer :: npoints, itmax, gitmax, kdim
     real(r8) :: eta
-    real(r8), parameter :: epsilon = 1.e-7
+    real(r8), parameter :: epsilon = 5.e-8
 
-    integer :: i, stagnant_iters, gmres_flag, j
+    integer :: i, stagnant_iters, gmres_flag
     real(r8) :: old_resid, gmres_norm
     real(r8), dimension(size(solution),order) :: u, u_prev
-    real(r8), dimension(size(solution))       :: f_prev, rhs, thing
-    logical :: tmp
-    real(r8), dimension(2) :: rtmp
-    integer, dimension(2) :: itmp
+    real(r8), dimension(size(solution))       :: f_prev, rhs
     
 
     if (.not. present(differentiate) .and. order > 1) then
@@ -238,8 +235,6 @@ contains
     old_resid = 5*resid_norm
     
     iplvl = 5
-      thing = lin_op(solution, solution, rhs, rtmp, itmp, tmp)
-      thing = lin_op([(1._r8, j=1,size(solution))], solution, rhs, rtmp, itmp, tmp)
     do while(resid_norm > eta)
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -254,8 +249,6 @@ contains
         return
       end if
 
-      print*,i,eta
-      print*,resid_norm,gmres_norm
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        1e-2_r8*eta, preconditioner, iter_max=gitmax,  &
@@ -268,6 +261,7 @@ contains
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
+      print*,resid_norm,gmres_norm
     end do
     iplvl = 0
 
@@ -281,7 +275,7 @@ contains
       real(r8), dimension(:), intent(in) :: v
       real(r8), dimension(size(v), order) :: get_derivs
       integer :: j
-      get_derivs(:,1) = solution
+      get_derivs(:,1) = v
       do j = 2, order
         get_derivs(:,j) = differentiate(v, i-1)
       end do
@@ -309,9 +303,6 @@ contains
         !! Result of the operation
       real(r8), dimension(size(xcur),order) :: v_derivs
       v_derivs = get_derivs(v)
-      print*,'--------------------------------------'
-      print*,L(v)
-      print*,(f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
       lin_op = L(v) - (f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
       success = .true.
     end function lin_op

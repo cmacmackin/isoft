@@ -259,7 +259,7 @@ contains
     time = 1.0_r8
     expected = this%plume1%state_vector()
     call this%plume1%solve(thickness, density, temperature, time)
-    actual = this%plume3%state_vector()
+    actual = this%plume1%state_vector()
     print*,actual
     @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-3_r8)
   end subroutine test_solve
