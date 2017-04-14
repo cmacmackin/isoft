@@ -197,7 +197,6 @@ contains
     real(r8) :: old_resid, gmres_norm
     real(r8), dimension(size(solution),order) :: u, u_prev
     real(r8), dimension(size(solution))       :: f_prev, rhs
-    
 
     if (.not. present(differentiate) .and. order > 1) then
       flag = 3
@@ -233,8 +232,7 @@ contains
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     old_resid = 5*resid_norm
-    
-    iplvl = 5
+
     do while(resid_norm > eta)
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -262,9 +260,7 @@ contains
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
-      print*,resid_norm,gmres_norm
     end do
-    iplvl = 0
 
     flag = 0
     

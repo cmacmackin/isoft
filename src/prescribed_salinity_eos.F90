@@ -49,7 +49,8 @@ module prescribed_eos_mod
     ! An equation of state, depending only on salinity, where the
     ! salinity is prescribed such that \(SD = {\rm constant}\) for
     ! some specified thickness \(D\). The salinity is related to the
-    ! density by the haline contraction coefficient \(\beta_S\).
+    ! density by the haline contraction coefficient \(\beta_S\). The
+    ! only real use for this is testing and debugging the plume model.
     !
     private
     class(scalar_field), allocatable :: density
@@ -96,8 +97,9 @@ contains
     call temperature%guard_temp(); call salinity%guard_temp()
     if (temperature == uniform_scalar_field(0._r8) .and. &
         salinity == uniform_scalar_field(0._r8)) then
+      ! Kludge to ensure correct ambient density is returned
       allocate(uniform_scalar_field :: density)
-      density = uniform_scalar_field(1._r8)
+      density = uniform_scalar_field(0._r8)
     else
       allocate(density, mold=this%density)
       density = this%density

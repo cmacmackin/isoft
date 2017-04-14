@@ -41,19 +41,23 @@ module plume_test
   use specfun_mod, only: ei
   implicit none
 
-  integer, parameter  :: resolution = 10
+  integer, parameter  :: resolution = 50
+  real(r8), parameter :: offset = 0.1_r8
+  real(r8), parameter :: perturbation = 1.e-1_r8
+
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
   real(r8), parameter :: q_g = 8.0_r8
-  real(r8), parameter :: eps_m = 6.9e-4_r8
+  real(r8), parameter :: eps_m = 0._r8!6.9e-4_r8
   real(r8), parameter :: beta = 0.024
-  real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
+  !real(r8), parameter :: thermal_melt_coef = (1.0_r8 + beta)/eps_m
   real(r8), parameter :: r = 1.12_r8
+  real(r8), parameter :: h_g = 1._r8
   real(r8), parameter :: length = 2.5_r8
-
-
-  real(r8), parameter :: offset = 0.1_r8
-  real(r8), parameter :: perturbation = 1.e-2_r8
+  real(r8), parameter :: nu_val = 1.0e2_r8
+  real(r8), parameter :: alpha = q_g**(1._r8/3._r8)/nu_val
+  real(r8), parameter :: xi = r*exp(alpha*offset)*(1._r8 + beta)* &
+                              q_g**(1._r8/3._r8)/(2._r8*h_g)
 
   @TestCase
   type, extends(testcase), public :: test_plume
@@ -61,7 +65,7 @@ module plume_test
     integer     :: nodes = resolution
     real(r8)    :: lower1 = 0.0_r8, upper1 = length
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
-    real(r8)    :: delta = 0.0_r8, nu = 1.0e-2_r8
+    real(r8)    :: delta = 0.0_r8, nu = nu_val
     real(r8)    :: mu = 0.0_r8, epsilon = 0.0_r8
   contains
     procedure :: setup
@@ -72,8 +76,7 @@ contains
   pure function depth1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth1
-    depth1 = (1._r8 - location(1)/big_x) / &
-             sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2) / r
+    depth1 = h_g*(1._r8 - location(1))/r!h_g*(2._r8 - exp(alpha*location(1)))/r
   end function depth1
 
   pure function depth2(location)
@@ -85,7 +88,7 @@ contains
   pure function thickness1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness1
-    thickness1 = depth1([0._r8]) - depth1([offset]) + location(1)!depth1([0.0_r8]) - depth1(location+offset)
+    thickness1 = depth1([0.0_r8]) - depth1(location+offset)
   end function thickness1
 
   pure function thickness2(location)
@@ -114,11 +117,29 @@ contains
               * velocity(location)
   end function velocity3
 
+  pure function s1(x)
+    real(r8), intent(in) :: x
+    real(r8) :: s1
+    s1 = exp(alpha*x)
+  end function s1
+
+  pure function s2(x)
+    real(r8), intent(in) :: x
+    real(r8) :: s2
+    s2 = s1(x)*ei(-alpha*(x+offset))
+  end function s2
+
   pure function salinity1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: salinity1
-    real(r8) :: sal_st
-    salinity1 = 1.0/thickness1([0._r8]) + 1.3*location(1)*(location(1) - 2*length)
+    real(r8), parameter :: salt_st = 10._r8
+    real(r8) :: a12, a21, a22, phi, theta
+    a12 = ei(-alpha*offset)
+    a21 = alpha*s1(length)
+    a22 = alpha*s2(length) + exp(-alpha*offset)/(length + offset)
+    phi = -a21 * salt_st/(a22 - a21*a12)
+    theta = salt_st - a12*phi
+    salinity1 = theta*s1(location(1)) + phi*s2(location(1))
   end function salinity1
 
   pure function salinity2(location)
@@ -137,8 +158,14 @@ contains
   pure function temp1(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: temp1
-    real(r8), parameter :: temp_st = (beta+1.0_r8)*big_x*r/(big_x+1.0_r8)
-    temp1 = temp_st - 0.25*location(1)*(location(1) - 2*length)
+    real(r8), parameter :: temp_st = 1._r8, zeta = r*(beta+1._r8)
+    real(r8) :: a12, a21, a22, phi, theta
+    a12 = ei(-alpha*offset)
+    a21 = alpha*s1(length)
+    a22 = alpha*s2(length) + exp(-alpha*offset)/(length + offset)
+    phi = -a21 * (temp_st - zeta)/(a22 - a21*a12)
+    theta = temp_st -zeta - a12*phi
+    temp1 = theta*s1(location(1)) + phi*s2(location(1)) + zeta
   end function temp1
 
   pure function temp2(location)
@@ -171,7 +198,9 @@ contains
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
-    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
+    tmp = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
+    allocate(prescribed_eos :: eos)
+    eos = prescribed_eos(q_g**(2._r8/3._r8), -1.0_r8, tmp)
     allocate(bound, source=boundary(thickness1([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
                                     temp1([0.0_r8]),salinity1([0.0_r8])))
     domain1(1,:) = [this%lower1, this%upper1]
@@ -186,14 +215,13 @@ contains
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
-    tmp = cheb1d_scalar_field(this%nodes, thickness1, this%lower1, this%upper1)
     allocate(prescribed_eos :: eos)
-    eos = prescribed_eos(1.0_r8, -1.0_r8, tmp)
+    eos = prescribed_eos(q_g**(2._r8/3._r8), -1.0_r8, tmp)
     !allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
     allocate(bound, source=boundary(thickness1([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
                                     temp1([0.0_r8]),salinity1([0.0_r8])))
-    call this%plume3%initialise(domain1, [this%nodes], thickness1, velocity,  &
-                                temp1, salinity1, ent, mel, amb, eos, bound,  &
+    call this%plume3%initialise(domain1, [this%nodes], thickness3, velocity3,  &
+                                temp3, salinity3, ent, mel, amb, eos, bound,  &
                                 this%delta, this%nu, this%mu, this%epsilon)
   end subroutine setup
 
@@ -260,10 +288,12 @@ contains
     temperature = 0.0_r8
     time = 1.0_r8
     expected = this%plume1%state_vector()
+    call this%plume1%solve(thickness, density, temperature, time)
+    actual = this%plume1%state_vector()
+    @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-4_r8)
     call this%plume3%solve(thickness, density, temperature, time)
     actual = this%plume3%state_vector()
-    print*,actual
-    @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-3_r8)
+    @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-4_r8)
   end subroutine test_solve
 
 end module plume_test

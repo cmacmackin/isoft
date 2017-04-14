@@ -806,7 +806,6 @@ contains
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
 
-      !print*,this%state_vector()
       call this%update(v)
       
       ! Thickness
@@ -1121,6 +1120,12 @@ contains
         f(st:en) = scalar_tmp%raw()
       end associate
     end function f
+
+    pure function lin(location)
+          real(r8), dimension(:), intent(in) :: location
+    real(r8) :: lin
+    lin = location(1)
+    end function lin
 
     function preconditioner(v, u, L_op, f_op, Lcur, fcur)
       !! The preconditioner, which approximates an inverse of `L`.

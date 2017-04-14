@@ -102,7 +102,7 @@ contains
       !! used by Dalalston et al.
     type(dallaston2015_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%coef = (beta + 1.0_r8)/melt_conversion
+    this%coef = (beta + 1.0_r8)
     this%melt_conversion = melt_conversion
   end function constructor
 
@@ -130,9 +130,6 @@ contains
       call velocity%allocate_scalar_field(this%melt_values)
     end if
     this%melt_values = velocity%norm()
-    this%melt_values = this%melt_conversion * this%melt_values 
-    ! Should be able to do this in one step (with better performance)
-    ! but that seems to confuse the compiler.
     call velocity%clean_temp(); call pressure%clean_temp()
     call temperature%clean_temp(); call salinity%clean_temp()
     call plume_thickness%clean_temp()
@@ -162,7 +159,7 @@ contains
       !! The melt rate from the ice into the plume water.
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(melt)
-    melt = this%melt_values
+    melt = this%melt_conversion * this%melt_values
     call melt%set_temp()
   end function dallaston2015_melt_rate
 
