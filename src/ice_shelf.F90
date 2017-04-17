@@ -741,7 +741,7 @@ contains
     real(r8) :: dt
       !! The time-step to use
     associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
-              C => 10.0_r8)
+              C => 100.0_r8)
       associate(dx1 => dx%component(1))
         dt = minval(abs(C*dx1/u))
         call logger%trivia('ice_shelf%time_step','Calculated time step of '// &

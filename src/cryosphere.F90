@@ -53,6 +53,9 @@ module cryosphere_mod
   character(len=23), parameter, public :: hdf_comp_time = 'binary_compilation_time'
   character(len=16), parameter, public :: hdf_write_time = 'data_output_time'
 
+  character(len=25), parameter, public :: hdf_crash_file = &
+                                            'isoft_termination_dump.h5'
+
   type, public :: cryosphere
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -73,40 +76,42 @@ module cryosphere_mod
       !! A model for the ground or ocean underneath the ice
     real(r8)                                  :: time 
       !! The time in the simulation
+    logical                                   :: first_integration
+      !! Indicates whether the cryosphere has been integrated before
+      !! or not.
   contains
+    procedure :: initialise
     procedure :: integrate
     procedure :: write_data
     procedure :: time_step
   end type cryosphere
 
-  interface cryosphere
-    module procedure constructor
-  end interface cryosphere
-
 contains
 
-  function constructor(ice, sub_ice) result(this)
+  subroutine initialise(this, ice, sub_ice)
     !* Author: Christopher MacMackin
     !  Date: November 2016
     !
-    ! Create a new [[cryosphere]] object from the provided
-    ! components. This will model the evolution of a glacier/ice
-    ! shelf/ice sheet and its surroundings.
+    ! Initialise a cryosphere object from the provided
+    ! components. This object will model the evolution of a
+    ! glacier/ice shelf/ice sheet and its surroundings.
     !
+    class(cryosphere), intent(out) :: this
     class(glacier), allocatable, intent(inout)       :: ice
       !! An object modelling the ice sheet or shelf component of this
       !! system. Will be deallocated on return.
     class(basal_surface), allocatable, intent(inout) :: sub_ice
       !! An object modelling the component of this system beneath the
       !! ice. Will be deallocated on return.
-    type(cryosphere) :: this
     call move_alloc(ice, this%ice)
     call move_alloc(sub_ice, this%sub_ice)
     this%time = 0.0_r8
+    this%first_integration = .true.
 #ifdef DEBUG
     call logger%debug('cryosphere','Instantiated new cryosphere object.')
 #endif
-  end function constructor
+  end subroutine initialise
+
 
   function time_step(this)
     !* Author: Chris MacMackin
@@ -119,6 +124,7 @@ contains
     real(r8) :: time_step
     time_step = this%ice%time_step()
   end function time_step
+
 
   subroutine integrate(this,time)
     !* Author: Christopher MacMackin
@@ -133,30 +139,87 @@ contains
     class(glacier), dimension(:), allocatable :: old_glaciers
     logical, save :: first_call = .true.
     logical :: success
+    real(r8) :: t
+
+    if (time < this%time) then
+      call logger%warning('cryosphere%integrate','Request made to '// &
+                          'integrate cryosphere to earlier time '//  &
+                          'than present state. No action taken.')
+      return
+    end if
 
     ! Normally the plume should be solved at the end of the previous
     ! iteration, but in the first iteration obviously there hasn't
     ! been a chance for this to happen yet.
-    if (first_call) then
+    if (this%first_integration) then
       ! As I am integrating only semi-implicitly and solving the plume
       ! for the current (rather than future) state, I think I should
       ! pass the current time. I only *think* that this is correct,
       ! however.
       call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
                               this%ice%ice_temperature(), this%time, success)
-      first_call = .false.
+      this%first_integration = .false.
     end if
-
     allocate(old_glaciers(1), mold=this%ice)
+    
+    t = this%time + this%time_step()
+    do while (t < time)
+      old_glaciers(1) = this%ice
+      call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
+                              this%sub_ice%basal_drag_parameter(),     &
+                              this%sub_ice%water_density(), t, success)
+      if (.not. success) then
+        call logger%fatal('cryosphere%integrate','Failed to integrate '// &
+                          'glacier to time '//str(t)//'! Writing '//      &
+                          'cryosphere state to file "'//hdf_crash_file//'".')
+        call this%write_data(hdf_crash_file)
+        error stop
+      end if
+
+      ! Solve the plume so that it is ready for use in the next step of
+      ! the time integration.
+      call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
+                              this%ice%ice_temperature(), t, success)
+
+      if (success) then
+        call logger%trivia('cryosphere%integrate','Successfully integrated '// &
+                           'cryosphere to time '//str(t))
+      else
+        call logger%fatal('cryosphere%integrate','Failed to solve plume '// &
+                          'at time '//str(t)//'! Writing cryosphere '    // &
+                          'state to file "'//hdf_crash_file//'".')
+        call this%write_data(hdf_crash_file)
+        error stop
+      end if
+      t = t + this%time_step()
+    end do
+
     old_glaciers(1) = this%ice
-    call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
-                            this%sub_ice%basal_drag_parameter(),  &
+    call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(),    &
+                            this%sub_ice%basal_drag_parameter(),        &
                             this%sub_ice%water_density(), time, success)
+    if (.not. success) then
+      call logger%fatal('cryosphere%integrate','Failed to integrate '// &
+                        'glacier to time '//str(t)//'! Writing '//      &
+                        'cryosphere state to file "'//hdf_crash_file//'".')
+      call this%write_data(hdf_crash_file)
+      error stop
+    end if
 
     ! Solve the plume so that it is ready for use in the next step of
     ! the time integration.
     call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
                             this%ice%ice_temperature(), time, success)
+    if (success) then
+      call logger%info('cryosphere%integrate','Successfully integrated '// &
+                       'cryosphere to time '//str(t))
+    else
+      call logger%fatal('cryosphere%integrate','Failed to solve plume '// &
+                        'at time '//str(t)//'! Writing cryosphere '    // &
+                        'state to file "'//hdf_crash_file//'".')
+      call this%write_data(hdf_crash_file)
+      error stop
+    end if
     this%time = time
   end subroutine integrate
 

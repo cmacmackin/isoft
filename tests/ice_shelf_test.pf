@@ -293,7 +293,7 @@ contains
     call h5open_f(herr)
     call h5fcreate_f('ice_shelf.h5', H5F_ACC_TRUNC_F, hfile, herr)
     time = 3._r8
-    t = 10 * this%shelf4%time_step()
+    t = this%shelf4%time_step()
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
@@ -306,7 +306,7 @@ contains
       shelf_array(1) = this%shelf4
       call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, t, success)
       @assertTrue(success,message='Integration of shelf failed.')
-      t = t + 10*this%shelf4%time_step()
+      t = t + this%shelf4%time_step()
     end do
     shelf_array(1) = this%shelf4
     call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, time, success)

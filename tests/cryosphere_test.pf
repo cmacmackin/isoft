@@ -1,8 +1,8 @@
 !
-!  nitsol_test.pf
+!  cryosphere_test.pf
 !  This file is part of ISOFT.
 !  
-!  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
+!  Copyright 2017 Chris MacMackin <cmacmackin@gmail.com>
 !  
 !  This program is free software; you can redistribute it and/or modify
 !  it under the terms of the GNU General Public License as published by
@@ -24,22 +24,196 @@ module cryosphere_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
   use cryosphere_mod, only: cryosphere
+  use glacier_mod, only: glacier
+  use ice_shelf_mod, only: ice_shelf
+  use basal_surface_mod, only: basal_surface
+  use plume_mod, only: plume
+  use viscosity_mod, only: abstract_viscosity
+  use newtonian_viscosity_mod, only: newtonian_viscosity
+  use glacier_boundary_mod, only: glacier_boundary
+  use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
+  use entrainment_mod, only: abstract_entrainment
+  use melt_relationship_mod, only: abstract_melt_relationship
+  use plume_boundary_mod, only: plume_boundary
+  use ambient_mod, only: ambient_conditions
+  use equation_of_state_mod, only: equation_of_state
+  use dallaston2015_melt_mod, only: melt => dallaston2015_melt
+  use jenkins1991_entrainment_mod, only: entrainment => jenkins1991_entrainment
+  use uniform_ambient_mod, only: ambient => uniform_ambient_conditions
+  use simple_plume_boundary_mod, only: boundary => simple_plume_boundary
+  use linear_eos_mod, only: linear_eos
+  use specfun_mod, only: ei
 
   integer, parameter :: resolution = 50
+  real(r8), parameter :: length = 2.5_r8
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
+  real(r8), parameter :: chi_val = 4._r8
+  real(r8), parameter :: q_g = 8.0_r8
+  real(r8), parameter :: eps_m = 0._r8!6.9e-4_r8
+  real(r8), parameter :: beta = 0.024
+  real(r8), parameter :: r = 1.12_r8
+  real(r8), parameter :: h_g = 1._r8
+  real(r8), parameter :: nu_val = 1.0e2_r8
+  real(r8), parameter :: alpha = q_g**(1._r8/3._r8)/nu_val
+
+  real(r8), parameter :: offset = 0.1_r8
 
   type, extends(testcase), public :: test_cryo
-    type(cryosphere) :: cryo1, cryo2
+    type(cryosphere) :: cryo
+    type(ice_shelf)  :: shelf_comp
+    type(plume)      :: plume_comp
     integer     :: nodes = resolution
     real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
+    ! Ice shelf parameters
+    real(r8)    :: temperature = -15._r8, lambda = lambda_d, chi = chi_val
+    ! Plume parameters
+    real(r8)    :: delta = 0.0_r8, nu = nu_val, mu = 0.0_r8, epsilon = 0.0_r8
   contains
     procedure :: setup
   end type test_cryo
 
 contains
 
+  pure function h(location) result(thickness)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = (1._r8 - location(1)/big_x)
+  end function h
+
+  pure function u_ice(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity(1) = sqrt(1._r8 + 0.25_r8*chi_val*big_x - &
+                       0.25_r8*chi_val*big_x*(1._r8 - location(1)/big_x)**2)
+  end function u_ice
+
+  pure function d(location) result(thickness)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = (h([0.0_r8]) - h(location+offset))/r
+  end function d
+
+  pure function u_plume(location) result(velocity)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: velocity
+    velocity = [q_g**(1.0/3.0)]
+  end function u_plume
+
+  pure function s1(x)
+    real(r8), intent(in) :: x
+    real(r8) :: s1
+    s1 = exp(alpha*x/big_x)
+  end function s1
+
+  pure function s2(x)
+    real(r8), intent(in) :: x
+    real(r8) :: s2
+    s2 = s1(x)*ei(-alpha*(x+offset)/big_x)
+  end function s2
+
+  pure function s(location) result(salinity)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: salinity
+    real(r8), parameter :: salt_st = 10._r8
+    real(r8) :: a12, a21, a22, phi, theta
+    a12 = ei(-alpha*offset/big_x)
+    a21 = alpha*s1(length)
+    a22 = alpha*s2(length) + exp(-alpha*offset/big_x)/(length + offset)
+    phi = -a21 * salt_st/(a22 - a21*a12)
+    theta = salt_st - a12*phi
+    salinity = theta*s1(location(1)) + phi*s2(location(1))
+  end function s
+
+  pure function t(location) result(temp)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: temp
+    real(r8), parameter :: temp_st = 1._r8
+    real(r8), parameter :: zeta = r*(beta+1._r8)
+    real(r8) :: a12, a21, a22, phi, theta
+    a12 = ei(-alpha*offset/big_x)
+    a21 = alpha*s1(length)
+    a22 = alpha*s2(length) + exp(-alpha*offset/big_x)/(length + offset)
+    phi = -a21 * (temp_st - zeta)/(a22 - a21*a12)
+    theta = temp_st -zeta - a12*phi
+    temp = theta*s1(location(1)) + phi*s2(location(1)) + zeta
+  end function t
+
   subroutine setup(this)
     class(test_cryo), intent(inout) :: this
+    real(r8), dimension(1,2) :: domain1
+    ! Objects to build shelf
+    class(abstract_viscosity), allocatable :: visc
+    class(glacier_boundary), allocatable :: bound_s
+    type(ice_shelf), allocatable :: shelf
+    class(glacier), allocatable :: glace
+    ! Objects to build plume
+    class(abstract_entrainment), allocatable :: ent
+    class(abstract_melt_relationship), allocatable :: mel
+    class(ambient_conditions), allocatable :: amb
+    class(equation_of_state), allocatable :: eos
+    class(plume_boundary), allocatable :: bound_p
+    type(plume), allocatable :: plm
+    class(basal_surface), allocatable :: basal
+    domain1(1,1) = this%lower1
+    domain1(1,2) = this%upper1
+    ! Initialise ice shelf
+    allocate(visc, source=newtonian_viscosity(1.0_r8))
+    allocate(bound_s, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
+    allocate(shelf)
+    call shelf%initialise(domain1, [this%nodes], h, u_ice, this%temperature, &
+                          visc, bound_s, this%lambda, this%chi)
+    this%shelf_comp = shelf
+    ! Initialise ice shelf
+    allocate(ent, source=entrainment(1.0_r8))
+    allocate(mel, source=melt(beta,eps_m))
+    allocate(amb, source=ambient(0.0_r8,0.0_r8))
+    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
+    allocate(bound_p, source=boundary(d([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
+                                      t([0.0_r8]),s([0.0_r8])))
+    allocate(plm)
+    call plm%initialise(domain1, [this%nodes], d, u_plume, &
+                        t, s, ent, mel, amb, eos, bound_p, &
+                        this%delta, this%nu, this%mu, this%epsilon)
+    allocate(ent, source=entrainment(1.0_r8))
+    allocate(mel, source=melt(beta,eps_m))
+    allocate(amb, source=ambient(0.0_r8,0.0_r8))
+    allocate(eos, source=linear_eos(1.0_r8, 0.0_r8, 0.0_r8, 0.0_r8, -1.0_r8))
+    allocate(bound_p, source=boundary(d([0.0_r8]),[q_g**(1.0/3.0),0._r8], &
+                                      t([0.0_r8]),s([0.0_r8])))
+    call this%plume_comp%initialise(domain1, [this%nodes], d, u_plume, &
+                                   t, s, ent, mel, amb, eos, bound_p,  &
+                                   this%delta, this%nu, this%mu, this%epsilon)
+    ! Initialise cryosphere
+    call move_alloc(shelf, glace)
+    call move_alloc(plm, basal)
+    call this%cryo%initialise(glace, basal)
   end subroutine setup
+
+  @Test
+  subroutine test_integrate(this)
+    class(test_cryo), intent(inout) :: this
+    call this%cryo%integrate(1._r8)
+    call this%cryo%integrate(3._r8)
+    ! Consider adding some tests...
+  end subroutine test_integrate
+
+  @Test
+  subroutine test_time_step(this)
+    class(test_cryo), intent(inout) :: this
+    @assertEqual(this%shelf_comp%time_step(),this%cryo%time_step(),message="Incorrect time step returned.")
+  end subroutine test_time_step
+
+  @Test
+  subroutine test_write_data(this)
+    class(test_cryo), intent(inout) :: this
+    character(len=16), parameter :: test_file = '____test_file.h5'
+    call execute_command_line('rm -f '//test_file)
+    call this%cryo%write_data(test_file)
+    ! Do some actual tests on the file...
+    call execute_command_line('rm -f '//test_file)
+  end subroutine test_write_data
 
 end module cryosphere_test
