@@ -41,6 +41,8 @@ module cryosphere_mod
   use meta_mod
   use hdf5
   use h5lt
+  use logger_mod, only: logger => master_logger
+  use penf, only: str
   implicit none
   private
 
@@ -72,14 +74,6 @@ module cryosphere_mod
     real(r8)                                  :: time 
       !! The time in the simulation
   contains
-!$    procedure :: t => cryosphere_dt
-!$    procedure :: local_error => cryosphere_local_error
-!$    procedure :: integrand_multiply_integrand => cryosphere_m_cryosphere
-!$    procedure :: integrand_multiply_real => cryosphere_m_real
-!$    procedure, pass(rhs) :: real_multiply_integrand => real_m_cryosphere
-!$    procedure :: add => cryosphere_add
-!$    procedure :: sub => cryosphere_sub
-!$    procedure :: assign_integrand => cryosphere_assign
     procedure :: integrate
     procedure :: write_data
     procedure :: time_step
@@ -109,6 +103,9 @@ contains
     call move_alloc(ice, this%ice)
     call move_alloc(sub_ice, this%sub_ice)
     this%time = 0.0_r8
+#ifdef DEBUG
+    call logger%debug('cryosphere','Instantiated new cryosphere object.')
+#endif
   end function constructor
 
   function time_step(this)
@@ -146,7 +143,7 @@ contains
       ! pass the current time. I only *think* that this is correct,
       ! however.
       call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
-                              this%ice%ice_temperature(), this%time)
+                              this%ice%ice_temperature(), this%time, success)
       first_call = .false.
     end if
 
@@ -159,7 +156,7 @@ contains
     ! Solve the plume so that it is ready for use in the next step of
     ! the time integration.
     call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
-                            this%ice%ice_temperature(), time)
+                            this%ice%ice_temperature(), time, success)
     this%time = time
   end subroutine integrate
 
@@ -180,9 +177,9 @@ contains
     integer(hid_t) :: file_id, error_code
     call h5fopen_f(outfile, H5F_ACC_TRUNC_F, file_id, error_code)
     if (error_code /= 0) then
-      write(*,*) 'WARNING: Error code',error_code,' returned when creating '// &
-                 'HDF5 file ', outfile
-      write(*,*) '         Data IO not performed'
+      call logger%error('cryosphere%write_data','Error code '//       &
+                        str(error_code)//' returned when creating '// &
+                        'HDF5 file '//outfile)
       return
     end if
 
@@ -193,9 +190,9 @@ contains
     call h5ltset_attribute_string_f(file_id,'/',hdf_write_time,current_time(), &
                                     error_code)
     if (error_code /= 0) then
-      write(*,*) 'WARNING: Error code',error_code,' returned when writing '// &
-                 'attributes to HDF5 file ', outfile
-      write(*,*) '         Possible bad IO'
+      call logger%warning('cryosphere%write_data','Error code '//      &
+                          str(error_code)//' returned when writing '// &
+                          'attributes to HDF5 file '//outfile)
     end if
     
     ! Call for subobjects
@@ -204,145 +201,15 @@ contains
 
     call h5fclose_f(file_id, error_code)
     if (error_code /= 0) then
-      write(*,*) 'WARNING: Error code',error_code,' returned when closing '// &
-                 'HDF5 file ', outfile
-      write(*,*) '         Possible bad IO'
+      call logger%warning('cryosphere%write_data','Error code '//      &
+                          str(error_code)//' returned when closing '// &
+                          'HDF5 file '//outfile)
     end if
+
+#ifdef DEBUG
+    call logger%debug('cryosphere%write_data','Wrote cryosphere data to '// &
+                      'HDF file '//outfile)
+#endif
   end subroutine write_data
   
-  
-!$  function cryosphere_dt(self,t)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Computes the derivative of the cryosphere with respect to time. As
-!$    ! the cryosphere type is really just a pupateer for components which
-!$    ! contain the actual physics, basically this just requires calling the
-!$    ! equivalent functions for the object's glaciers. Note that, as it is
-!$    ! only the ice which is being treated as being dynamic in time (with
-!$    ! the ground being unchanging and the ocean being quasistatic), only
-!$    ! the glacier components will actually have their derivative computed.
-!$    !
-!$    class(cryosphere), intent(in)  :: self
-!$    real(r8), intent(in), optional :: t
-!$      !! Time at which to evaluate the derivative
-!$    class(integrand), allocatable  :: cryosphere_dt
-!$      !! The time rate of change of the cryosphere. Has dynamic type
-!$      !! [[cryosphere]].
-!$  end function cryosphere_dt
-!$ 
-!$  function cryosphere_local_error(lhs, rhs) result(error)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Calculates a real scalar to represent the absolute difference between
-!$    ! two cryosphere objects. `rhs` must be a [[cryosphere]] object, or a
-!$    ! runtime error will occur.
-!$    !
-!$    class(cryosphere), intent(in) :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)  :: rhs
-!$      !! The cryosphere object which is being compared against.
-!$    real(r8) :: error
-!$      !! The scalar representation of the absolute difference between these
-!$      !! two cryospheres.
-!$  end function cryosphere_local_error
-!$ 
-!$  function cryosphere_m_cryosphere(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one cryosphere object by another. That is to say, it 
-!$    ! performs element-wise multiplication of the state vectors 
-!$    ! representing the two arguments. `rhs` must be a [[cryosphere]]
-!$    ! object, or a runtime error will occur.
-!$    !
-!$    class(cryosphere), intent(in) :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)  :: rhs
-!$      !! The cryosphere object being multiplied by.
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[cryosphere]].
-!$  end function cryosphere_m_cryosphere
-!$ 
-!$  function cryosphere_m_real(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one cryosphere object by a scalar. That is to say, it 
-!$    ! performs element-wise multiplication of the state vector 
-!$    ! representing the cryosphere.
-!$    !
-!$    class(cryosphere), intent(in) :: lhs
-!$      !! Self
-!$    real(r8), intent(in)          :: rhs
-!$      !! The scalar being multiplied by.
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[cryosphere]].
-!$  end function cryosphere_m_real
-!$ 
-!$  function real_m_cryosphere(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one cryosphere object by a scalar. That is to say, it 
-!$    ! performs element-wise multiplication of the state vector 
-!$    ! representing the cryosphere.
-!$    !
-!$    real(r8), intent(in)          :: lhs
-!$      !! The scalar being multiplied by.
-!$    class(cryosphere), intent(in) :: rhs
-!$      !! Self
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[cryosphere]].
-!$  end function real_m_cryosphere
-!$ 
-!$   function cryosphere_add(lhs, rhs) result(sum)
-!$     !* Author: Christopher MacMackin
-!$     !  Date: April 2016
-!$     !
-!$     ! Adds one cryosphere object to another. That is to say, it performs
-!$     ! element-wise addition of the state vectors representing the two
-!$     ! arguments. `rhs` must be a [[cryosphere]] object, or a runtime
-!$     ! error will occur.
-!$     !
-!$     class(cryosphere), intent(in) :: lhs
-!$       !! Self
-!$     class(integrand), intent(in)  :: rhs
-!$       !! The cryosphere object being added.
-!$     class(integrand), allocatable :: sum
-!$       !! The sum of the two arguments. Has dynamic type [[cryosphere]].
-!$   end function cryosphere_add
-!$ 
-!$   function cryosphere_sub(lhs, rhs) result(difference)
-!$     !* Author: Christopher MacMackin
-!$     !  Date: April 2016
-!$     !
-!$     ! Subtracts one cryosphere object from another. That is to say, it 
-!$     ! performs element-wise addition of the state vectors representing 
-!$     ! the two arguments. `rhs` must be a [[cryosphere]] object, or a
-!$     ! runtime error will occur.
-!$     !
-!$     class(cryosphere), intent(in) :: lhs
-!$       !! Self
-!$     class(integrand), intent(in)  :: rhs
-!$       !! The cryosphere object being subtracted.
-!$     class(integrand), allocatable :: difference
-!$       !! The difference of the two arguments. Has dynamic type [[cryosphere]].
-!$   end function cryosphere_sub
-!$ 
-!$   subroutine cryosphere_assign(lhs, rhs)
-!$     !* Author: Christopher MacMackin
-!$     !  Date: April 2016
-!$     !
-!$     ! Assigns the `rhs` cryosphere to this, `lhs`, one. All components
-!$     ! will be the same following the assignment.
-!$     !
-!$     class(cryosphere), intent(inout) :: lhs
-!$       !! Self
-!$     class(integrand), intent(in)     :: rhs
-!$       !! The object to be assigned. Must have dynamic type [[cryosphere]],
-!$       !! or a runtime error will occur.
-!$   end subroutine cryosphere_assign
-
 end module cryosphere_mod

@@ -214,7 +214,7 @@ contains
 
 
   subroutine ground_solve(this, ice_thickness, ice_density, &
-                         ice_temperature, time)
+                         ice_temperature, time, success)
     !* Author: Chris MacMackin
     !  Date: April 2017
     !
@@ -230,6 +230,8 @@ contains
       !! The temperature of the ice above the basal surface, assumed uniform
     real(r8), intent(in)            :: time
       !! The time to which the basal surface should be solved
+    logical, intent(out)            :: success
+      !! True if the solver is successful, false otherwise
   end subroutine ground_solve
 
 end module ground_mod

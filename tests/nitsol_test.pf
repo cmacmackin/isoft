@@ -235,7 +235,7 @@ contains
     @assertLessThanOrEqual(res,1e-8_r8*points,message='Residual greater than tolerance.')
     @assertEqual(expected,actual,tolerance=5*1.e-8_r8,message='Actual solution is different from expected one.')
     actual = 0.0_r8
-    call gmres_solve(actual, identity, expected, res, flag, 1.e-10_r8*points, &
+    call gmres_solve(actual, identity, expected, res, flag, tol=1.e-10_r8*points, &
                      resid_update=1, iter_max=20, krylov_dim=5)
     @assertEqual(0,flag,message='GMRES routine failed to converge')
     @assertLessThanOrEqual(res,1e-10_r8*points,message='Residual greater than tolerance.')

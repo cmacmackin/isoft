@@ -283,15 +283,16 @@ contains
     integer :: i, steps
     type(cheb1d_scalar_field) :: thickness
     real(r8) :: density, temperature, time
+    logical :: success
     thickness = r * cheb1d_scalar_field(this%nodes, depth1, this%lower1, this%upper1)
     density = 1.0_r8 / r
     temperature = 0.0_r8
     time = 1.0_r8
     expected = this%plume1%state_vector()
-    call this%plume1%solve(thickness, density, temperature, time)
+    call this%plume1%solve(thickness, density, temperature, time, success)
     actual = this%plume1%state_vector()
     @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-4_r8)
-    call this%plume3%solve(thickness, density, temperature, time)
+    call this%plume3%solve(thickness, density, temperature, time, success)
     actual = this%plume3%state_vector()
     @assertEqual(expected,actual,message='Plume did not reach correct solution.',tolerance=1.e-4_r8)
   end subroutine test_solve

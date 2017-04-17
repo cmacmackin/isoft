@@ -52,6 +52,8 @@ module plume_mod
   use linear_eos_mod, only: linear_eos
   use hdf5
   use h5lt
+  use logger_mod, only: logger => master_logger
+  use penf, only: str
   implicit none
   private
 
@@ -448,6 +450,9 @@ contains
     call set_preconditioners(btype_l, btype_u, this%salinity_precond, &
                              this%salinity_dx_precond)
     
+#ifdef DEBUG
+    call logger%debug('plume','Initialised new ice shelf object.')
+#endif
 
   contains
 
@@ -572,6 +577,9 @@ contains
     allocate(uniform_scalar_field :: drag)
     drag = uniform_scalar_field(0.0_r8)
     call drag%set_temp()
+#ifdef DEBUG
+    call logger%debug('plume%drag_parameter','Returned plume drag parameter.')
+#endif
   end function plume_drag_parameter
 
 
@@ -594,6 +602,10 @@ contains
     real(r8)       :: density
       !! The density of the water at the base of the ice sheet.
     density = 1.0_r8
+#ifdef DEBUG
+    call logger%debug('plume%water_density','Plume has average density '// &
+                     str(density)//'.')
+#endif
   end function plume_water_density
 
 
@@ -624,6 +636,9 @@ contains
     call this%salinity%set_from_raw(state_vector(i:i + this%salinity_size - 1))
     i = i + this%salinity_size
     call this%salinity_dx%set_from_raw(state_vector(i:i + this%salinity_size - 1))
+#ifdef DEBUG
+    call logger%debug('plume%update','Updated state of plume.')
+#endif
   end subroutine plume_update
 
 
@@ -638,6 +653,10 @@ contains
     real(r8), intent(in)        :: time
       !! The time at which the plume is in the present state.
     this%time = time
+#ifdef DEBUG
+    call logger%debug('plume%set_time','Updating time for plume to '// &
+                      str(time))
+#endif
   end subroutine plume_set_time
 
 
@@ -657,6 +676,10 @@ contains
                       this%velocity_dx%raw_size() + this%temperature%raw_size() + &
                       this%temperature_dx%raw_size() + this%salinity%raw_size() + &
                       this%salinity_dx%raw_size()
+#ifdef DEBUG
+    call logger%debug('plume%data_size','Plume shelf has '//str(plume_data_size)// &
+                     ' elements in its state vector.')
+#endif
   end function plume_data_size
 
 
@@ -674,6 +697,10 @@ contains
                     this%velocity_dx%raw(), this%temperature%raw(), &
                     this%temperature_dx%raw(), this%salinity%raw(), &
                     this%salinity_dx%raw()]
+#ifdef DEBUG
+    call logger%debug('plume%state_vector','Returning state vector '// &
+                      'for plume.')
+#endif
   end function plume_state_vector
 
 
@@ -701,65 +728,69 @@ contains
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when creating HDF '// &
-                 'group', group_name
-      write(*,*) '         Data IO not performed for ice shelf'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                          ' returned when creating HDF group "'//group_name//'"')
+      call logger%error('plume%write_data','Data IO not performed for plume')
       return
     end if
 
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code', error,' returned when writing '// &
-                 'attribute to HDF group', group_name
-      write(*,*) '         Output file will have missing information'
+      call logger%warning('plume%write_data','Error code '//str(error)//     &
+                          ' returned when writing attribute to HDF group '// &
+                          group_name)
       ret_err = error
     end if
 
     call this%thickness%write_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
-                 'thickness field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                          ' returned when writing plume thickness '//    &
+                          'field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%velocity%write_hdf(group_id, hdf_velocity, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
-                 'velocity field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                          ' returned when writing plume velocity '//     &
+                          'field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%temperature%write_hdf(group_id, hdf_temperature, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
-                 'temperature field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                          ' returned when writing plume temperature '//  &
+                          'field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%salinity%write_hdf(group_id, hdf_salinity, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when writing plume '// &
-                 'salinity field to HDF'
-      write(*,*) '         Data likely missing'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                          ' returned when writing plume salinity '//     &
+                          'field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
-      write(*,*) 'WARNING: Error code',error,' returned when closing HDF '// &
-                 'group', group_name
-      write(*,*) '         Possible bad IO'
+      call logger%warning('plume%write_data','Error code '//str(error)// &
+                         ' returned when closing HDF group '//group_name)
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
+#ifdef DEBUG
+    call logger%debug('plume%write_data','Wrote plume data to HDF group '// &
+                      group_name)
+#endif
   end subroutine plume_write_data
 
 
-  subroutine plume_solve(this, ice_thickness, ice_density, ice_temperature, time)
+  subroutine plume_solve(this, ice_thickness, ice_density, ice_temperature, &
+                         time, success)
     !* Author: Chris MacMackin
     !  Date: March 2017
     !
@@ -770,27 +801,54 @@ contains
     class(plume), intent(inout)     :: this
     class(scalar_field), intent(in) :: ice_thickness
       !! Thickness of the ice above the basal surface
-    real(r8), intent(in)  :: ice_density
+    real(r8), intent(in)            :: ice_density
       !! The density of the ice above the basal surface, assumed uniform
-    real(r8), intent(in)  :: ice_temperature
+    real(r8), intent(in)            :: ice_temperature
       !! The temperature of the ice above the basal surface, assumed uniform
-    real(r8), intent(in)  :: time
+    real(r8), intent(in)            :: time
       !! The time to which the basal surface should be solved
-    
+    logical, intent(out)            :: success
+      !! True if the solver is successful, false otherwise
+   
     real(r8), dimension(:), allocatable :: solution
     real(r8) :: residual
-    integer :: flag, i
+    integer, dimension(5) :: info
+    integer :: flag
 
     call ice_thickness%guard_temp()
     this%time = time
 
     solution = this%state_vector()
-    call quasilinear_solve(L, f, solution, 1, residual, flag, 1.e-12_r8*size(solution), &
-                           precond=preconditioner, krylov_dim=100)!, gmres_iter_max=i)
-    if (flag /= 0) then
-      call this%update(solution)
-      error stop ('QLM solver returned with nonzero status flag.')
-    end if
+#ifdef DEBUG
+    call logger%debug('plume%solve','Calling QLM ODE solver')
+#endif
+    call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
+                           1.e-9_r8*size(solution), precond=preconditioner, &
+                           krylov_dim=100)
+    call this%update(solution)
+#ifdef DEBUG
+    call logger%debug('plume%solve','QLM solver required '//str(info(5))// &
+                      ' nonlinear iterations and '//str(info(1)+info(2))// &
+                      ' function calls.')
+#endif
+
+    select case(flag)
+    case(0)
+      call logger%info('plume%solver','Solved plume at time '//str(time))
+      success = .true.
+    case(1)
+      call logger%warning('plume%solver','Plume solver stagnated with '// &
+                       'residual of '//str(residual))
+      success = .true.
+    case(2)
+      call logger%error('plume%solver','Reached maximum number of '// &
+                        'iterations solving plume')
+      success = .false.
+    case default
+      call logger%error('plume%solve','QLM solver failed for plume with '// &
+                        'error code '//str(flag))
+      success = .false.
+    end select
     
     call ice_thickness%clean_temp()
 
@@ -819,7 +877,9 @@ contains
       case(free_boundary)
         continue
       case default
-        error stop ('Plume can only handle Dirichlet or free thickness boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
+                         'or free thickness boundaries.')
+        error stop
       end select
       select case(btype_u)
       case(dirichlet)
@@ -828,8 +888,9 @@ contains
       case(free_boundary)
         continue
       case default
-        error stop ('Plume can only handle Dirichlet or free thickness '// &
-                    'boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
+                          'or free thickness boundaries.')
+        error stop
       end select
       st = 1
       en = st + this%thickness_size - 1
@@ -856,15 +917,17 @@ contains
         call vector_tmp%set_boundary(-1, bdepth_l, &
                                      this%velocity_dx%get_boundary(-1, bdepth_l))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'velocity boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free velocity boundaries.')
+        error stop
       end if
       if (btype_u == neumann) then
         call vector_tmp%set_boundary(1, bdepth_u, &
                                      this%velocity_dx%get_boundary(1, bdepth_u))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'velocity boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free velocity boundaries.')
+        error stop
       end if
       st = en + 1
       en = st + this%velocity_size - 1
@@ -891,15 +954,17 @@ contains
         call scalar_tmp%set_boundary(-1, bdepth_l, &
                                      this%temperature_dx%get_boundary(-1, bdepth_l))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'temperature boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free temperature boundaries.')
+        error stop
       end if
       if (btype_u == neumann) then
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%temperature_dx%get_boundary(1, bdepth_u))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'temperature boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free temperature boundaries.')
+        error stop
       end if
       st = en + 1
       en = st + this%temperature_size - 1
@@ -926,21 +991,22 @@ contains
         call scalar_tmp%set_boundary(-1, bdepth_l, &
                                      this%salinity_dx%get_boundary(-1, bdepth_l))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'salinity boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free salinity boundaries.')
+        error stop
       end if
       if (btype_u == neumann) then
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%salinity_dx%get_boundary(1, bdepth_u))
       else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                    'salinity boundaries.')
+        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                          'Neumann or free salinity boundaries.')
+        error stop
       end if
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
     end function L
-
 
     function f(v)
       !! The nonlinear operator
@@ -995,7 +1061,9 @@ contains
         case(free_boundary)
           continue
         case default
-          error stop ('Plume can only handle Dirichlet or free thickness boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
+                            'or free thickness boundaries.')
+          error stop
         end select
         select case(btype_u)
         case(dirichlet)
@@ -1003,8 +1071,9 @@ contains
         case(free_boundary)
           continue
         case default
-          error stop ('Plume can only handle Dirichlet or free thickness '// &
-                      'boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
+                            'or free thickness boundaries.')
+          error stop
         end select
         st = 1
         en = st + this%thickness_size - 1
@@ -1032,14 +1101,16 @@ contains
         if (btype_l == neumann) then
           call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'velocity boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free velocity boundaries.')
+          error stop
         end if
         if (btype_u == neumann) then
           call vector_tmp%set_boundary(1, bdepth_u, bounds%velocity_bound(1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'velocity boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free velocity boundaries.')
+          error stop
         end if
         st = en + 1
         en = st + this%velocity_size - 1
@@ -1069,14 +1140,16 @@ contains
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'temperature boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free temperature boundaries.')
+          error stop
         end if
         if (btype_u == neumann) then
           call scalar_tmp%set_boundary(1, bdepth_u, bounds%temperature_bound(1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'temperature boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free temperature boundaries.')
+          error stop
         end if
         st = en + 1
         en = st + this%salinity_size - 1
@@ -1106,26 +1179,22 @@ contains
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'salinity boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free salinity boundaries.')
+          error stop
         end if
         if (btype_u == neumann) then
           call scalar_tmp%set_boundary(1, bdepth_u, bounds%salinity_bound(1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          error stop ('Plume can only handle Dirichlet, Neumann or free '// &
-                      'salinity boundaries.')
+          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
+                            'Neumann or free salinity boundaries.')
+          error stop
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
       end associate
     end function f
-
-    pure function lin(location)
-          real(r8), dimension(:), intent(in) :: location
-    real(r8) :: lin
-    lin = location(1)
-    end function lin
 
     function preconditioner(v, u, L_op, f_op, Lcur, fcur)
       !! The preconditioner, which approximates an inverse of `L`.

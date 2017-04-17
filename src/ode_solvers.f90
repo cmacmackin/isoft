@@ -93,8 +93,8 @@ module ode_solvers_mod
 
 contains
 
-  subroutine quasilinear_solve(L, f, solution, order, resid_norm, &
-                               flag, tol, precond, differentiate, &
+  subroutine quasilinear_solve(L, f, solution, order, resid_norm,       &
+                               flag, info, tol, precond, differentiate, &
                                iter_max, gmres_iter_max, krylov_dim)
     !* Author: Chris MacMackin
     !  Date: March 2017
@@ -138,20 +138,30 @@ contains
     ! approximate \(L^{-1}\). The derivatives of \(\vec{f}\) and
     ! \(g_k\) are estimated using a finite-difference.
     !
-    procedure(L_intr)                     :: L
+    !####Output parameters
+    !
+    ! On output, the components of the `info` argument are as follows:
+    !
+    !     info(1)   = nLe   (number of evaluations of `L`)
+    !     info(2)   = nfe   (number of evaluations of `f`)
+    !     info(3)   = nrpre (number of preconditioner evaluations)
+    !     info(4)   = nli   (number of linear iterations)
+    !     info(5)   = nni   (number of nonlinear iterations)
+    !
+    procedure(L_intr)                            :: L
       !! A function providing the linear, left-hand-side of the ODE
       !! being solved.
-    procedure(f_intr)                     :: f
+    procedure(f_intr)                            :: f
       !! A function providing the nonlinear, right-hand-side of the
       !! ODE being solved.
-    real(r8), dimension(:), intent(inout) :: solution
+    real(r8), dimension(:), intent(inout)        :: solution
       !! On input, an estimate of the solution to the ODE. On output,
       !! the actual solution.
-    integer, intent(in)                   :: order
+    integer, intent(in)                          :: order
       !! The order of the derivative taken by `L`
-    real(r8), intent(out)                 :: resid_norm
+    real(r8), intent(out)                        :: resid_norm
       !! Norm of the residual of the final solution.
-    integer, intent(out)                  :: flag
+    integer, intent(out)                         :: flag
       !! Status flag indicating whether the iterations ended succesfully.
       !!
       !!< 0:
@@ -169,21 +179,24 @@ contains
       !!3
       !!:    No `diff` procedure provided when `order > 1`
       !!
-    real(r8), intent(in), optional        :: tol
-      !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
-    procedure(pre_intr), optional         :: precond
+    integer, dimension(5), intent(out), optional :: info
+      !! Array containing various outputs; see above
+    real(r8), intent(in), optional               :: tol
+      !! The required reduction in the solution residual. Default is
+      !! `size(solution) * 1e-8`.
+    procedure(pre_intr), optional                :: precond
       !! A right-preconditioner which may be used to improve
       !! convergence of the solution.
-    procedure(diff_intr), optional        :: differentiate
+    procedure(diff_intr), optional               :: differentiate
       !! A procedure which will evaluate the `n`th derivative of the
       !! state vector, when `n` is less than `order`.
-    integer, intent(in), optional         :: iter_max
+    integer, intent(in), optional                :: iter_max
       !! Maximum allowable number of quasilinearised
       !! iterations. Default is 15.
-    integer, intent(in), optional         :: gmres_iter_max
+    integer, intent(in), optional                :: gmres_iter_max
       !! Maximum allowable number of GMRES iterations. Default is
       !! 1000.
-    integer, intent(in), optional         :: krylov_dim
+    integer, intent(in), optional                :: krylov_dim
       !! Maximum Krylov subspace dimension; default 10. Larger values
       !! will allow for faster convergence (and in some cases be the
       !! difference between whether or not convergence is possible),
@@ -194,9 +207,14 @@ contains
     real(r8), parameter :: epsilon = 5.e-8
 
     integer :: i, stagnant_iters, gmres_flag
+    integer :: nlhs, nrpre, nli, tnlhs, tnrpre, tnli
     real(r8) :: old_resid, gmres_norm
-    real(r8), dimension(size(solution),order) :: u, u_prev
+    real(r8), dimension(size(solution),order) :: u_prev
     real(r8), dimension(size(solution))       :: f_prev, rhs
+
+    tnlhs  = 0
+    tnrpre = 0
+    tnli   = 0
 
     if (.not. present(differentiate) .and. order > 1) then
       flag = 3
@@ -250,9 +268,20 @@ contains
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
-                       gmres_eta, preconditioner, iter_max=gitmax,  &
-                       krylov_dim=kdim)
+                       nlhs, nrpre, nli, gmres_eta, preconditioner,   &
+                       iter_max=gitmax, krylov_dim=kdim)
+      tnlhs  = tnlhs  + nlhs
+      tnrpre = tnrpre + nrpre
+      tnli   = tnli   + nli
+
       if (gmres_flag /= 0) then
+        if (present(info)) then
+          info(1) = i + tnlhs + tnrpre
+          info(2) = 2*i + tnlhs
+          info(3) = tnrpre
+          info(4) = tnli
+          info(5) = i
+        end if
         flag = -gmres_flag
         return
       end if
@@ -262,6 +291,13 @@ contains
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     end do
 
+    if (present(info)) then
+      info(1) = 1 + i + tnlhs + tnrpre
+      info(2) = 1 + 2*i + tnlhs
+      info(3) = tnrpre
+      info(4) = tnli
+      info(5) = i
+    end if
     flag = 0
     
   contains

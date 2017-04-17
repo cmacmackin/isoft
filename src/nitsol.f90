@@ -307,6 +307,7 @@ module nitsol_mod
       !     info(4)   = nli (number of linear iterations)
       !     info(5)   = nni (number of nonlinear iterations)
       !     info(6)   = nbt (number of backtracks)
+      !
       import :: r8
       implicit none
       integer, intent(in)                   :: n
@@ -634,9 +635,9 @@ contains
   end subroutine dummy_f
 
 
-  subroutine gmres_solve(solution, lhs, rhs, resid_norm, flag, tol, precond, &
-                         rpar, ipar, resid_update, iter_max, krylov_dim,     &
-                         inner_prod, norm)
+  subroutine gmres_solve(solution, lhs, rhs, resid_norm, flag, nlhs, nrpre, &
+                         nli, tol, precond, rpar, ipar, resid_update,       &
+                         iter_max, krylov_dim, inner_prod, norm)
     !* Author: Chris MacMackin
     !  Date: March 2017
     !
@@ -684,6 +685,12 @@ contains
       !!     solution has been found.
     real(r8), intent(in), optional                  :: tol
       !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
+    integer, intent(out), optional                  :: nlhs
+        !! Number of evaluations of the left hand side of the system
+    integer, intent(out), optional                  :: nrpre
+        !! Number of evaluations of the right-preconditioner
+    integer, intent(out), optional                  :: nli
+        !! Number of iterations
     procedure(mat_mult), optional                   :: precond
       !! A right-preconditioner which may be used to improve
       !! convergence of the solution.
@@ -708,12 +715,16 @@ contains
     procedure(dnorm_intr), optional                 :: norm
       !! Norm routine, either user supplied or BLAS dnrm2.
     
-    integer  :: npoints, preflag, resup, itmax, kdim, nfe, njve, nrpre, nli
+    integer  :: npoints, preflag, resup, itmax, kdim, nfe, lnlhs, lnrpre, lnli
     real(r8) :: eta
     procedure(dinpr_intr), pointer :: dinpr
     procedure(dnorm_intr), pointer :: dnorm
     real(r8), dimension(:), allocatable, save :: xcur, svbig, svsml, w, rwork
     real(r8), dimension(:,:), allocatable, save :: vv, rr
+
+    lnlhs  = 0
+    lnrpre = 0
+    lnli   = 0
 
     npoints = size(solution)
     if (present(precond)) then
@@ -782,10 +793,14 @@ contains
       allocate(rwork(npoints))
     end if
 
-    call nitgm2(npoints, xcur, -rhs, solution, eta, dummy_f, jacv,  &
-                rpar, ipar, 1, preflag, itmax, resup, 1, nfe, njve, &
-                nrpre, nli, kdim, kdim+1, vv, rr, svbig, svsml, w,  &
-                rwork, resid_norm, dinpr, dnorm, flag)
+    call nitgm2(npoints, xcur, -rhs, solution, eta, dummy_f, jacv, &
+                rpar, ipar, 1, preflag, itmax, resup, 1, nfe,      &
+                lnlhs, lnrpre, lnli, kdim, kdim+1, vv, rr, svbig,  &
+                svsml, w, rwork, resid_norm, dinpr, dnorm, flag)
+
+    if (present(nlhs))  nlhs  = lnlhs
+    if (present(nrpre)) nrpre = lnrpre
+    if (present(nli))   nli   = lnli
 
   contains
     

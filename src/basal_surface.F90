@@ -145,7 +145,7 @@ module basal_surface_mod
     end subroutine write_dat
 
     subroutine surface_solve(this, ice_thickness, ice_density, &
-                           ice_temperature, time)
+                           ice_temperature, time, success)
       import :: basal_surface
       import :: scalar_field
       import :: r8
@@ -158,6 +158,8 @@ module basal_surface_mod
         !! The temperature of the ice above the basal surface, assumed uniform
       real(r8), intent(in)                :: time
         !! The time to which the basal surface should be solved
+      logical, intent(out)                :: success
+        !! True if the solver is successful, false otherwise
     end subroutine surface_solve
   end interface
 

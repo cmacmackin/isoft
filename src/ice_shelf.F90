@@ -242,140 +242,10 @@ contains
     this%jacobian_time = -1._r8
     this%precondition_obj = preconditioner(1.e-3_r8, 10)
 #ifdef DEBUG
-    call logger%debug('ice_shelf','Instantiated new ice shelf object')
+    call logger%debug('ice_shelf','Initialised new ice shelf object')
 #endif
   end subroutine shelf_initialise
 
-!$  function shelf_dt(self,t)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Computes the derivative of the ice shelf with respect to time. As
-!$    ! the only property of the ice which explicitely changes with time is
-!$    ! the ice thickness, that will be the only portion of the returned type
-!$    ! which actually corresponds to the derivative.
-!$    !
-!$    class(ice_shelf), intent(in)   :: self
-!$    real(r8), intent(in), optional :: t
-!$      !! Time at which to evaluate the derivative
-  !$    class(integrand), allocatable  :: shelf_dt
-!$      !! The time rate of change of the ice shelf. Has dynamic type
-!$      !! [[ice_shelf]].
-!$  end function shelf_dt
-!$
-!$  function shelf_local_error(lhs, rhs) result(error)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Calculates a real scalar to represent the absolute difference between
-!$    ! two ice_shelf objects. `rhs` must be a a [[ice_shelf]] object, or a
-!$    ! runtime error will occur.
-!$    !
-!$    class(ice_shelf), intent(in) :: lhs
-!$      !! Self
-!$    class(integrand), intent(in) :: rhs
-!$      !! The ice shelf object which is being compared against.
-!$    real(r8) :: error
-!$      !! The scalar representation of the absolute difference between these
-!$      !! two ice shelves.
-!$  end function shelf_local_error
-!$
-!$  function shelf_m_shelf(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one ice shelf object by another. That is to say, it 
-!$    ! performs element-wise multiplication of the state vectors 
-!$    ! representing the two arguments. `rhs` must be an [[ice_shelf]]
-!$    ! object, or a runtime error will occur.
-!$    !
-!$    class(ice_shelf), intent(in)  :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)  :: rhs
-!$      !! The ice shelf object being multiplied by.
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-!$  end function shelf_m_shelf
-!$
-!$  function shelf_m_real(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-!$    ! performs element-wise multiplication of the state vector 
-!$    ! representing the ice shelf.
-!$    !
-!$    class(ice_shelf), intent(in)  :: lhs
-!$      !! Self
-!$    real(r8), intent(in)          :: rhs
-!$      !! The scalar being multiplied by.
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-!$  end function shelf_m_real
-!$
-!$  function real_m_shelf(lhs, rhs) result(product)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Multiplies one ice shelf object by a scalar. That is to say, it 
-!$    ! performs element-wise multiplication of the state vector 
-!$    ! representing the ice shelf.
-!$    !
-!$    real(r8), intent(in)          :: lhs
-!$      !! The scalar being multiplied by.
-!$    class(ice_shelf), intent(in)  :: rhs
-!$      !! Self
-!$    class(integrand), allocatable :: product
-!$      !! The product of the two arguments. Has dynamic type [[ice_shelf]].
-!$  end function real_m_shelf
-!$
-!$  function shelf_add(lhs, rhs) result(sum)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Adds one ice shelf object to another. That is to say, it performs
-!$    ! element-wise addition of the state vectors representing the two
-!$    ! arguments. `rhs` must be an [[ice_shelf]] object, or a runtime
-!$    ! error will occur.
-!$    !
-!$    class(ice_shelf), intent(in)  :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)  :: rhs
-!$      !! The ice shelf object being added.
-!$    class(integrand), allocatable :: sum
-!$      !! The sum of the two arguments. Has dynamic type [[ice_shelf]].
-!$  end function shelf_add
-!$
-!$  function shelf_sub(lhs, rhs) result(difference)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Subtracts one ice shelf object from another. That is to say, it 
-!$    ! performs element-wise addition of the state vectors representing 
-!$    ! the two arguments. `rhs` must be a a [[ice_shelf]] object, or a
-!$    ! runtime error will occur.
-!$    !
-!$    class(ice_shelf), intent(in)  :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)  :: rhs
-!$      !! The ice shelf object being subtracted.
-!$    class(integrand), allocatable :: difference
-!$      !! The difference of the two arguments. Has dynamic type [[ice_shelf]].
-!$  end function shelf_sub
-!$
-!$  subroutine shelf_assign(lhs, rhs)
-!$    !* Author: Christopher MacMackin
-!$    !  Date: April 2016
-!$    !
-!$    ! Assigns the `rhs` ice shelf to this, `lhs`, one. All components
-!$    ! will be the same following the assignment.
-!$    !
-!$    class(ice_shelf), intent(inout) :: lhs
-!$      !! Self
-!$    class(integrand), intent(in)    :: rhs
-!$      !! The object to be assigned. Must have dynamic type [[ice_shelf]],
-!$      !! or a runtime error will occur.
-!$  end subroutine shelf_assign
 
   pure function shelf_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
@@ -386,6 +256,7 @@ contains
     class(ice_shelf), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
     allocate(thickness, source=this%thickness)
+    call thickness%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%thickness','Returned ice shelf thickness')
 #endif    
@@ -423,8 +294,8 @@ contains
     real(r8)                     :: density !! The ice density.
     density = 1.0_r8/1.12_r8 !TODO: Will probably want to change this at some point
 #ifdef DEBUG
-    call logger%debug('ice_shelf%density','Ice shelf has '// &
-                      str(density))
+    call logger%debug('ice_shelf%density','Ice shelf has density '// &
+                      str(density)//'.')
 #endif
   end function shelf_density
 
@@ -625,8 +496,9 @@ contains
     class is(ice_shelf)
       delta_t = this%time - previous_states(1)%time
     class default
-      error stop ('Type other than `ice_shelf` passed to `ice_shelf` '// &
-                  'object as a previous state.')
+      call logger%fatal('ice_shelf%precondition','Type other than `ice_shelf` '// &
+                        'passed to `ice_shelf` object as a previous state.')
+      error stop
     end select
     call delta_shelf%thickness%assign_meta_data(this%thickness)
     call delta_shelf%velocity%assign_meta_data(this%velocity)
@@ -812,7 +684,7 @@ contains
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data', 'Error code '//str(error)// &
+      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
                           ' returned when creating HDF group "'//group_name//'"')
       call logger%error('ice_shelf%write_data','Data IO not performed for '// &
                         'ice shelf')
@@ -822,8 +694,8 @@ contains
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code'//str(error)// &
-                          ' returned when writing attribute to HDF group'// &
+      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
+                          ' returned when writing attribute to HDF group '// &
                           group_name)
       ret_err = error
     end if
@@ -846,16 +718,17 @@ contains
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code'//str(error)// &
-                          ' returned when closing HDF group'//group_name)
+      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
+                          ' returned when closing HDF group '//group_name)
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
 #ifdef DEBUG
     call logger%debug('ice_shelf%write_data','Wrote ice shelf data to '// &
-                      'HDF group'//group_name)
+                      'HDF group '//group_name)
 #endif
   end subroutine shelf_write_data
+
 
   function shelf_time_step(this) result(dt)
     !* Author: Chris MacMackin
@@ -876,6 +749,7 @@ contains
       end associate
     end associate
   end function shelf_time_step
+
 
   subroutine shelf_assign(this, rhs)
     !* Author: Chris MacMackin

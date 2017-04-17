@@ -334,6 +334,7 @@ contains
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
                 1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
                 int_param, flag, ddot, dnrm2)
+    call this%update(state)
 !!$    if (flag == 6 .and. input(9) > -1) then
 !!$      input(9) = -1
 !!$      call logger%trivia('glacier%integrate','Backtracking failed in NITSOL '// &
@@ -351,14 +352,14 @@ contains
 
     select case(flag)
     case(0)
-      call logger%info('glacier%integrate', 'Integrated glacier to time '//str(time))
+      call logger%info('glacier%integrate','Integrated glacier to time '//str(time))
       success = .true.
     case(1)
-      call logger%error('glacier%integrate', 'Reached maximum number of'// &
+      call logger%error('glacier%integrate','Reached maximum number of'// &
                         ' iterations integrating glacier')
       success = .false.
     case default
-      call logger%error('glacier%integrate', 'NITSOL failed when integrating'// &
+      call logger%error('glacier%integrate','NITSOL failed when integrating'// &
                         ' glacier with error code '//str(flag))
       success = .false.
     end select
