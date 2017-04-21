@@ -117,11 +117,11 @@ contains
       !! exit, the iteratively determined value of the preconditioned
       !! vector.
 
-    character(len=76), parameter :: success_format = '("Picard solver '// &
-         'converged with error of ",es8.5," after ",i3," iterations.")'
-    character(len=76), parameter :: failure_format = '("Picard solver '// &
-         'reached maximum (",i3,") iterations, with error ",es8.5,".")'
-    integer, parameter                             :: msg_len = 68
+    character(len=77), parameter :: success_format = '("Picard solver '// &
+         'converged with error of ",es12.5," after ",i2," iterations.")'
+    character(len=77), parameter :: failure_format = '("Picard solver '// &
+         'reached maximum (",i3,") iterations, with error ",es12.5,".")'
+    integer, parameter                             :: msg_len = 72
     class(scalar_field), dimension(:), allocatable :: prev_estimate
     integer                                        :: i, j, k, n
     real(r8)                                       :: max_err, old_max_err
@@ -164,32 +164,22 @@ contains
           end if
         end do
         estimate(j) = jacobian(j,j)%solve_for(vector(j) - tmp_field)
-!!$        if (j==1) then
-!!$           print*,'======================='
-!!$           print*,vector(j)%raw() - tmp_field%raw()
-!!$           print*,'-----------------------'
-!!$           print*,estimate(j)%raw()
-!!$           print*,'-----------------------'
-!!$           tmp_field = jacobian(j,j) * estimate(j)
-!!$           print*,tmp_field%raw()
-!!$        end if
         max_err = max(max_err, &
                       maxval(abs( (estimate(j)-prev_estimate(j))/(prev_estimate(j)+1e-10_r8) )))
       end do
       ! If difference between result and previous guess is less than
       ! the tolerance, stop iterations
-!!$      print*,i,max_err
       if (max_err < this%tolerance) then
         write(msg,success_format) max_err, i
-        call logger%debug('preconditioner_apply',msg)
-        call logger%debug('preconditioner_apply','Exiting function `precondition`.')
+        call logger%debug('preconditioner%apply',msg)
+        call logger%debug('preconditioner%apply','Exiting function `precondition`.')
         call vector%clean_temp(); call estimate%clean_temp()
         return
       end if
       if (i > 1 .and. old_max_err <= max_err) then
-        call logger%error('preconditioner_apply', &
-                         'Iterations diverging. Exiting and returning previous iterate.')
-        call logger%debug('preconditioner_apply','Exiting function `precondition`.')
+        call logger%trivia('preconditioner%apply','Iterations diverging. Exiting '// &
+                           'and returning previous iterate.')
+        call logger%debug('preconditioner%apply','Exiting function `precondition`.')
         estimate = prev_estimate
         call vector%clean_temp(); call estimate%clean_temp()
         return
@@ -197,9 +187,9 @@ contains
       old_max_err = max_err
     end do
     write(msg,failure_format) this%max_iterations, max_err
-    call logger%error('preconditioner_apply',msg)
+    call logger%warning('preconditioner%apply',msg)
     call vector%clean_temp(); call estimate%clean_temp()
-    call logger%debug('preconditioner_apply','Exiting function `precondition`.')
+    call logger%debug('preconditioner%apply','Exiting function `precondition`.')
   end subroutine preconditioner_apply
   
 end module preconditioner_mod

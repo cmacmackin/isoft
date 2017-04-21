@@ -23,6 +23,7 @@
 module cryosphere_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
+  use hdf5
   use cryosphere_mod, only: cryosphere
   use glacier_mod, only: glacier
   use ice_shelf_mod, only: ice_shelf
@@ -43,8 +44,9 @@ module cryosphere_test
   use simple_plume_boundary_mod, only: boundary => simple_plume_boundary
   use linear_eos_mod, only: linear_eos
   use specfun_mod, only: ei
+  implicit none
 
-  integer, parameter :: resolution = 50
+  integer, parameter :: resolution = 15
   real(r8), parameter :: length = 2.5_r8
   real(r8), parameter :: lambda_d = 0.37_r8
   real(r8), parameter :: big_x = 1.0_r8/lambda_d
@@ -59,17 +61,17 @@ module cryosphere_test
 
   real(r8), parameter :: offset = 0.1_r8
 
+  @TestCase
   type, extends(testcase), public :: test_cryo
     type(cryosphere) :: cryo
     type(ice_shelf)  :: shelf_comp
     type(plume)      :: plume_comp
     integer     :: nodes = resolution
-    real(r8)    :: lower1 = 0.0_r8, upper1 = 2.7_r8
-    real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
+    real(r8)    :: lower1 = 0.0_r8, upper1 = length
     ! Ice shelf parameters
     real(r8)    :: temperature = -15._r8, lambda = lambda_d, chi = chi_val
     ! Plume parameters
-    real(r8)    :: delta = 0.0_r8, nu = nu_val, mu = 0.0_r8, epsilon = 0.0_r8
+    real(r8)    :: delta = 0.0_r8, nu = nu_val, mu = 0.0_r8
   contains
     procedure :: setup
   end type test_cryo
@@ -164,7 +166,7 @@ contains
     allocate(bound_s, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
     allocate(shelf)
     call shelf%initialise(domain1, [this%nodes], h, u_ice, this%temperature, &
-                          visc, bound_s, this%lambda, this%chi)
+                          visc, bound_s, this%lambda, this%chi, 50._r8)
     this%shelf_comp = shelf
     ! Initialise ice shelf
     allocate(ent, source=entrainment(1.0_r8))
@@ -176,7 +178,7 @@ contains
     allocate(plm)
     call plm%initialise(domain1, [this%nodes], d, u_plume, &
                         t, s, ent, mel, amb, eos, bound_p, &
-                        this%delta, this%nu, this%mu, this%epsilon)
+                        this%delta, this%nu, this%mu)
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
@@ -185,7 +187,7 @@ contains
                                       t([0.0_r8]),s([0.0_r8])))
     call this%plume_comp%initialise(domain1, [this%nodes], d, u_plume, &
                                    t, s, ent, mel, amb, eos, bound_p,  &
-                                   this%delta, this%nu, this%mu, this%epsilon)
+                                   this%delta, this%nu, this%mu)
     ! Initialise cryosphere
     call move_alloc(shelf, glace)
     call move_alloc(plm, basal)
@@ -196,6 +198,7 @@ contains
   subroutine test_integrate(this)
     class(test_cryo), intent(inout) :: this
     call this%cryo%integrate(1._r8)
+    call this%cryo%integrate(-1._r8)
     call this%cryo%integrate(3._r8)
     ! Consider adding some tests...
   end subroutine test_integrate
@@ -207,11 +210,41 @@ contains
   end subroutine test_time_step
 
   @Test
+  subroutine test_reduce_time_step(this)
+    class(test_cryo), intent(inout) :: this
+    @assertEqual(this%shelf_comp%time_step(),this%cryo%time_step(),message="Incorrect time step returned.")
+    call this%cryo%reduce_time_step()
+    @assertTrue(this%shelf_comp%time_step() > this%cryo%time_step(),message="Time step not reduced.")
+  end subroutine test_reduce_time_step
+
+  @Test
+  subroutine test_increase_time_step(this)
+    class(test_cryo), intent(inout) :: this
+    real(r8) :: dt_old, dt_new
+    integer  :: i
+    @assertEqual(this%shelf_comp%time_step(),this%cryo%time_step(),message="Incorrect time step returned.")
+    call this%cryo%reduce_time_step()
+    @assertTrue(this%shelf_comp%time_step() > this%cryo%time_step(),message="Time step not reduced.")
+    call this%cryo%increase_time_step()
+    @assertTrue(this%shelf_comp%time_step() > this%cryo%time_step(),message="Time step increased too rapidly.")
+    do i = 1, 5
+      call this%cryo%increase_time_step()
+    end do
+    @assertEqual(this%shelf_comp%time_step(),this%cryo%time_step(),message="Time step not increased.")
+  end subroutine test_increase_time_step
+
+  @Test
   subroutine test_write_data(this)
     class(test_cryo), intent(inout) :: this
     character(len=16), parameter :: test_file = '____test_file.h5'
+    integer :: herr
+    logical :: exists
+    call h5open_f(herr)
     call execute_command_line('rm -f '//test_file)
     call this%cryo%write_data(test_file)
+    exists = .false.
+    inquire(file=test_file, exist=exists)
+    @assertTrue(exists,'Output file not created.')
     ! Do some actual tests on the file...
     call execute_command_line('rm -f '//test_file)
   end subroutine test_write_data

@@ -57,11 +57,15 @@ module plume_mod
   implicit none
   private
 
-  character(len=9),  parameter, public :: hdf_type_name = 'ice_shelf'
+  character(len=9),  parameter, public :: hdf_type_name = 'plume'
   character(len=9),  parameter, public :: hdf_thickness = 'thickness'
   character(len=8),  parameter, public :: hdf_velocity = 'velocity'
   character(len=11), parameter, public :: hdf_temperature = 'temperature'
   character(len=8),  parameter, public :: hdf_salinity = 'salinity'
+  character(len=5),  parameter, public :: hdf_delta = 'delta'
+  character(len=2),  parameter, public :: hdf_nu = 'nu'
+  character(len=2),  parameter, public :: hdf_mu = 'mu'
+  character(len=5),  parameter, public :: hdf_r = 'r_val'
 
   type, extends(basal_surface), public :: plume
     !* Author: Christopher MacMackin
@@ -106,11 +110,6 @@ module plume_mod
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
     real(r8)        :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
-    real(r8)        :: epsilon
-      !! A coefficient on the melt term in the continuity equation,
-      !! which may be set to 0 to remove this term. This can be useful
-      !! when testing with simple systems, such as that of Dallaston
-      !! et al. (2015).
     real(r8)        :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
@@ -213,7 +212,7 @@ contains
   subroutine plume_initialise(this, domain, resolution, thickness, velocity,    &
                               temperature, salinity, entrainment_formulation,   &
                               melt_formulation, ambient_conds, eos, boundaries, &
-                              delta, nu, mu, epsilon, r_val)
+                              delta, nu, mu, r_val)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -286,11 +285,6 @@ contains
     real(r8), optional, intent(in)       :: mu
       !! The dimensionless ratio \(\mu \equiv
       !! \frac{\C_dx_0}{D_0}\). Defaults to 0.
-    real(r8), optional, intent(in)       :: epsilon
-      !! A coefficient on the melting term in the continuity
-      !! equation. Can be used to turn off this contribution, which
-      !! may be useful depending on the scalings used. Defaults to
-      !! 1.0.
     real(r8), optional, intent(in)       :: r_val
       !! The dimensionless ratio of the water density to the ice shelf
       !! density, \( r = \rho_0/\rho_i. \) Defaults to 1.12.
@@ -347,11 +341,6 @@ contains
       this%mu = mu
     else
       this%mu = 0.0_r8
-    end if
-    if (present(epsilon)) then
-      this%epsilon = epsilon
-    else
-      this%epsilon = 1.0_r8
     end if
     if (present(r_val)) then
       this%r_val = r_val
@@ -604,7 +593,7 @@ contains
     density = 1.0_r8
 #ifdef DEBUG
     call logger%debug('plume%water_density','Plume has average density '// &
-                     str(density)//'.')
+                     trim(str(density))//'.')
 #endif
   end function plume_water_density
 
@@ -677,8 +666,9 @@ contains
                       this%temperature_dx%raw_size() + this%salinity%raw_size() + &
                       this%salinity_dx%raw_size()
 #ifdef DEBUG
-    call logger%debug('plume%data_size','Plume shelf has '//str(plume_data_size)// &
-                     ' elements in its state vector.')
+    call logger%debug('plume%data_size','Plume shelf has '//     &
+                      trim(str(plume_data_size))//' elements '// &
+                      'in its state vector.')
 #endif
   end function plume_data_size
 
@@ -728,57 +718,68 @@ contains
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                          ' returned when creating HDF group "'//group_name//'"')
+      call logger%warning('plume%write_data','Error code '// &
+                          trim(str(error))//' returned '//   &
+                          'when creating HDF group "'//group_name//'"')
       call logger%error('plume%write_data','Data IO not performed for plume')
       return
     end if
 
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_delta, &
+                                    [this%delta], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_nu, &
+                                    [this%nu], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_mu, &
+                                    [this%mu], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_r, &
+                                    [this%r_val], 1_size_t, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)//     &
-                          ' returned when writing attribute to HDF group '// &
+      call logger%warning('plume%write_data','Error code '//    &
+                          trim(str(error))//' returned when '// &
+                          'writing attribute to HDF group '//   &
                           group_name)
       ret_err = error
     end if
 
     call this%thickness%write_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                          ' returned when writing plume thickness '//    &
-                          'field to HDF')
+      call logger%warning('plume%write_data','Error code '//    &
+                          trim(str(error))//' returned when '// &
+                          'writing plume thickness field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%velocity%write_hdf(group_id, hdf_velocity, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                          ' returned when writing plume velocity '//     &
-                          'field to HDF')
+      call logger%warning('plume%write_data','Error code '//    &
+                          trim(str(error))//' returned when '// &
+                          'writing plume velocity field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%temperature%write_hdf(group_id, hdf_temperature, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                          ' returned when writing plume temperature '//  &
-                          'field to HDF')
+      call logger%warning('plume%write_data','Error code '//       &
+                          trim(str(error))//' returned when '//    &
+                          'writing plume temperature field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%salinity%write_hdf(group_id, hdf_salinity, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                          ' returned when writing plume salinity '//     &
-                          'field to HDF')
+      call logger%warning('plume%write_data','Error code '//    &
+                          trim(str(error))//' returned when '// &
+                          'writing plume salinity field to HDF')
       if (ret_err == 0) ret_err = error
     end if
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
-      call logger%warning('plume%write_data','Error code '//str(error)// &
-                         ' returned when closing HDF group '//group_name)
+      call logger%warning('plume%write_data','Error code '//    &
+                          trim(str(error))//' returned when '// &
+                          'closing HDF group '//group_name)
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
@@ -827,18 +828,19 @@ contains
                            krylov_dim=100)
     call this%update(solution)
 #ifdef DEBUG
-    call logger%debug('plume%solve','QLM solver required '//str(info(5))// &
-                      ' nonlinear iterations and '//str(info(1)+info(2))// &
+    call logger%debug('plume%solve','QLM solver required '//         &
+                      trim(str(info(5)))//' nonlinear iterations '// &
+                      'and '//trim(str(info(1)+info(2)))//           &
                       ' function calls.')
 #endif
 
     select case(flag)
     case(0)
-      call logger%info('plume%solver','Solved plume at time '//str(time))
+      call logger%trivia('plume%solver','Solved plume at time '//trim(str(time)))
       success = .true.
     case(1)
       call logger%warning('plume%solver','Plume solver stagnated with '// &
-                       'residual of '//str(residual))
+                       'residual of '//trim(str(residual)))
       success = .true.
     case(2)
       call logger%error('plume%solver','Reached maximum number of '// &
@@ -846,7 +848,7 @@ contains
       success = .false.
     case default
       call logger%error('plume%solve','QLM solver failed for plume with '// &
-                        'error code '//str(flag))
+                        'error code '//trim(str(flag)))
       success = .false.
     end select
     
@@ -1030,9 +1032,8 @@ contains
                 S_x => this%salinity_dx, T => this%temperature, &
                 T_x => this%temperature_dx, mf => this%melt_formulation, &
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
-                mu => this%mu, epsilon => this%epsilon, r => this%r_val, &
-                bounds => this%boundaries)
-  
+                mu => this%mu, r => this%r_val, bounds => this%boundaries)
+
         b = -h/r
         call mf%solve_for_melt(Uvec, b, T, S, D, time)
 

@@ -66,7 +66,7 @@ module plume_test
     real(r8)    :: lower1 = 0.0_r8, upper1 = length
     real(r8)    :: lower2 = -1.0_r8, upper2 = 1.0_r8
     real(r8)    :: delta = 0.0_r8, nu = nu_val
-    real(r8)    :: mu = 0.0_r8, epsilon = 0.0_r8
+    real(r8)    :: mu = 0.0_r8
   contains
     procedure :: setup
   end type test_plume
@@ -209,9 +209,9 @@ contains
     call mel%solve_for_melt(vel,tmp,tmp,tmp,tmp,0.0_r8)
     call this%plume1%initialise(domain1, [this%nodes], thickness1, velocity,  &
                                 temp1, salinity1, ent, mel, amb, eos, bound, &
-                                this%delta, this%nu, this%mu, this%epsilon)
+                                this%delta, this%nu, this%mu)
     call this%plume2%initialise(domain2, [this%nodes], thickness2, velocity, &
-                                temp2, salinity2, epsilon=this%epsilon)
+                                temp2, salinity2)
     allocate(ent, source=entrainment(1.0_r8))
     allocate(mel, source=melt(beta,eps_m))
     allocate(amb, source=ambient(0.0_r8,0.0_r8))
@@ -222,7 +222,7 @@ contains
                                     temp1([0.0_r8]),salinity1([0.0_r8])))
     call this%plume3%initialise(domain1, [this%nodes], thickness3, velocity3,  &
                                 temp3, salinity3, ent, mel, amb, eos, bound,  &
-                                this%delta, this%nu, this%mu, this%epsilon)
+                                this%delta, this%nu, this%mu)
   end subroutine setup
 
   @Test

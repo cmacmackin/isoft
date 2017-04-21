@@ -43,6 +43,7 @@ module cryosphere_mod
   use h5lt
   use logger_mod, only: logger => master_logger
   use penf, only: str
+  use nitsol_mod, only: iplvl
   implicit none
   private
 
@@ -52,6 +53,7 @@ module cryosphere_mod
   character(len=13), parameter, public :: hdf_version = 'isoft_version'
   character(len=23), parameter, public :: hdf_comp_time = 'binary_compilation_time'
   character(len=16), parameter, public :: hdf_write_time = 'data_output_time'
+  character(len=15), parameter, public :: hdf_simulation_time = 'simulation_time'
 
   character(len=25), parameter, public :: hdf_crash_file = &
                                             'isoft_termination_dump.h5'
@@ -70,20 +72,29 @@ module cryosphere_mod
     ! libraries for evolution in time.
     !
     private
-    class(glacier), allocatable               :: ice
+    class(glacier), allocatable       :: ice
       !! A model for the ice shelf or ice sheet
-    class(basal_surface), allocatable         :: sub_ice
+    class(basal_surface), allocatable :: sub_ice
       !! A model for the ground or ocean underneath the ice
-    real(r8)                                  :: time 
+    real(r8)                          :: time 
       !! The time in the simulation
-    logical                                   :: first_integration
+    logical                           :: first_integration
       !! Indicates whether the cryosphere has been integrated before
       !! or not.
+    real(r8)                          :: dt_factor = 1.0_r8
+      !! A factor by which to reduce the time step
+    real(r8)                          :: min_dt_factor = 1e-3_r8
+      !! The smallest time step reduction to allow
+    logical                           :: performing_time_step
+      !! True if in the process of trying to get a time-step to
+      !! successfully integrate.
   contains
     procedure :: initialise
     procedure :: integrate
     procedure :: write_data
     procedure :: time_step
+    procedure :: reduce_time_step
+    procedure :: increase_time_step
   end type cryosphere
 
 contains
@@ -120,10 +131,57 @@ contains
     ! Calculates an appropriate time step with which to integrate the
     ! cryosphere so as not to cause numerical instability.
     !
-    class(cryosphere), intent(in) :: this
+    class(cryosphere), intent(inout) :: this
     real(r8) :: time_step
-    time_step = this%ice%time_step()
+    time_step = this%dt_factor*this%ice%time_step()
+!  contains
+!    function factor()
+!      real(r8) :: factor
+!      factor = this%dt_factor
+!      this%dt_factor = min(this%dt_factor+0.1_r8,1._r8)
+!    end function factor
   end function time_step
+
+
+  subroutine reduce_time_step(this)
+    !* Author: Christopher MacMackin
+    !  Date: April 2017
+    !
+    ! Reuces the time step by a factor of 2, unless doing so would
+    ! take it below the minimum value.
+    !
+    class(cryosphere), intent(inout) :: this
+    real(r8) :: new_factor
+    new_factor = 0.7_r8 * this%dt_factor
+    if (new_factor < this%min_dt_factor) then
+      this%dt_factor = this%min_dt_factor
+      call logger%warning('cryosphere%reduce_time_step','Attempting to '// &
+                          'reduce time step factor below minimum value '// &
+                          'of '//trim(str(this%min_dt_factor)))
+    else
+      this%dt_factor = new_factor
+    end if
+#ifdef DEBUG
+    call logger%debug('cryosphere%reduce_time_step','Reducing time '// &
+                      'step by factor of '//trim(str(this%dt_factor)))
+#endif
+  end subroutine reduce_time_step
+
+
+  subroutine increase_time_step(this)
+    !* Author: Christopher MacMackin
+    !  Date: April 2017
+    !
+    ! Increases the time step by a factor of 2, unless doing so would
+    ! take it above the maximum.
+    !
+    class(cryosphere), intent(inout) :: this
+    this%dt_factor = min(1.2_r8 * this%dt_factor, 1._r8)
+#ifdef DEBUG
+    call logger%debug('cryosphere%increase_time_step','Reducing time '// &
+                      'step by factor of '//trim(str(this%dt_factor)))
+#endif
+  end subroutine increase_time_step
 
 
   subroutine integrate(this,time)
@@ -137,9 +195,8 @@ contains
     real(r8), intent(in)             :: time
       !! The time to which to integrate the cryosphere
     class(glacier), dimension(:), allocatable :: old_glaciers
-    logical, save :: first_call = .true.
     logical :: success
-    real(r8) :: t
+    real(r8) :: t, old_t
 
     if (time < this%time) then
       call logger%warning('cryosphere%integrate','Request made to '// &
@@ -161,19 +218,33 @@ contains
       this%first_integration = .false.
     end if
     allocate(old_glaciers(1), mold=this%ice)
-    
-    t = this%time + this%time_step()
-    do while (t < time)
+
+    old_t = this%time
+    t = min(this%time + this%time_step(), time)
+    do while (t <= time)
       old_glaciers(1) = this%ice
       call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                               this%sub_ice%basal_drag_parameter(),     &
                               this%sub_ice%water_density(), t, success)
       if (.not. success) then
-        call logger%fatal('cryosphere%integrate','Failed to integrate '// &
-                          'glacier to time '//str(t)//'! Writing '//      &
-                          'cryosphere state to file "'//hdf_crash_file//'".')
-        call this%write_data(hdf_crash_file)
-        error stop
+        this%ice = old_glaciers(1)
+        if (this%dt_factor > this%min_dt_factor) then
+          call logger%warning('cryosphere%integrate','Failure in nonlinear '// &
+                              'solver. Reducing time step and trying again.')
+          call this%reduce_time_step()
+          t = min(old_t + this%time_step(), time) ! Not quite right...
+          cycle
+        else
+          call logger%fatal('cryosphere%integrate','Failed to integrate '//  &
+                            'glacier to time '//trim(str(t))//'! Writing '// &
+                            'cryosphere state to file "'//hdf_crash_file//'".')
+          call this%write_data(hdf_crash_file)
+          iplvl = 4
+          call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
+                                  this%sub_ice%basal_drag_parameter(),     &
+                                  this%sub_ice%water_density(), t, success)
+          error stop
+        end if
       end if
 
       ! Solve the plume so that it is ready for use in the next step of
@@ -183,44 +254,24 @@ contains
 
       if (success) then
         call logger%trivia('cryosphere%integrate','Successfully integrated '// &
-                           'cryosphere to time '//str(t))
+                           'cryosphere to time '//trim(str(t)))
       else
-        call logger%fatal('cryosphere%integrate','Failed to solve plume '// &
-                          'at time '//str(t)//'! Writing cryosphere '    // &
+        call logger%fatal('cryosphere%integrate','Failed to solve plume '//   &
+                          'at time '//trim(str(t))//'! Writing cryosphere '// &
                           'state to file "'//hdf_crash_file//'".')
         call this%write_data(hdf_crash_file)
         error stop
       end if
-      t = t + this%time_step()
+
+      call this%increase_time_step()
+      if (t >= time) exit
+      old_t = t
+      t = min(t + this%time_step(), time)
     end do
 
-    old_glaciers(1) = this%ice
-    call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(),    &
-                            this%sub_ice%basal_drag_parameter(),        &
-                            this%sub_ice%water_density(), time, success)
-    if (.not. success) then
-      call logger%fatal('cryosphere%integrate','Failed to integrate '// &
-                        'glacier to time '//str(t)//'! Writing '//      &
-                        'cryosphere state to file "'//hdf_crash_file//'".')
-      call this%write_data(hdf_crash_file)
-      error stop
-    end if
-
-    ! Solve the plume so that it is ready for use in the next step of
-    ! the time integration.
-    call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
-                            this%ice%ice_temperature(), time, success)
-    if (success) then
-      call logger%info('cryosphere%integrate','Successfully integrated '// &
-                       'cryosphere to time '//str(t))
-    else
-      call logger%fatal('cryosphere%integrate','Failed to solve plume '// &
-                        'at time '//str(t)//'! Writing cryosphere '    // &
-                        'state to file "'//hdf_crash_file//'".')
-      call this%write_data(hdf_crash_file)
-      error stop
-    end if
     this%time = time
+    call logger%info('cryosphere%integrate','Successfully integrated '// &
+                     'cryosphere to time '//trim(str(t)))
   end subroutine integrate
 
     
@@ -238,11 +289,11 @@ contains
       !! The file to which to write the data describing the state of the 
       !! cryosphere
     integer(hid_t) :: file_id, error_code
-    call h5fopen_f(outfile, H5F_ACC_TRUNC_F, file_id, error_code)
+    call h5fcreate_f(outfile, H5F_ACC_TRUNC_F, file_id, error_code)
     if (error_code /= 0) then
-      call logger%error('cryosphere%write_data','Error code '//       &
-                        str(error_code)//' returned when creating '// &
-                        'HDF5 file '//outfile)
+      call logger%error('cryosphere%write_data','Error code '//    &
+                        trim(str(error_code))//' returned when '// &
+                        'creating HDF5 file '//outfile)
       return
     end if
 
@@ -252,10 +303,12 @@ contains
                                     error_code)
     call h5ltset_attribute_string_f(file_id,'/',hdf_write_time,current_time(), &
                                     error_code)
+    call h5ltset_attribute_double_f(file_id,'/',hdf_simulation_time,[this%time], &
+                                    1_size_t,error_code)
     if (error_code /= 0) then
-      call logger%warning('cryosphere%write_data','Error code '//      &
-                          str(error_code)//' returned when writing '// &
-                          'attributes to HDF5 file '//outfile)
+      call logger%warning('cryosphere%write_data','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'writing attributes to HDF5 file '//outfile)
     end if
     
     ! Call for subobjects
@@ -264,9 +317,9 @@ contains
 
     call h5fclose_f(file_id, error_code)
     if (error_code /= 0) then
-      call logger%warning('cryosphere%write_data','Error code '//      &
-                          str(error_code)//' returned when closing '// &
-                          'HDF5 file '//outfile)
+      call logger%warning('cryosphere%write_data','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'closing HDF5 file '//outfile)
     end if
 
 #ifdef DEBUG

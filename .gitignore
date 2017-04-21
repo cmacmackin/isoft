@@ -13,3 +13,4 @@ a.out
 *.x
 *.d
 tests/*.F90
+*.pyc

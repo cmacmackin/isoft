@@ -313,10 +313,14 @@ contains
     integer                                   :: flag
 
     call basal_melt%guard_temp(); call basal_drag%guard_temp()
-
     first_call = .true.
-    if (.not. allocated(work)) then
-      nval = this%data_size()
+    nval = this%data_size()
+    if (allocated(work)) then
+      if (size(work) /= nval*(kdmax+5) + kdmax*(kdmax+3)) then
+        deallocate(work)
+        allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
+      end if
+    else
       allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
     end if
     state = this%state_vector()
@@ -345,22 +349,41 @@ contains
 !!$                  int_param, flag, ddot, dnrm2)
 !!$    end if
 #ifdef DEBUG
-    call logger%debug('glacier%integrate','NITSOL required '//str(info(5))// &
-                      ' nonlinear iterations and '//str(info(1))//           &
-                      ' function calls.')
+    call logger%debug('glacier%integrate','NITSOL required '//       &
+                      trim(str(info(5)))//' nonlinear iterations '// &
+                      'and '//trim(str(info(1)))//' function calls.')
 #endif
 
     select case(flag)
     case(0)
-      call logger%info('glacier%integrate','Integrated glacier to time '//str(time))
+      call logger%trivia('glacier%integrate','Integrated glacier to time '// &
+                         trim(str(time)))
       success = .true.
     case(1)
       call logger%error('glacier%integrate','Reached maximum number of'// &
                         ' iterations integrating glacier')
       success = .false.
+    !case(5)
+    !  call logger%debug('glacier%integrate','Solution diverging. Trying '// &
+    !                    'again with backtracking.')
+    !  state = old_states(1)%state_vector()
+    !  input(9) = 0
+    !  call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
+    !              1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
+    !              int_param, flag, ddot, dnrm2)
+    !  call this%update(state)
+    !  if (flag == 0) then
+    !    call logger%trivia('glacier%integrate','Integrated glacier to time '// &
+    !                       trim(str(time)))
+    !    success = .true.
+    !  else
+    !    call logger%error('glacier%integrate','NITSOL failed when integrating'// &
+    !                      ' glacier with error code '//trim(str(flag)))
+    !    success = .false.
+    !  end if
     case default
       call logger%error('glacier%integrate','NITSOL failed when integrating'// &
-                        ' glacier with error code '//str(flag))
+                        ' glacier with error code '//trim(str(flag)))
       success = .false.
     end select
 

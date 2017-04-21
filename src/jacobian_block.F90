@@ -537,17 +537,18 @@ contains
     else
       factor = 'F'
     end if
+!    print*,rhs%raw()
     call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
                   rhs%raw(), sol_vector, this%l_multipliers, this%u_diagonal, &
                   this%u_superdiagonal1, this%u_superdiagonal2, this%pivots,  &
                   factor, 'N', forward_err, backward_err, condition_num,      &
                   flag)
     if (flag/=0) then
-      msg = 'Tridiagonal matrix solver returned with flag '//str(flag)
+      msg = 'Tridiagonal matrix solver returned with flag '//trim(str(flag))
       call logger%error('jacobian_block%solve_for',msg)
     else
-      msg = 'Tridiagonal matrix solver retunred with estimated condition '// &
-            'number '//str(condition_num)
+      msg = 'Tridiagonal matrix solver returned with estimated condition '// &
+            'number '//trim(str(condition_num))
 #ifdef DEBUG
       call logger%debug('jacobian_block%solve_for',msg)
 #endif

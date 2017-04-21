@@ -281,17 +281,13 @@ contains
   subroutine test_integrate(this)
     !! Tests that an ice shelf perturbed from the steady state will
     !! evolve back to it
-    use hdf5
     class(test_shelf), intent(inout) :: this
     type(ice_shelf), dimension(1) :: shelf_array
     real(r8) :: t, time
     real(r8), dimension(:), allocatable :: actual, expected
-    integer :: i, steps, herr
+    integer :: i, steps
     type(cheb1d_scalar_field) :: melt, drag
     logical :: success
-    integer(hid_t) :: hfile, hgroup
-    call h5open_f(herr)
-    call h5fcreate_f('ice_shelf.h5', H5F_ACC_TRUNC_F, hfile, herr)
     time = 3._r8
     t = this%shelf4%time_step()
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
@@ -302,7 +298,6 @@ contains
     i = -1
     do while(t < time)
       i = i + 1
-      call this%shelf4%write_data(hfile,'shelf'//str(i),herr)
       shelf_array(1) = this%shelf4
       call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, t, success)
       @assertTrue(success,message='Integration of shelf failed.')
@@ -310,13 +305,11 @@ contains
     end do
     shelf_array(1) = this%shelf4
     call this%shelf4%integrate(shelf_array, melt, drag, 1._r8, time, success)
-    call this%shelf4%write_data(hfile,'shelf'//str(i+1),herr)
     @assertTrue(success,message='Integration of shelf failed.')
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
     @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-6_r8)
     iplvl = 0
-    call h5fclose_f(hfile , herr)
   end subroutine test_integrate
 
 end module ice_shelf_test

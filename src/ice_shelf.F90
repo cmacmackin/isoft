@@ -54,6 +54,8 @@ module ice_shelf_mod
   character(len=9), parameter, public :: hdf_type_name = 'ice_shelf'
   character(len=9), parameter, public :: hdf_thickness = 'thickness'
   character(len=8), parameter, public :: hdf_velocity = 'velocity'
+  character(len=6), parameter, public :: hdf_lambda = 'lambda'
+  character(len=3), parameter, public :: hdf_chi = 'chi'
 
   type, extends(glacier), public :: ice_shelf
     !* Author: Chris MacMackin
@@ -73,6 +75,8 @@ module ice_shelf_mod
     real(r8)                  :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
+    real(r8)                  :: courant
+      !! The Courant number to use when calculating the time step.
     class(abstract_viscosity), allocatable :: viscosity_law
       !! An object representing the model used for ice viscosity.
     class(glacier_boundary), allocatable   :: boundaries
@@ -139,7 +143,7 @@ contains
   
   subroutine shelf_initialise(this, domain, resolution, thickness, velocity, &
                               temperature, viscosity_law, boundaries,  &
-                              lambda, chi)
+                              lambda, chi, courant)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -180,6 +184,12 @@ contains
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}\left(1 -
       !! \frac{\rho_i}{\rho_0}\right)$.
+    real(r8), intent(in), optional       :: courant
+      !! The Courant number to use when calculating the time
+      !! step. Defaults to 100. Too large a value will pose
+      !! difficulties for the nonlinear solver, while too small a
+      !! value can be numerically unstable. Typically, smaller values
+      !! are needed for lower resolution.
 
     integer, dimension(:), allocatable :: lower, upper
 
@@ -216,6 +226,12 @@ contains
       this%chi = chi
     else
       this%chi = 4.0_r8
+    end if
+
+    if (present(courant)) then
+      this%courant = courant
+    else
+      this%courant = 1e2_r8
     end if
 
     lower = this%boundaries%thickness_lower_bound()
@@ -255,7 +271,8 @@ contains
     !
     class(ice_shelf), intent(in)     :: this
     class(scalar_field), allocatable :: thickness !! The ice thickness.
-    allocate(thickness, source=this%thickness)
+    allocate(cheb1d_scalar_field :: thickness)
+    thickness = this%thickness
     call thickness%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%thickness','Returned ice shelf thickness')
@@ -271,7 +288,8 @@ contains
     !
     class(ice_shelf), intent(in)     :: this
     class(vector_field), allocatable :: velocity !! The ice velocity.
-    allocate(velocity, source=this%velocity)
+    allocate(cheb1d_vector_field :: velocity)
+    velocity = this%velocity
     call velocity%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%velocity','Returned ice shelf velocity')
@@ -295,7 +313,7 @@ contains
     density = 1.0_r8/1.12_r8 !TODO: Will probably want to change this at some point
 #ifdef DEBUG
     call logger%debug('ice_shelf%density','Ice shelf has density '// &
-                      str(density)//'.')
+                      trim(str(density))//'.')
 #endif
   end function shelf_density
 
@@ -312,7 +330,7 @@ contains
     temperature = -15.0_r8 !TODO: Will probably want to change this at some point.
 #ifdef DEBUG
     call logger%debug('ice_shelf%temperature','Ice shelf has temperature '// &
-                      str(temperature))
+                      trim(str(temperature)))
 #endif
   end function shelf_temperature
 
@@ -617,7 +635,7 @@ contains
     this%time = time
 #ifdef DEBUG
     call logger%debug('ice_shelf%set_time','Updating time for ice shelf to '// &
-                      str(time))
+                      trim(str(time)))
 #endif
   end subroutine shelf_set_time
 
@@ -636,8 +654,9 @@ contains
       !! The number of elements in the ice shelf's state vector.
     shelf_data_size = this%thickness_size + this%velocity_size
 #ifdef DEBUG
-    call logger%debug('ice_shelf%data_size','Ice shelf has '//                &
-                      str(shelf_data_size)//' elements in its state vector.')
+    call logger%debug('ice_shelf%data_size','Ice shelf has '//   &
+                      trim(str(shelf_data_size))//' elements '// &
+                      'in its state vector.')
 #endif
   end function shelf_data_size
 
@@ -684,8 +703,9 @@ contains
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
-                          ' returned when creating HDF group "'//group_name//'"')
+      call logger%warning('ice_shelf%write_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'creating HDF group "'//group_name//'"')
       call logger%error('ice_shelf%write_data','Data IO not performed for '// &
                         'ice shelf')
       return
@@ -693,33 +713,40 @@ contains
 
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_lambda, &
+                                    [this%lambda], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_chi, &
+                                    [this%chi], 1_size_t, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
-                          ' returned when writing attribute to HDF group '// &
+      call logger%warning('ice_shelf%write_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'writing attribute to HDF group '//    &
                           group_name)
       ret_err = error
     end if
 
     call this%thickness%write_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
-                          ' returned when writing ice shelf thickness '//    &
-                          'field to HDF file')
+      call logger%warning('ice_shelf%write_data','Error code '//        &
+                          trim(str(error))//' returned when writing '// &
+                          'ice shelf thickness field to HDF file')
       if (ret_err == 0) ret_err = error
     end if
 
     call this%velocity%write_hdf(group_id, hdf_velocity, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
-                          ' returned when writing ice shelf velocity '//     &
-                          'field to HDF file')
+      call logger%warning('ice_shelf%write_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'writing ice shelf velocity field '//  &
+                          'to HDF file')
       if (ret_err == 0) ret_err = error
     end if
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
-      call logger%warning('ice_shelf%write_data','Error code '//str(error)// &
-                          ' returned when closing HDF group '//group_name)
+      call logger%warning('ice_shelf%write_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'closing HDF group '//group_name)
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
@@ -741,11 +768,12 @@ contains
     real(r8) :: dt
       !! The time-step to use
     associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
-              C => 100.0_r8)
+              C => this%courant)
       associate(dx1 => dx%component(1))
         dt = minval(abs(C*dx1/u))
         call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
-                           str(dt)//' using Courant number of '//str(C))
+                           trim(str(dt))//' using Courant number of '//       &
+                           trim(str(C)))
       end associate
     end associate
   end function shelf_time_step
@@ -773,6 +801,7 @@ contains
       this%velocity = rhs%velocity
       this%lambda = rhs%lambda
       this%chi = rhs%chi
+      this%courant = rhs%courant
       allocate(this%viscosity_law, source=rhs%viscosity_law)
       allocate(this%boundaries, source=rhs%boundaries)
       this%time = rhs%time
