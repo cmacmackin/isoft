@@ -90,11 +90,13 @@ module cryosphere_mod
       !! successfully integrate.
   contains
     procedure :: initialise
-    procedure :: integrate
-    procedure :: write_data
     procedure :: time_step
     procedure :: reduce_time_step
     procedure :: increase_time_step
+    procedure :: state_vector
+    procedure :: integrate
+    procedure :: read_data
+    procedure :: write_data
   end type cryosphere
 
 contains
@@ -134,12 +136,6 @@ contains
     class(cryosphere), intent(inout) :: this
     real(r8) :: time_step
     time_step = this%dt_factor*this%ice%time_step()
-!  contains
-!    function factor()
-!      real(r8) :: factor
-!      factor = this%dt_factor
-!      this%dt_factor = min(this%dt_factor+0.1_r8,1._r8)
-!    end function factor
   end function time_step
 
 
@@ -184,6 +180,21 @@ contains
   end subroutine increase_time_step
 
 
+  function state_vector(this)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Returns the state vector for the current state of the
+    ! cryosphere. This takes the form of a 1D array. This routine is
+    ! mainly useful for unit-testing.
+    !
+    class(cryosphere), intent(in) :: this
+    real(r8), dimension(:), allocatable :: state_vector
+    integer :: state_size
+    state_vector = [this%ice%state_vector(), this%sub_ice%state_vector()]
+  end function state_vector
+    
+
   subroutine integrate(this,time)
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -198,7 +209,7 @@ contains
     logical :: success
     real(r8) :: t, old_t
 
-    if (time < this%time) then
+    if (time <= this%time) then
       call logger%warning('cryosphere%integrate','Request made to '// &
                           'integrate cryosphere to earlier time '//  &
                           'than present state. No action taken.')
@@ -274,18 +285,94 @@ contains
                      'cryosphere to time '//trim(str(t)))
   end subroutine integrate
 
+
+  subroutine read_data(this,infile,set_time)
+    !* Author: Christopher MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the data describing the cryosphere from an HDF5 file on
+    ! the disc. `h5open_f` must have been called once prior to using
+    ! this method. After the method has been used, `h5close_f` must be
+    ! called once before the end of the program.
+    !
+    class(cryosphere), intent(inout) :: this
+    character(len=*), intent(in)     :: infile
+      !! The file from which to read the data describing the state of the 
+      !! cryosphere
+    logical, optional, intent(in)    :: set_time
+      !! If present and `.true.` then set the simulation time of the
+      !! cryosphere to be the same as that in the HDF file. Otherwise,
+      !! leave it unchanged.
+    logical :: set_t
+    integer(hid_t) :: file_id, error_code
+    character(len=50) :: string
+    real(r8), dimension(1) :: sim_time
+
+    if (present(set_time)) then
+      set_t = set_time
+    else
+      set_t = .false.
+    end if
+
+    call h5fopen_f(infile, H5F_ACC_RDONLY_F, file_id, error_code)
+    if (error_code /= 0) then
+      call logger%fatal('cryosphere%read_data','Error code '//    &
+                        trim(str(error_code))//' returned when '// &
+                        'opening HDF5 file '//infile)
+      error stop
+    end if
+
+    ! Read any whole-system data...
+    call h5ltget_attribute_string_f(file_id,'/',hdf_version,string,error_code)
+    if (trim(string) /= version()) then
+      call logger%warning('cryosphere%read_data','Reading HDF data produced '// &
+                          'by different ISOFT version: '//version())
+    end if
+    call h5ltget_attribute_double_f(file_id,'/',hdf_simulation_time,sim_time, &
+                                    error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_data','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'reading attributes from HDF5 file '//infile)
+    end if
+    
+    ! Call for subobjects
+    call this%ice%read_data(file_id, hdf_glacier, error_code)
+    call this%sub_ice%read_data(file_id, hdf_basal, error_code)
+       
+    ! Close the file
+    call h5fclose_f(file_id, error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_data','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'closing HDF5 file '//infile)
+    end if
+
+    ! Set the time, if necessary
+    if (set_t) then
+      this%time = sim_time(1)
+      call this%ice%set_time(this%time)
+      call logger%info('cryosphere%read_data','Read cryosphere data '// &
+                       'from HDF file '//infile//', with simulation '// &
+                       'time '//trim(str(this%time)))
+    else
+      call logger%info('cryosphere%read_data','Read cryosphere data from '// &
+                       'HDF file '//infile)
+    end if
+  end subroutine read_data
+
     
   subroutine write_data(this,outfile)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
     ! Writes the data describing the cryosphere to the disc as an HDF5
-    ! file. `h5open_f` must have been once called prior to using this
+    ! file. `h5open_f` must have been called once prior to using this
     ! method. After the method has been used, `h5close_f` must be
     ! called once before the end of the program.
     !
     class(cryosphere), intent(in) :: this
-    character(len=*), intent(in) :: outfile
+    character(len=*), intent(in)  :: outfile
       !! The file to which to write the data describing the state of the 
       !! cryosphere
     integer(hid_t) :: file_id, error_code
@@ -324,7 +411,8 @@ contains
 
 #ifdef DEBUG
     call logger%debug('cryosphere%write_data','Wrote cryosphere data to '// &
-                      'HDF file '//outfile)
+                      'HDF file '//outfile//' at simulation time '//        &
+                      trim(str(this%time)))
 #endif
   end subroutine write_data
   

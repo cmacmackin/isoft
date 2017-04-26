@@ -44,7 +44,7 @@ class Glacier(object):
     
     @property
     def grid(self):
-        return self.data['thickness'].attrs['gridpoints_dim1'][...]
+        return self.data[self.data['thickness'].attrs['gridpoints_dim1']][...]
 
     @property
     def h(self):
@@ -88,7 +88,7 @@ class Plume(object):
     
     @property
     def grid(self):
-        return self.data['thickness'].attrs['gridpoints_dim1'][...]
+        return self.data[self.data['thickness'].attrs['gridpoints_dim1']][...]
 
     @property
     def D(self):

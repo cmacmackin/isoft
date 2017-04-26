@@ -155,9 +155,9 @@ module plume_mod
     procedure :: basal_drag_parameter => plume_drag_parameter
     procedure :: water_density => plume_water_density
     procedure :: update => plume_update
-    procedure :: set_time => plume_set_time
     procedure :: data_size => plume_data_size
     procedure :: state_vector => plume_state_vector
+    procedure :: read_data => plume_read_data
     procedure :: write_data => plume_write_data
     procedure :: solve => plume_solve
     final :: plume_finalise
@@ -631,24 +631,6 @@ contains
   end subroutine plume_update
 
 
-  subroutine plume_set_time(this, time)
-    !* Author: Christopher MacMackin
-    !  Date: November 2016
-    !
-    ! Sets the time information held by the plume object. This is
-    ! the time at which the plume is in its current state.
-    !
-    class(plume), intent(inout) :: this
-    real(r8), intent(in)        :: time
-      !! The time at which the plume is in the present state.
-    this%time = time
-#ifdef DEBUG
-    call logger%debug('plume%set_time','Updating time for plume to '// &
-                      str(time))
-#endif
-  end subroutine plume_set_time
-
-
   pure function plume_data_size(this)
     !* Author: Christopher MacMackin
     !  Date: August 2016
@@ -694,6 +676,118 @@ contains
   end function plume_state_vector
 
 
+  subroutine plume_read_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the state of the plume object from an HDF file in the
+    ! specified group. This sets the thickness, velocity, temperature,
+    ! salinity dataset, and parameter values.
+    !
+    class(plume), intent(inout)  :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in) :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    integer :: ret_err
+    real(r8), dimension(1) :: param
+    character(len=50) :: base_type
+
+    ret_err = 0
+    call h5gopen_f(file_id, group_name, group_id, error)
+    if (error /= 0) then
+      call logger%error('plume%read_data','Could not open HDF group "'// &
+                        group_name//'", so no IO performed.')
+      return
+    end if
+
+    call h5ltget_attribute_string_f(file_id, group_name, hdf_type_attr, &
+                                    base_type, error)
+    if (trim(base_type) /= hdf_type_name) then
+      call logger%error('plume%read_data','Trying to read data from '// &
+                        'basal_surface of type other than plume.')
+      error = -1
+      return
+    end if
+
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_delta, &
+                                    param, error)
+    this%delta = param(1)
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_nu, &
+                                    param, error)
+    this%nu = param(1)
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_mu, &
+                                    param, error)
+    this%mu = param(1)
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_r, &
+                                    param, error)
+    this%r_val = param(1)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '//  &
+                          'reading attributes from HDF group '// &
+                          group_name)
+      ret_err = error
+    end if
+
+    call this%thickness%read_hdf(group_id, hdf_thickness, error)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '// &
+                          'reading plume thickness field '//   &
+                          'from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%velocity%read_hdf(group_id, hdf_velocity, error)
+    this%velocity_dx = this%velocity%d_dx(1)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '// &
+                          'reading plume velocity field '//     &
+                          'from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%temperature%read_hdf(group_id, hdf_temperature, error)
+    this%temperature_dx = this%temperature%d_dx(1)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '// &
+                          'reading plume temperature field '//  &
+                          'from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%salinity%read_hdf(group_id, hdf_salinity, error)
+    this%salinity_dx = this%salinity%d_dx(1)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '// &
+                          'reading plume salinity field '//     &
+                          'from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call h5gclose_f(group_id, error)
+    if (error /= 0) then
+      call logger%warning('plume%read_data','Error code '//     &
+                          trim(str(error))//' returned when '// &
+                          'closing HDF group '//group_name)
+      if (ret_err == 0) ret_err = error
+    end if
+    error = ret_err
+    call logger%trivia('plume%read_data','Read plume data from HDF group '// &
+                       group_name)
+  end subroutine plume_read_data
+
+
   subroutine plume_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
     !  Date: November 2016
@@ -702,7 +796,7 @@ contains
     ! specified group. This will consist of a thickness, a velocity, a
     ! temperature, and a salinity dataset.
     !
-    class(plume), intent(in) :: this
+    class(plume), intent(in)     :: this
     integer(hid_t), intent(in)   :: file_id
       !! The identifier for the HDF5 file/group in which this data is
       !! meant to be written.

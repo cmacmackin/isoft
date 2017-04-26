@@ -111,14 +111,6 @@ module ice_shelf_mod
       !! An object with a method to apply a block-Jacobian
       !! preconditioner, with the specified convergence properties.
   contains
-!$    procedure            :: t => shelf_dt
-!$    procedure            :: local_error => shelf_local_error
-!$    procedure            :: integrand_multiply_integrand => shelf_m_shelf
-!$    procedure            :: integrand_multiply_real => shelf_m_real
-!$    procedure, pass(rhs) :: real_multiply_integrand => real_m_shelf
-!$    procedure            :: add => shelf_add
-!$    procedure            :: sub => shelf_sub
-!$    procedure            :: assign_integrand => shelf_assign
     procedure :: initialise => shelf_initialise
     procedure :: ice_thickness => shelf_thickness
 !$    procedure :: ice_velocity => shelf_velocity
@@ -130,6 +122,7 @@ module ice_shelf_mod
     procedure :: set_time => shelf_set_time
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
+    procedure :: read_data => shelf_read_data
     procedure :: write_data => shelf_write_data
     procedure :: time_step => shelf_time_step
     procedure, private :: assign => shelf_assign
@@ -679,6 +672,91 @@ contains
   end function shelf_state_vector
 
 
+  subroutine shelf_read_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the state of the ice shelf object from the specified group
+    ! in an HDF5 file. This sets the thickness, the velocity, and
+    ! parameter values.
+    !
+    class(ice_shelf), intent(inout) :: this
+    integer(hid_t), intent(in)      :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in)    :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)            :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    integer :: ret_err
+    real(r8), dimension(1) :: param
+    character(len=50) :: ice_type
+
+    ret_err = 0
+    call h5gopen_f(file_id, group_name, group_id, error)
+    if (error /= 0) then
+      call logger%error('ice_shelf%read_data','Could not open HDF group "'// &
+                        group_name//'", so no IO performed.')
+      return
+    end if
+
+    call h5ltget_attribute_string_f(file_id, group_name, hdf_type_attr, &
+                                    ice_type, error)
+    if (trim(ice_type) /= hdf_type_name) then
+      call logger%error('ice_shelf%read_data','Trying to read data from '// &
+                        'glacier of type other than ice_shelf.')
+      error = -1
+      return
+    end if
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_lambda, &
+                                    param, error)
+    this%lambda = param(1)
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_chi, &
+                                    param, error)
+    this%chi = param(1)
+    if (error /= 0) then
+      call logger%warning('ice_shelf%read_data','Error code '//  &
+                          trim(str(error))//' returned when '//  &
+                          'reading attributes from HDF group '// &
+                          group_name)
+      ret_err = error
+    end if
+
+    call this%thickness%read_hdf(group_id, hdf_thickness, error)
+    if (error /= 0) then
+      call logger%warning('ice_shelf%read_data','Error code '//        &
+                          trim(str(error))//' returned when reading '// &
+                          'ice shelf thickness field from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call this%velocity%read_hdf(group_id, hdf_velocity, error)
+    if (error /= 0) then
+      call logger%warning('ice_shelf%read_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'reading ice shelf velocity field '//  &
+                          'from HDF file')
+      if (ret_err == 0) ret_err = error
+    end if
+
+    call h5gclose_f(group_id, error)
+    if (error /= 0) then
+      call logger%warning('ice_shelf%read_data','Error code '// &
+                          trim(str(error))//' returned when '//  &
+                          'closing HDF group '//group_name)
+      if (ret_err == 0) ret_err = error
+    end if
+    error = ret_err
+#ifdef DEBUG
+    call logger%debug('ice_shelf%read_data','Read ice shelf data from '// &
+                      'HDF group '//group_name)
+#endif
+  end subroutine shelf_read_data
+
+
   subroutine shelf_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
     !  Date: November 2016
@@ -750,10 +828,8 @@ contains
       if (ret_err == 0) ret_err = error
     end if
     error = ret_err
-#ifdef DEBUG
-    call logger%debug('ice_shelf%write_data','Wrote ice shelf data to '// &
-                      'HDF group '//group_name)
-#endif
+    call logger%trivia('ice_shelf%write_data','Wrote ice shelf data to '// &
+                       'HDF group '//group_name)
   end subroutine shelf_write_data
 
 

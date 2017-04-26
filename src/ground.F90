@@ -53,9 +53,9 @@ module ground_mod
     procedure :: basal_drag_parameter => ground_drag_parameter
     procedure :: water_density => ground_water_density
     procedure :: update => ground_update
-    procedure :: set_time => ground_set_time
     procedure :: data_size => ground_data_size
     procedure :: state_vector => ground_state_vector
+    procedure :: read_data => ground_read_data
     procedure :: write_data => ground_write_data
     procedure :: solve => ground_solve
   end type ground
@@ -137,19 +137,6 @@ contains
   end subroutine ground_update
 
 
-  subroutine ground_set_time(this, time)
-    !* Author: Christopher MacMackin
-    !  Date: November 2016
-    !
-    ! Sets the time information held by the ground object. This is
-    ! the time at which the ground is in its current state.
-    !
-    class(ground), intent(inout) :: this
-    real(r8), intent(in)         :: time
-      !! The time at which the ground is in the present state.
-  end subroutine ground_set_time
-
-
   pure function ground_data_size(this)
     !* Author: Christopher MacMackin
     !  Date: August 2016
@@ -178,6 +165,28 @@ contains
   end function ground_state_vector
 
 
+  subroutine ground_read_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the state of the ground object from the specified group in
+    ! an HDF file.
+    !
+    class(ground), intent(inout) :: this
+    integer(hid_t), intent(in)   :: file_id
+      !! The identifier for the HDF5 file/group from which this data is
+      !! meant to be read.
+    character(len=*), intent(in) :: group_name
+      !! The name of the group in the HDF5 file storing the
+      !! ground's data.
+    integer, intent(out)         :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+    integer(hid_t) :: group_id
+    error = 0
+  end subroutine ground_read_data
+
+
   subroutine ground_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
     !  Date: November 2016
@@ -185,13 +194,13 @@ contains
     ! Writes the state of the ground object to an HDF file in the
     ! specified group.
     !
-    class(ground), intent(in) :: this
+    class(ground), intent(in)    :: this
     integer(hid_t), intent(in)   :: file_id
       !! The identifier for the HDF5 file/group in which this data is
       !! meant to be written.
     character(len=*), intent(in) :: group_name
       !! The name to give the group in the HDF5 file storing the
-      !! ice shelf's data.
+      !! ground's data.
     integer, intent(out)         :: error
       !! Flag indicating whether routine ran without error. If no
       !! error occurs then has value 0.

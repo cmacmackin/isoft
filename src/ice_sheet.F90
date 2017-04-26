@@ -86,6 +86,7 @@ module ice_sheet_mod
     procedure :: set_time => sheet_set_time
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
+    procedure :: read_data => sheet_read_data
     procedure :: write_data => sheet_write_data
     procedure :: time_step => sheet_time_step
     procedure, private :: assign => sheet_assign
@@ -422,6 +423,26 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice sheet.
   end function sheet_state_vector
+
+  subroutine sheet_read_data(this,file_id,group_name,error)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the state of the ice shelf object from the specified group
+    ! in an HDF5 file. This sets the thickness, the velocity, and
+    ! parameter values.
+    !
+    class(ice_sheet), intent(inout) :: this
+    integer(hid_t), intent(in)      :: file_id
+      !! The identifier for the HDF5 file/group in which this data is
+      !! meant to be written.
+    character(len=*), intent(in)    :: group_name
+      !! The name to give the group in the HDF5 file storing the
+      !! ice shelf's data.
+    integer, intent(out)            :: error
+      !! Flag indicating whether routine ran without error. If no
+      !! error occurs then has value 0.
+  end subroutine sheet_read_data
 
   subroutine sheet_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin

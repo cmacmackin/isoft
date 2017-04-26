@@ -61,14 +61,14 @@ module basal_surface_mod
       !! Density of the water at the basal surface.
     procedure(setter), deferred        :: update
       !! Sets the state of the basal surface
-    procedure(time_setter), deferred   :: set_time
-      !! Sets the time record for this basal surface.
     procedure(get_i), deferred         :: data_size
       !! Returns the number of elements in the basal surface's state
       !! vector
     procedure(get_r81d), deferred      :: state_vector
       !! Returns the basal surface's state vector, a 1D array with all
       !! necessary data to describe its state.
+    procedure(read_dat), deferred      :: read_data
+      !! Read the basal surface data from an HDF5 file on the disc.
     procedure(write_dat), deferred     :: write_data
       !! Writes the data describing the basal surface to the disc as
       !! an HDF5 file.
@@ -128,6 +128,21 @@ module basal_surface_mod
         !! The value of whatever property of the basal surface is being
         !! returned.
     end function get_i
+
+    subroutine read_dat(this,file_id,group_name,error)
+      import :: basal_surface
+      import :: hid_t
+      class(basal_surface), intent(inout) :: this
+      integer(hid_t), intent(in)          :: file_id
+        !! The identifier for the HDF5 file/group from which the data
+        !! will be read.
+      character(len=*), intent(in)        :: group_name
+        !! The name of the group in the HDF5 file from which to read
+        !! basal surface's data.
+      integer, intent(out)                :: error
+        !! Flag indicating whether routine ran without error. If no
+        !! error occurs then has value 0.
+    end subroutine read_dat
 
     subroutine write_dat(this,file_id,group_name,error)
       import :: basal_surface

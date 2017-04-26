@@ -234,19 +234,43 @@ contains
   end subroutine test_increase_time_step
 
   @Test
-  subroutine test_write_data(this)
+  subroutine test_io(this)
     class(test_cryo), intent(inout) :: this
     character(len=16), parameter :: test_file = '____test_file.h5'
+    real(r8), dimension(:), allocatable :: expected, integrated, actual
+    real(r8), parameter :: tol = 1e-16_r8, time=0.01_r8
     integer :: herr
     logical :: exists
     call h5open_f(herr)
     call execute_command_line('rm -f '//test_file)
+    expected = this%cryo%state_vector()
     call this%cryo%write_data(test_file)
     exists = .false.
     inquire(file=test_file, exist=exists)
     @assertTrue(exists,'Output file not created.')
-    ! Do some actual tests on the file...
+    call this%cryo%integrate(time)
+    integrated = this%cryo%state_vector()
+    @assertFalse(all(expected==integrated),message='Cryosphere has not evolved with integration')
+    call this%cryo%read_data(test_file)
+    actual = this%cryo%state_vector()
+    @assertEqual(expected,actual,message='Cryosphere incorrectly read HDF data',tolerance=tol)
+    call this%cryo%integrate(time)
+    actual = this%cryo%state_vector()
+    @assertFalse(all(integrated==actual),message='Cryosphere updated simulation time when should not have')
+    call this%cryo%read_data(test_file, .false.)
+    actual = this%cryo%state_vector()
+    @assertEqual(expected,actual,message='Cryosphere incorrectly read HDF data',tolerance=tol)
+    call this%cryo%integrate(time)
+    actual = this%cryo%state_vector()
+    @assertFalse(all(integrated==actual),message='Cryosphere updated simulation time when should not have')
+    call this%cryo%read_data(test_file, .true.)
+    actual = this%cryo%state_vector()
+    @assertEqual(expected,actual,message='Cryosphere incorrectly read HDF data',tolerance=tol)
+    call this%cryo%integrate(time)
+    actual = this%cryo%state_vector()
+    @assertEqual(integrated,actual,message='Cryosphere did not update to HDF simulation time',tolerance=1e-8_r8)
     call execute_command_line('rm -f '//test_file)
-  end subroutine test_write_data
+    call h5close_f(herr)
+  end subroutine test_io
 
 end module cryosphere_test
