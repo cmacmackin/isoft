@@ -631,7 +631,7 @@ contains
   end subroutine plume_update
 
 
-  pure function plume_data_size(this)
+  function plume_data_size(this)
     !* Author: Christopher MacMackin
     !  Date: August 2016
     !
@@ -655,7 +655,7 @@ contains
   end function plume_data_size
 
 
-  pure function plume_state_vector(this) result(state_vector) 
+  function plume_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !

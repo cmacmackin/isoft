@@ -135,7 +135,7 @@ contains
     call plume_thickness%clean_temp()
   end subroutine dallaston2015_solve
 
-  pure function dallaston2015_heat(this) result(heat)
+  function dallaston2015_heat(this) result(heat)
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: heat
       !! The value of the contribution made by melting/thermal
@@ -153,7 +153,7 @@ contains
       !! transfer to the salt equation for a [[plume]]
   end function dallaston2015_salt
 
-  pure function dallaston2015_melt_rate(this) result(melt)
+  function dallaston2015_melt_rate(this) result(melt)
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: melt
       !! The melt rate from the ice into the plume water.

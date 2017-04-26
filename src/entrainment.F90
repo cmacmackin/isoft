@@ -51,7 +51,7 @@ module entrainment_mod
   end type abstract_entrainment
 
   abstract interface
-    pure function get_entrainment(this, velocity, thickness, depth, time) &
+    function get_entrainment(this, velocity, thickness, depth, time) &
                                                     result(property)
       import :: abstract_entrainment
       import :: vector_field

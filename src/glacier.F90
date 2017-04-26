@@ -92,7 +92,7 @@ module glacier_mod
   end type glacier
 
   abstract interface
-    pure function get_scalar(this) result(property)
+    function get_scalar(this) result(property)
       import :: glacier
       import :: scalar_field
       class(glacier), intent(in)       :: this
@@ -169,7 +169,7 @@ module glacier_mod
         !! The result of applying the preconditioner to `delta_state`.
     end function precond
     
-    pure function get_r81d(this) result(state_vector)
+    function get_r81d(this) result(state_vector)
       import :: glacier
       import :: r8
       class(glacier), intent(in)          :: this

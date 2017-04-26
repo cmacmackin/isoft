@@ -88,7 +88,7 @@ contains
     end if
   end function constructor
 
-  pure function uniform_temperature(this, depth, t) result(property)
+  function uniform_temperature(this, depth, t) result(property)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
@@ -108,7 +108,7 @@ contains
     call property%set_temp()
   end function uniform_temperature
 
-  pure function uniform_salinity(this, depth, t) result(property)
+  function uniform_salinity(this, depth, t) result(property)
     !* Author: Chris MacMackin
     !  Date: November 2016
     !

@@ -67,7 +67,7 @@ module prescribed_eos_mod
 
 contains
 
-  pure function constructor(const, beta_s, thickness) result(this)
+  function constructor(const, beta_s, thickness) result(this)
     real(r8), intent(in)            :: const
       !! The constant to which \(SD\) is equal.
     real(r8), intent(in)            :: beta_s
@@ -76,8 +76,10 @@ contains
     class(scalar_field), intent(in) :: thickness
       !! The thickness of the plume, from which the salinity is calculated.
     type(prescribed_eos)            :: this
+    call thickness%guard_temp()
     call thickness%allocate_scalar_field(this%density)
     this%density = const*beta_s/thickness
+    call thickness%clean_temp()
   end function constructor
 
   function prescribed_water_density(this, temperature, salinity) result(density)

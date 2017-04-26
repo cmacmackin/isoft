@@ -256,7 +256,7 @@ contains
   end subroutine shelf_initialise
 
 
-  pure function shelf_thickness(this) result(thickness)
+  function shelf_thickness(this) result(thickness)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -273,7 +273,7 @@ contains
   end function shelf_thickness
 
 
-  pure function shelf_velocity(this) result(velocity)
+  function shelf_velocity(this) result(velocity)
     !* Author: Christopher MacMackin
     !  Date: July 2016
     !
@@ -654,7 +654,7 @@ contains
   end function shelf_data_size
 
 
-  pure function shelf_state_vector(this) result(state_vector) 
+  function shelf_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !

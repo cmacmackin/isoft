@@ -95,7 +95,7 @@ module melt_relationship_mod
         !! present then assumed to be same as previous value passed.
     end subroutine solve
 
-    pure function get_scalar(this) result(property)
+    function get_scalar(this) result(property)
       import :: abstract_melt_relationship
       import :: scalar_field
       class(abstract_melt_relationship), intent(in) :: this

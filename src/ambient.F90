@@ -54,7 +54,7 @@ module ambient_mod
   end type ambient_conditions
 
   abstract interface
-    pure function get_property(this, depth, t) result(property)
+    function get_property(this, depth, t) result(property)
       import :: r8
       import :: ambient_conditions
       import :: scalar_field

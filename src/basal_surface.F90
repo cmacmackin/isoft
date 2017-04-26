@@ -96,7 +96,7 @@ module basal_surface_mod
         !! returned.
     end function get_real
 
-    pure function get_r81d(this) result(state_vector)
+    function get_r81d(this) result(state_vector)
       import :: basal_surface
       import :: r8
       class(basal_surface), intent(in)          :: this
@@ -121,7 +121,7 @@ module basal_surface_mod
         !! The time at which the basal surface is in the present state.
     end subroutine time_setter
 
-    pure function get_i(this) result(property)
+    function get_i(this) result(property)
       import :: basal_surface
       class(basal_surface), intent(in) :: this
       integer                    :: property
