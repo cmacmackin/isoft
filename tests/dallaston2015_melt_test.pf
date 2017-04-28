@@ -37,7 +37,7 @@ module dallaston2015_melt_test
     type(dallaston2015_melt) :: melt1, melt2
     type(cheb1d_scalar_field) :: pressure, temperature, salinity, plume_thickness
     type(cheb1d_vector_field) :: velocity1, velocity2
-    real(r8) :: time1, time2, beta1, beta2, conv1, conv2
+    real(r8) :: time1, time2, beta1, beta2, conv1, conv2, denom
     integer :: numpoints = resolution
   contains
     procedure :: setup
@@ -102,8 +102,9 @@ contains
     this%beta2 = -3.5_r8
     this%conv1 = 1.0_r8
     this%conv2 = 5.3e-7_r8
+    this%denom = 1._r8
     this%melt1 = dallaston2015_melt(this%beta1, this%conv1)
-    this%melt2 = dallaston2015_melt(this%beta2, this%conv2)
+    this%melt2 = dallaston2015_melt(this%beta2, this%conv2, this%denom)
   end subroutine setup
 
   @Test
@@ -119,11 +120,11 @@ contains
   @Test
   subroutine test_has_salt(this)
     class(test_melt), intent(inout) :: this
-    @assertFalse(this%melt1%has_salt_terms(),message='Providing terms for salt equation.')
-    @assertFalse(this%melt2%has_salt_terms(),message='Providing terms for salt equation.')
+    @assertTrue(this%melt1%has_salt_terms(),message='Providing terms for salt equation.')
+    @assertTrue(this%melt2%has_salt_terms(),message='Providing terms for salt equation.')
     call solve_melts(this)
-    @assertFalse(this%melt1%has_salt_terms(),message='Providing terms for salt equation.')
-    @assertFalse(this%melt2%has_salt_terms(),message='Providing terms for salt equation.')
+    @assertTrue(this%melt1%has_salt_terms(),message='Providing terms for salt equation.')
+    @assertTrue(this%melt2%has_salt_terms(),message='Providing terms for salt equation.')
   end subroutine test_has_salt
 
   @Test
@@ -150,6 +151,19 @@ contains
     expected = (this%beta2+1.0_r8)*this%melt2%melt_rate()/this%conv2
     @assertTrue(expected==actual,message='Incorrect heat terms')
   end subroutine test_heat_terms
+
+  @Test
+  subroutine test_salt_terms(this)
+    class(test_melt), intent(inout) :: this
+    type(cheb1d_scalar_field) :: actual, expected
+    call solve_melts(this)
+    actual = this%melt1%salt_equation_terms()
+    expected = 0._r8 * actual
+    @assertTrue(expected==actual,message='Incorrect salt terms')
+    actual = this%melt2%salt_equation_terms()
+    expected = this%melt2%melt_rate()/this%denom
+    @assertTrue(expected==actual,message='Incorrect salt terms')
+  end subroutine test_salt_terms
 
   subroutine solve_melts(this)
     class(test_melt), intent(inout) :: this

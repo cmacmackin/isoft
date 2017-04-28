@@ -27,7 +27,7 @@ module meta_mod
   !
   ! Provides functions specifying the version of ISOFT, time of compilation, etc.
   !
-  use iso_fortran_env, only: i8 => int64
+  use iso_fortran_env, only: i8 => int64, compiler_version, compiler_options
   implicit none
   
   character(len=3), dimension(12), parameter :: months = ['Jan', &
@@ -63,6 +63,15 @@ module meta_mod
       !
       character(len=20) :: compile_time
     end function compile_time
+
+    module function compile_info()
+      !* Author: Chris MacMackin
+      !  Date: April 2017
+      !
+      ! Returns compiler version and and flags.
+      !
+      character(len=1000) :: compile_info
+    end function compile_info
   end interface
 
 contains

@@ -64,6 +64,7 @@ module dallaston2015_melt_mod
       !! Dallaston et al. (2015) and that used in ISOFT, $$
       !! \frac{m_0x_0}{D_0U_0}, $$ where \(m_0\) is the melt scale
       !! used by Dalalston et al.
+    real(r8) :: salinity_denom = 1e100_r8
   contains
     procedure :: solve_for_melt => dallaston2015_solve
     procedure :: heat_equation_terms => dallaston2015_heat
@@ -92,7 +93,7 @@ module dallaston2015_melt_mod
 
 contains
 
-  pure function constructor(beta, melt_conversion) result(this)
+  pure function constructor(beta, melt_conversion, salinity_denom) result(this)
     real(r8), intent(in) :: beta
       !! The inverse stefan number, $$ \frac{c(T_a - T_m)}{L} $$
     real(r8), intent(in) :: melt_conversion
@@ -100,10 +101,17 @@ contains
       !! Dallaston et al. (2015) and that used in ISOFT, $$
       !! \frac{m_0x_0}{D_0U_0}, $$ where \(m_0\) is the melt scale
       !! used by Dalalston et al.
+    real(r8), intent(in), optional :: salinity_denom
+      !! The factor which, when used to divide the `melt_conversion`
+      !! term, produces a conversion factor for the melt-terms in the
+      !! salinity equation of Dallaston et al. (2015). It has the form
+      !! $$ \frac{Q_{g0}}{D_0U_0}, $$ where \(Q_{g0}\) is the
+      !! subglacial discharge across the grounding line.
     type(dallaston2015_melt) :: this
       !! The newly created object representing the melt relationship.
     this%coef = (beta + 1.0_r8)
     this%melt_conversion = melt_conversion
+    if (present(salinity_denom)) this%salinity_denom = salinity_denom
   end function constructor
 
   subroutine dallaston2015_solve(this, velocity, pressure, temperature, &
@@ -146,11 +154,15 @@ contains
     call heat%set_temp()
   end function dallaston2015_heat
 
-  pure function dallaston2015_salt(this) result(salt)
+  function dallaston2015_salt(this) result(salt)
     class(dallaston2015_melt), intent(in) :: this
     class(scalar_field), allocatable      :: salt
       !! The value of the contribution made by melting/thermal
       !! transfer to the salt equation for a [[plume]]
+    if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
+    call this%melt_values%allocate_scalar_field(salt)
+    salt = this%melt_conversion/this%salinity_denom * this%melt_values
+    call salt%set_temp()
   end function dallaston2015_salt
 
   function dallaston2015_melt_rate(this) result(melt)
@@ -176,7 +188,7 @@ contains
     logical                               :: has_salt
       !! Whether this formulation of melting contributes terms to
       !! the salinity equation of the plume.
-    has_salt = .false.
+    has_salt = .true.
   end function dallaston2015_has_salt
 
 end module dallaston2015_melt_mod

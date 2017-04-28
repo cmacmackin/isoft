@@ -97,6 +97,7 @@ module cryosphere_mod
     procedure :: integrate
     procedure :: read_data
     procedure :: write_data
+    procedure :: get_time
   end type cryosphere
 
 contains
@@ -227,6 +228,17 @@ contains
       call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
                               this%ice%ice_temperature(), this%time, success)
       this%first_integration = .false.
+      if (.not. success) then
+        call logger%fatal('cryosphere%integrate','Failed to integrate '//  &
+                          'glacier to time '//trim(str(t))//'! Writing '// &
+                          'cryosphere state to file "'//hdf_crash_file//'".')
+        call this%write_data(hdf_crash_file)
+        iplvl = 4
+        call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
+                                this%sub_ice%basal_drag_parameter(),     &
+                                this%sub_ice%water_density(), t, success)
+        error stop
+      end if
     end if
     allocate(old_glaciers(1), mold=this%ice)
 
@@ -415,5 +427,17 @@ contains
                       trim(str(this%time)))
 #endif
   end subroutine write_data
+
+
+  pure function get_time(this)
+    !* Author: Chris MacMackin
+    !  Date: April 2017
+    !
+    ! Returns the current time of the cryosphere system.
+    !
+    class(cryosphere), intent(in) :: this
+    real(r8)                      :: get_time
+    get_time = this%time
+  end function get_time
   
 end module cryosphere_mod

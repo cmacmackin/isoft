@@ -18,6 +18,7 @@
 #  
 
 # Directories
+EXEC_FILE := main.o
 SDIR := ./src
 TDIR := ./tests
 MDIR := ./mod
@@ -25,9 +26,9 @@ FDIR := ./factual
 PFUNIT = $(HOME)/Code/pfunit-$(F90)
 
 # Output
-EXEC := 
+EXEC := isoft
 TEXEC := tests.x
-LIB := isoft.a
+LIB := libisoft.a
 FLIB := $(FDIR)/factual.a
 FMDIR := $(FDIR)/mod
 FMOD := $(FMDIR)/factual_mod.mod
@@ -36,7 +37,7 @@ LIBDIR := $(PREFIX)/lib
 INCDIR := $(PREFIX)/include 
 BINDIR := $(PREFIX)/bin
 
-BLAS := blas
+BLAS := openblas
 
 # Include paths internal to project
 PROJECT_INCDIRS := $(FMDIR) $(TDIR)
@@ -52,9 +53,12 @@ ifeq ($(VENDOR_),intel)
   COVFLAGS := 
 else
   F90      := gfortran-6
-  FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR)  #-ffpe-trap=underflow,denormal
+  FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=overflow,invalid,zero #-fsanitize=address,undefined
+#  FCFLAGS  := -O3 -cpp -J$(MDIR)
   LDFLAGS  := -O0 -g -pg
+#  LDFLAGS  := -O3
   COVFLAGS := -fprofile-arcs -ftest-coverage 
+  COVFLAGS := 
 endif
 
 # Include paths
@@ -89,16 +93,14 @@ META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)
 
 #OBJS := $(filter-out $(META_OBJ), $(OBJS))
 
-.PRECIOUS: %.F90
-
 # "make" builds all
-all: all_objects tests
+all: exec
 
 all_objects: clean_src_mod $(OBJS)
 
 exec: $(EXEC) 
 
-$(EXEC): $(OBJS) $(FLIB)
+$(EXEC): $(EXEC_FILE) $(LIB) $(FLIB)
 	$(F90) $^ $(LDFLAGS) -o $@
 
 install_exec: exec
@@ -112,10 +114,8 @@ $(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
 		$(FCFLAGS) $^ isoft.a $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
-	@echo $(META_OBJ)
-	@echo $(SRCS)
 
-$(LIB): clean_src_mod $(OBJS)
+$(LIB): $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
 install_lib: lib

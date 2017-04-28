@@ -54,7 +54,7 @@ module plume_test
   real(r8), parameter :: r = 1.12_r8
   real(r8), parameter :: h_g = 1._r8
   real(r8), parameter :: length = 2.5_r8
-  real(r8), parameter :: nu_val = 1.0e2_r8
+  real(r8), parameter :: nu_val = 1.0e0_r8
   real(r8), parameter :: alpha = q_g**(1._r8/3._r8)/nu_val
   real(r8), parameter :: xi = r*exp(alpha*offset)*(1._r8 + beta)* &
                               q_g**(1._r8/3._r8)/(2._r8*h_g)

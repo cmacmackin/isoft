@@ -60,15 +60,15 @@ class Glacier(object):
 
     @property
     def glacier_type(self):
-        return self.attrs['glacier_type']
+        return self.data.attrs['glacier_type']
 
     @property
     def lambd(self):
-        return self.attrs['lambda']
+        return self.data.attrs['lambda']
 
     @property
     def chi(self):
-        return self.attrs['chi']
+        return self.data.attrs['chi']
 
 
 class Plume(object):
@@ -112,23 +112,23 @@ class Plume(object):
 
     @property
     def basal_surface_type(self):
-        return self.attrs['basal_type']
+        return self.data.attrs['basal_type']
 
     @property
     def delta(self):
-        return self.attrs['delta']
+        return self.data.attrs['delta']
 
     @property
     def mu(self):
-        return self.attrs['mu']
+        return self.data.attrs['mu']
 
     @property
     def nu(self):
-        return self.attrs['nu']
+        return self.data.attrs['nu']
 
     @property
     def r(self):
-        return self.attrs['r_val']
+        return self.data.attrs['r_val']
 
 
 class ShelfPlumeCryosphere(object):

@@ -46,4 +46,13 @@ contains
     compile_time = compile_time_val
   end function compile_time
 
+  module function compile_info()
+    character(len=40), parameter :: result_format = &
+                                    '("Compiled with ",a," using options ",a)'
+    write(compile_info,result_format) compiler_version(), compiler_options()
+    compile_info = 'Compiled with "'//compiler_version()//   &
+                   '" using options "'//compiler_options()// &
+                   '"'
+  end function compile_info
+
 end submodule meta_implementation_mod
