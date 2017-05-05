@@ -233,10 +233,6 @@ contains
                           'glacier to time '//trim(str(t))//'! Writing '// &
                           'cryosphere state to file "'//hdf_crash_file//'".')
         call this%write_data(hdf_crash_file)
-        iplvl = 4
-        call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
-                                this%sub_ice%basal_drag_parameter(),     &
-                                this%sub_ice%water_density(), t, success)
         error stop
       end if
     end if
@@ -263,6 +259,7 @@ contains
                             'cryosphere state to file "'//hdf_crash_file//'".')
           call this%write_data(hdf_crash_file)
           iplvl = 4
+          t = min(old_t + this%ice%time_step(), time)
           call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                                   this%sub_ice%basal_drag_parameter(),     &
                                   this%sub_ice%water_density(), t, success)
@@ -290,6 +287,7 @@ contains
       if (t >= time) exit
       old_t = t
       t = min(t + this%time_step(), time)
+      this%time = t
     end do
 
     this%time = time

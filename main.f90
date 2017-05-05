@@ -54,6 +54,7 @@ program isoft
   use linear_eos_mod, only: linear_eos
   use plume_boundary_mod, only: plume_boundary
   use simple_plume_boundary_mod, only: simple_plume_boundary
+  use dallaston2015_seasonal_mod, only: dallaston2015_seasonal_boundary
   use specfun_mod, only: ei
 
   implicit none
@@ -129,13 +130,13 @@ program isoft
   call cpu_time(cpu_start)
 
   ! Initialise variables to defaults
-  grid_points = 150
+  grid_points = 50
   domain(1,:) = [0._r8, 2.5_r8]
   domain(2,:) = [-1._r8, 1._r8]
-  end_time = 5._r8
-  restart_file = "steady_state.h5"
+  end_time = 5.5_r8
+  restart_file = "steadystate50.h5"
   end_on_steady = .true.
-  restart_from_file = .false.
+  restart_from_file = .true.
   restart_at_0 = .true.
 
   output_interval = 0.5_r8
@@ -148,7 +149,7 @@ program isoft
   chi = 4._r8
   lambda = 0.37_r8
   ice_temperature = -1._r8
-  courant = 20._r8
+  courant = 0.5_r8
 
   visc_coefficient = 1._r8
 
@@ -191,9 +192,9 @@ program isoft
   ! Print welcome message
   call logger%info('isoft', 'Welcome to ISOFT: Ice Shelf/Ocean '// &
                    'Fluid- and Thermodynamics')
-  call logger%info('isoft','ISOFT v'//version()//' compiled on '// &
+  call logger%info('isoft','ISOFT v'//version()//', compiled on '// &
                    compile_time())
-  call logger%info('isoft', trim(compile_info()))
+  call logger%trivia('isoft', trim(compile_info()))
   
   ! Initialise cryosphere
   allocate(viscosity, source=newtonian_viscosity(visc_coefficient))
@@ -213,10 +214,13 @@ program isoft
   allocate(eos,                                                          &
            source=linear_eos(ref_density, ref_temperature, ref_salinity, &
            beta_t, beta_s))
-  allocate(water_bound,                                        &
-           source=simple_plume_boundary(plume_thickness_lower, &
-           plume_velocity_lower, plume_temperature_lower,      &
-           plume_salinity_lower))
+!  allocate(water_bound, &
+!           source=simple_plume_boundary(plume_thickness_lower, &
+!           plume_velocity_lower, plume_temperature_lower, &
+!           plume_salinity_lower))
+  allocate(water_bound, &
+           source=dallaston2015_seasonal_boundary(plume_thickness_lower, &
+           69.115_r8, 0.9_r8, 1.0_r8, plume_temperature_lower))
   allocate(water)
   call water%initialise(domain, [grid_points], D, U_plume, T, S,      &
                         entrainment, melt_relationship, ambient, eos, &
@@ -325,6 +329,7 @@ contains
     a22 = alpha*s2(domain(1,2)) + exp(-alpha*offset)/(domain(1,2) + offset)
     phi = -a21 * plume_salinity_lower/(a22 - a21*a12)
     theta = plume_salinity_lower - a12*phi
+    if (theta < 1e-17_r8) theta = 0._r8
     S = theta*s1(x(1)) + phi*s2(x(1))
   end function S
 
@@ -339,6 +344,7 @@ contains
     a22 = alpha*s2(domain(1,2)) + exp(-alpha*offset)/(domain(1,2) + offset)
     phi = -a21 * (plume_temperature_lower - zeta)/(a22 - a21*a12)
     theta = plume_temperature_lower - zeta - a12*phi
+    if (theta < 1e-17_r8) theta = 0._r8
     T = theta*s1(x(1)) + phi*s2(x(1)) + zeta
   end function T
 

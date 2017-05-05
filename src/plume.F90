@@ -104,16 +104,16 @@ module plume_mod
       !! water's density to its temperature and salinity.
     class(plume_boundary), allocatable :: boundaries
       !! An object specifying the boundary conditions for the plume.
-    real(r8)        :: delta
+    real(r8)                  :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
-    real(r8)        :: nu
+    real(r8)                  :: nu
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
-    real(r8)        :: mu
+    real(r8)                  :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
-    real(r8)        :: r_val
+    real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
-    real(r8)        :: time
+    real(r8)                  :: time
       !! The time at which the ice shelf is in this state
     integer                   :: thickness_size
       !! The number of data values in the thickness field
@@ -919,7 +919,7 @@ contains
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
                            1.e-9_r8*size(solution), precond=preconditioner, &
-                           krylov_dim=100)
+                           iter_max=30, krylov_dim=100)
     call this%update(solution)
 #ifdef DEBUG
     call logger%debug('plume%solve','QLM solver required '//         &
@@ -939,6 +939,9 @@ contains
     case(2)
       call logger%error('plume%solver','Reached maximum number of '// &
                         'iterations solving plume')
+      success = .false.
+    case(3)
+      call logger%error('plume%solver','Plume solution began to diverge.')
       success = .false.
     case default
       call logger%error('plume%solve','QLM solver failed for plume with '// &
@@ -1119,6 +1122,7 @@ contains
                                    T_a, rho_a
 
       call this%update(v(:,1))
+      call this%boundaries%set_time(this%time)
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &

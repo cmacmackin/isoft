@@ -177,6 +177,9 @@ contains
       !!:    Solution did not converge within `iter_max` iterations
       !!
       !!3
+      !!:    Solution began to diverge
+      !!
+      !!4
       !!:    No `diff` procedure provided when `order > 1`
       !!
     integer, dimension(5), intent(out), optional :: info
@@ -262,6 +265,10 @@ contains
       end if
       if (i > itmax) then
         flag = 2
+        return
+      end if
+      if (old_resid < resid_norm) then
+        flag = 3
         return
       end if
 

@@ -51,12 +51,16 @@ class Glacier(object):
         return self.data['thickness'][...]
 
     @property
+    def uvec(self):
+        return self.data['velocity'][...]
+
+    @property
     def u(self):
-        return self.data['velocity'][0,...]
+        return self.uvec[0,...]
 
     @property
     def v(self):
-        return self.data['velocity'][1,...]
+        return self.uvec[1,...]
 
     @property
     def glacier_type(self):
@@ -95,12 +99,16 @@ class Plume(object):
         return self.data['thickness'][...]
 
     @property
+    def Uvec(self):
+        return self.data['velocity'][...]
+
+    @property
     def U(self):
-        return self.data['velocity'][0,...]
+        return self.Uvec[0,...]
 
     @property
     def V(self):
-        return self.data['velocity'][1,...]
+        return self.Uvec[1,...]
 
     @property
     def S(self):
@@ -169,6 +177,10 @@ class ShelfPlumeCryosphere(object):
         return self.shelf.h
 
     @property
+    def uvec(self):
+        return self.shelf.uvec
+
+    @property
     def u(self):
         return self.shelf.u
 
@@ -199,6 +211,10 @@ class ShelfPlumeCryosphere(object):
     @property
     def D(self):
         return self.plume.D
+
+    @property
+    def Uvec(self):
+        return self.plume.Uvec
 
     @property
     def U(self):

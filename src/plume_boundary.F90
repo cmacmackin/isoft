@@ -77,6 +77,9 @@ module plume_boundary_mod
     procedure :: salinity_bound => scalar_bound
       !! Produces a field containing the boundary conditions for plume
       !! salinity at the specified location.
+    procedure :: set_time
+      !! Specifies the time at which to calculate the boundary
+      !! conditions.
   end type plume_boundary
 
 contains
@@ -143,5 +146,15 @@ contains
     allocate(uniform_vector_field :: vector_bound)
     vector_bound = uniform_vector_field([0.0_r8,0.0_r8])
   end function vector_bound
+
+  subroutine set_time(this, time)
+    !* Author: Chris MacMackin
+    !  Date: May 2017
+    !
+    ! Sets the time at which boundary conditions are to be calculated.
+    !
+    class(plume_boundary), intent(inout) :: this
+    real(r8), intent(in)                 :: time
+  end subroutine set_time
 
 end module plume_boundary_mod

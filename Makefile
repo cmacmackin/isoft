@@ -54,9 +54,9 @@ ifeq ($(VENDOR_),intel)
 else
   F90      := gfortran-6
   FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=overflow,invalid,zero #-fsanitize=address,undefined
-#  FCFLAGS  := -O3 -cpp -J$(MDIR)
+  FCFLAGS  := -O3 -cpp -J$(MDIR) -g
   LDFLAGS  := -O0 -g -pg
-#  LDFLAGS  := -O3
+  LDFLAGS  := -O3
   COVFLAGS := -fprofile-arcs -ftest-coverage 
   COVFLAGS := 
 endif
@@ -130,7 +130,7 @@ $(FLIB):
 ifeq ($(MAKECMDGOALS),clean)
 else ifeq ($(MAKECMDGOALS),doc)
 else
--include $(OBJS:.o=.d) $(TOBJS:.o=.d)
+-include $(OBJS:.o=.d) $(TOBJS:.o=.d) $(EXEC_FILE:.o=.d)
 endif
 
 %.d: %.pf get_deps
