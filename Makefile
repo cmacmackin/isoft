@@ -29,7 +29,7 @@ PFUNIT = $(HOME)/Code/pfunit-$(F90)
 EXEC := isoft
 TEXEC := tests.x
 LIB := libisoft.a
-FLIB := $(FDIR)/factual.a
+FLIB := $(FDIR)/libfactual.a
 FMDIR := $(FDIR)/mod
 FMOD := $(FMDIR)/factual_mod.mod
 PREFIX := $(HOME)/.local
@@ -48,16 +48,18 @@ VENDOR_ = $(shell echo $(VENDOR) | tr A-Z a-z)
 
 ifeq ($(VENDOR_),intel)
   F90      := ifort
-  FCFLAGS  := -O0 -g -DDEBUG -fpp -module $(MDIR) -traceback -assume realloc_lhs
-  LDFLAGS  := -O0 -g -traceback
+  #FCFLAGS  := -O0 -g -DDEBUG -fpp -module $(MDIR) -traceback -assume realloc_lhs
+  #LDFLAGS  := -O0 -g -traceback
+  FCFLAGS  := -Ofast -fpp -module $(MDIR) -assume realloc_lhs
+  LDFLAGS  := -Ofast
   COVFLAGS := 
 else
   F90      := gfortran-6
-  FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=overflow,invalid,zero #-fsanitize=address,undefined
-  FCFLAGS  := -O3 -cpp -J$(MDIR) -g
-  LDFLAGS  := -O0 -g -pg
+  #FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=overflow,invalid,zero
+  #LDFLAGS  := -O0 -g -pg
+  #COVFLAGS := -fprofile-arcs -ftest-coverage 
+  FCFLAGS  := -O3 -cpp -J$(MDIR)
   LDFLAGS  := -O3
-  COVFLAGS := -fprofile-arcs -ftest-coverage 
   COVFLAGS := 
 endif
 
