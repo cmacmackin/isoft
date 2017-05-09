@@ -111,7 +111,7 @@ tests: $(TEXEC)
 
 $(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
 	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 $(COVFLAGS) \
-		$(FCFLAGS) $^ isoft.a $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
+		$(FCFLAGS) $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
 
 lib: $(LIB)
 

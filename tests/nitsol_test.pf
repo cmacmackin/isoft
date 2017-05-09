@@ -23,7 +23,6 @@
 module nitsol_test
   use iso_fortran_env, only: r8 => real64
   use pfunit_mod
-  use array_pointer_mod, only: array_1d
   use chebyshev_mod
   use nitsol_mod
   use f95_lapack

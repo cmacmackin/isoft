@@ -9,8 +9,15 @@ doc/
 *.gcov
 *.mod
 *.smod
-a.out
 *.x
 *.d
 tests/*.F90
 *.pyc
+*.log
+*.log.*
+*.mp4
+*.png
+*.out
+*.old
+*.h5
+isoft
