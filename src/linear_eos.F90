@@ -107,7 +107,7 @@ contains
       !! A field containing the temperature of the water
     class(scalar_field), intent(in)  :: salinity
       !! A field containing the salinity of the water
-    class(scalar_field), allocatable :: density
+    class(scalar_field), pointer     :: density
       !! A field containing the density of the water
     call temperature%guard_temp(); call salinity%guard_temp()
     call salinity%allocate_scalar_field(density)
@@ -138,7 +138,7 @@ contains
       !! water, in the same direction as `dir`
     integer, intent(in)              :: dir
       !! The direction in which to take the derivative
-    class(scalar_field), allocatable :: d_density
+    class(scalar_field), pointer     :: d_density
       !! A field containing the density of the water
     call temperature%guard_temp(); call salinity%guard_temp()
     call d_temperature%guard_temp(); call d_salinity%guard_temp()

@@ -31,11 +31,14 @@ module preconditioner_test
 
   integer, parameter :: resolution = 50
 
+  ! Kludge to avoid compiler bug finalising derivted type array components
+  type(cheb1d_scalar_field), dimension(3), target :: tvec, trhs
+
   @TestCase
   type, extends(testcase), public :: test_preconditioner
      type(preconditioner) :: prec1, prec2
      type(jacobian_block), dimension(3,3) :: jacobian
-     type(cheb1d_scalar_field), dimension(3) :: vector, rhs
+     type(cheb1d_scalar_field), dimension(:), pointer :: vector, rhs
   contains
     procedure :: setup
     procedure :: teardown
@@ -244,22 +247,24 @@ contains
                                         boundary_locs=locs, boundary_types=typs)
     this%jacobian(3,3) = jacobian_block(cheb1d_scalar_field(resolution,j33), 1, &
                                         boundary_locs=locs, boundary_types=typs)
-    this%vector(1) = cheb1d_scalar_field(resolution,v1)
-    this%vector(2) = cheb1d_scalar_field(resolution,v2)
-    this%vector(3) = cheb1d_scalar_field(resolution,v3)
-    this%rhs(1) = this%jacobian(1,1) * this%vector(1) &
+    tvec(1) = cheb1d_scalar_field(resolution,v1)
+    tvec(2) = cheb1d_scalar_field(resolution,v2)
+    tvec(3) = cheb1d_scalar_field(resolution,v3)
+    this%vector => tvec
+    trhs(1) = this%jacobian(1,1) * this%vector(1) &
                 + this%jacobian(1,2) * this%vector(2) &
                 + this%jacobian(1,3) * this%vector(3)
-    call this%rhs(1)%set_element(resolution,0._r8) ! Have to mess with these a bit to make work
-    this%rhs(2) = this%jacobian(2,1) * this%vector(1) &
+    call trhs(1)%set_element(resolution,0._r8) ! Have to mess with these a bit to make work
+    trhs(2) = this%jacobian(2,1) * this%vector(1) &
                 + this%jacobian(2,2) * this%vector(2) &
                 + this%jacobian(2,3) * this%vector(3)
-    call this%rhs(2)%set_element(1,0._r8)
-    call this%rhs(2)%set_element(resolution,0._r8)
-    this%rhs(3) = this%jacobian(3,1) * this%vector(1) &
+    call trhs(2)%set_element(1,0._r8)
+    call trhs(2)%set_element(resolution,0._r8)
+    trhs(3) = this%jacobian(3,1) * this%vector(1) &
                 + this%jacobian(3,2) * this%vector(2) &
                 + this%jacobian(3,3) * this%vector(3)
-    call this%rhs(3)%set_element(1,0._r8)
+    call trhs(3)%set_element(1,0._r8)
+    this%rhs => trhs
   end subroutine setup
 
   subroutine teardown(this)

@@ -262,11 +262,10 @@ contains
     !
     ! Returns the thickness of the ice shelf across its domain.
     !
-    class(ice_shelf), intent(in)     :: this
-    class(scalar_field), allocatable :: thickness !! The ice thickness.
-    allocate(cheb1d_scalar_field :: thickness)
+    class(ice_shelf), intent(in) :: this
+    class(scalar_field), pointer :: thickness !! The ice thickness.
+    call this%thickness%allocate_scalar_field(thickness)
     thickness = this%thickness
-    call thickness%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%thickness','Returned ice shelf thickness')
 #endif    
@@ -279,9 +278,9 @@ contains
     !
     ! Returns the velocity of the ice shelf across its domain.
     !
-    class(ice_shelf), intent(in)     :: this
-    class(vector_field), allocatable :: velocity !! The ice velocity.
-    allocate(cheb1d_vector_field :: velocity)
+    class(ice_shelf), intent(in) :: this
+    class(vector_field), pointer :: velocity !! The ice velocity.
+    call this%velocity%allocate_vector_field(velocity)
     velocity = this%velocity
     call velocity%set_temp()
 #ifdef DEBUG
@@ -356,6 +355,7 @@ contains
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
     type(cheb1d_scalar_field) :: scalar_tmp
+    class(scalar_field), pointer :: eta, u
     integer :: start, finish, bounds_start, bounds_finish
     integer, dimension(:), allocatable :: lower, upper
     real(r8), dimension(:), allocatable :: bounds
@@ -364,18 +364,20 @@ contains
     allocate(residual(this%data_size()))
     start = 1
 
+    eta => this%viscosity_law%ice_viscosity(this%velocity, &
+                         this%ice_temperature(), this%time)
+    u => this%velocity%component(1)
+    call eta%guard_temp(); call u%guard_temp()
+
     ! Use same or similar notation for variables as in equations
     select type(previous_states)
     class is(ice_shelf)
       ! TODO: Either move the function results over to proper
       ! assignment or figure out some way to have temporary results in
       ! associate constructs.
-      associate(h => this%thickness, h_old => previous_states(1)%thickness, &
-                uvec => this%velocity, u => this%velocity%component(1), &
-                eta => this%viscosity_law%ice_viscosity(this%velocity, &
-                                   this%ice_temperature(), this%time), &
-                m => melt_rate, lambda => this%lambda, chi => this%chi, &
-                t_old => previous_states(1)%time)
+      associate(h => this%thickness, h_old => previous_states(1)%thickness,   &
+                uvec => this%velocity, m => melt_rate, lambda => this%lambda, &
+                chi => this%chi, t_old => previous_states(1)%time)
         ! Boundary conditions
         bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
 
@@ -432,6 +434,7 @@ contains
     end select
 
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
+    call eta%clean_temp(); call u%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
 #endif
@@ -494,7 +497,8 @@ contains
 
     type(ice_shelf) :: delta_shelf
     type(cheb1d_scalar_field), dimension(2) :: vector, estimate
-    class(scalar_field), allocatable :: eta, u
+    type(cheb1d_scalar_field) :: u
+    class(scalar_field), pointer :: eta
     integer :: sl, el, su, eu
     integer :: i, elem
     integer, dimension(2) :: upper_type, lower_type
@@ -516,12 +520,12 @@ contains
     delta_shelf%thickness_size = this%thickness_size
     delta_shelf%velocity_size = this%velocity_size
     call delta_shelf%update(delta_state)
-    allocate(eta, source=this%viscosity_law%ice_viscosity(this%velocity, &
-                                       this%ice_temperature(), this%time))
-    call eta%unset_temp()
+    ! WARNIGN: POTENTIAL LEAK IN OBJECT POOL!!!
+    eta => this%viscosity_law%ice_viscosity(this%velocity, &
+                          this%ice_temperature(), this%time)
+    call eta%guard_temp()
     vector(1) = delta_shelf%thickness
     vector(2) = delta_shelf%velocity%component(1)
-    call this%velocity%allocate_scalar_field(u)
     u = this%velocity%component(1)
 
     associate(h => this%thickness, chi => this%chi)
@@ -569,6 +573,7 @@ contains
     preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
 
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
+    call eta%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%precondition','Applied preconditioner for ice shelf.')
 #endif
@@ -841,17 +846,17 @@ contains
     ! the CFL condition.
     !
     class(ice_shelf), intent(in) :: this
+    class(scalar_field), pointer :: u, dx1
+    class(vector_field), pointer :: dx
     real(r8) :: dt
       !! The time-step to use
-    associate(u => this%velocity%component(1), dx => this%velocity%grid_spacing(), &
-              C => this%courant)
-      associate(dx1 => dx%component(1))
-        dt = minval(abs(C*dx1/u))
-        call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
-                           trim(str(dt))//' using Courant number of '//       &
-                           trim(str(C)))
-      end associate
-    end associate
+    u => this%velocity%component(1)
+    dx => this%velocity%grid_spacing()
+    dx1 => dx%component(1)
+    dt = minval(abs(this%courant*dx1/u))
+    call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
+                        trim(str(dt))//' using Courant number of '//       &
+                        trim(str(this%courant)))
   end function shelf_time_step
 
 

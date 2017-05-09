@@ -100,12 +100,11 @@ contains
       !! is to be calculated.
     real(r8), intent(in)                          :: t
       !! The time at which the ambient conditions are to be calculated.
-    class(scalar_field), allocatable              :: property
+    class(scalar_field), pointer                  :: property
       !! A field containing the ambient temperature at the depth specified
       !! for each location.
     call this%temperature%allocate_scalar_field(property)
     property = this%temperature
-    call property%set_temp()
   end function uniform_temperature
 
   function uniform_salinity(this, depth, t) result(property)
@@ -120,12 +119,11 @@ contains
       !! is to be calculated.
     real(r8), intent(in)                          :: t
       !! The time at which the ambient conditions are to be calculated.
-    class(scalar_field), allocatable              :: property
+    class(scalar_field), pointer                  :: property
       !! A field containing the ambient salinity at the depth specified
       !! for each location.
     call this%salinity%allocate_scalar_field(property)
     property = this%salinity
-    call property%set_temp()
   end function uniform_salinity
 
 end module uniform_ambient_mod

@@ -227,8 +227,8 @@ contains
     type(jacobian_block)                        :: this
       !! A new Jacobian block
     call source_field%guard_temp()
-    call source_field%allocate_scalar_field(this%contents)
-    call source_field%allocate_scalar_field(this%derivative)
+    allocate(this%contents, mold=source_field)
+    allocate(this%derivative, mold=source_field)
     this%contents = source_field
     this%direction = direction
     this%derivative = this%contents%d_dx(this%direction)
@@ -268,12 +268,13 @@ contains
     class(scalar_field), intent(in)   :: rhs
       !! A field corresponding to a state vector being multiplied by
       !! the Jacobian block.
-    class(scalar_field), allocatable  :: product
-    class(scalar_field), allocatable  :: tmp
+    class(scalar_field), pointer :: product
+    class(scalar_field), pointer :: tmp
     real(r8), dimension(:), allocatable :: bounds
     integer :: i
     call rhs%guard_temp()
     call this%contents%allocate_scalar_field(product)
+    call product%unset_temp()
     if (this%extra_derivative==no_extra_derivative) then
       if (this%has_increment) then
         product = (this%derivative + this%scalar_increment) * rhs &
@@ -284,12 +285,14 @@ contains
     else
       allocate(tmp, mold=rhs)
       tmp = rhs%d_dx(this%extra_derivative)
+      call tmp%guard_temp()
       if (this%has_increment) then
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
                 + this%scalar_increment*rhs
       else
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
       end if
+      call tmp%clean_temp()
     end if
     call this%get_boundaries(this%contents,this%derivative,rhs,      &
                             this%boundary_locs,this%boundary_types, &
@@ -298,11 +301,11 @@ contains
       call product%set_element(this%boundary_locs(i), bounds(i))
     end do
     call rhs%clean_temp()
-    call product%set_temp()
 #ifdef DEBUG
     call logger%debug('jacobian_block%multiply','Multiplied vector by '// &
                       'Jacobian block.')
 #endif
+    call product%set_temp()
   end function jacobian_block_multiply
 
   function jacobian_block_add(this, rhs) result(sum)
@@ -373,7 +376,7 @@ contains
     class(jacobian_block), intent(inout) :: this
     class(scalar_field), intent(in)      :: rhs
       !! The right hand side of the linear(ised) system.
-    class(scalar_field), allocatable     :: solution
+    class(scalar_field), pointer         :: solution
     real(r8), dimension(:), allocatable  :: sol_vector
 
     integer                                   :: flag, n
@@ -382,13 +385,15 @@ contains
                                                  condition_num
     character(len=1)                          :: factor
     character(len=:), allocatable             :: msg
-    class(vector_field), allocatable          :: grid
+    class(vector_field), pointer              :: grid
     logical                                   :: use_cached
     class(scalar_field), allocatable, save    :: cached_field_type
     real(r8), dimension(:), allocatable, save :: cached_dx_c,   &
                                                  cached_dx2_uc, &
                                                  cached_dx2_ud, &
                                                  cached_dx2_dc
+    real(r8), save                            :: cached_upper_bound, &
+                                                 cached_lower_bound
     real(r8), dimension(:), allocatable       :: cont, deriv
     real(r8), dimension(:,:), allocatable     :: domain
     integer                                   :: i, pos
@@ -406,8 +411,8 @@ contains
       ! Try to use cached copy of inverse grid spacing, if available and suitable 
       if (allocated(cached_field_type)) then
         use_cached = same_type_as(this%contents, cached_field_type) .and. &
-                     abs(domain(1,1) - minval(cached_dx_c)) < 1e-10 .and. &
-                     abs(domain(1,2) - maxval(cached_dx_c)) < 1e-10 .and. &
+                     abs(domain(1,1) - cached_lower_bound) < 1e-10 .and.  &
+                     abs(domain(1,2) - cached_upper_bound) < 1e-10 .and.  &
                      n==size(cached_dx_c)
       else
         use_cached = .false.
@@ -426,6 +431,8 @@ contains
         call logger%debug('jacobian_block%solve_for','Calculating and caching '// &
                          'grid spacings.')
 #endif
+        cached_lower_bound = domain(1,1)
+        cached_upper_bound = domain(1,2)
         allocate(cached_field_type, mold=this%contents)
         allocate(cached_dx_c(n))
         allocate(cached_dx2_uc(n-1))
@@ -553,11 +560,11 @@ contains
       call logger%debug('jacobian_block%solve_for',msg)
 #endif
     end if
-    allocate(solution, mold=rhs)
+    call rhs%allocate_scalar_field(solution)
+    call solution%unset_temp()
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
-    call rhs%clean_temp()
-    call solution%set_temp()
+    call rhs%clean_temp(); call solution%set_temp()
   end function jacobian_block_solve
 
   subroutine jacobian_block_bounds(contents, derivative, rhs,   &

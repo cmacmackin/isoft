@@ -64,7 +64,7 @@ module ambient_mod
         !! are to be calculated.
       real(r8), intent(in)                  :: t
         !! The time at which the ambient conditions are to be calculated.
-      class(scalar_field), allocatable      :: property
+      class(scalar_field), pointer          :: property
         !! A field containing the ambient conditions at the depth specified
         !! for each location.
     end function get_property

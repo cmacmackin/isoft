@@ -116,7 +116,6 @@ contains
 
   subroutine dallaston2015_solve(this, velocity, pressure, temperature, &
                                  salinity, plume_thickness, time)
-    use factual_mod
     class(dallaston2015_melt), intent(inout) :: this
     class(vector_field), intent(in)          :: velocity
       !! The velocity field of the plume into which fluid is melting.
@@ -135,7 +134,7 @@ contains
     call temperature%guard_temp(); call salinity%guard_temp()
     call plume_thickness%guard_temp()
     if (.not. allocated(this%melt_values)) then
-      call velocity%allocate_scalar_field(this%melt_values)
+      allocate(this%melt_values, mold=salinity)
     end if
     this%melt_values = velocity%norm()
     call velocity%clean_temp(); call pressure%clean_temp()
@@ -145,34 +144,31 @@ contains
 
   function dallaston2015_heat(this) result(heat)
     class(dallaston2015_melt), intent(in) :: this
-    class(scalar_field), allocatable      :: heat
+    class(scalar_field), pointer          :: heat
       !! The value of the contribution made by melting/thermal
       !! transfer to the heat equation for a [[plume]]
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(heat)
     heat = this%coef * this%melt_values
-    call heat%set_temp()
   end function dallaston2015_heat
 
   function dallaston2015_salt(this) result(salt)
     class(dallaston2015_melt), intent(in) :: this
-    class(scalar_field), allocatable      :: salt
+    class(scalar_field), pointer          :: salt
       !! The value of the contribution made by melting/thermal
       !! transfer to the salt equation for a [[plume]]
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(salt)
     salt = this%melt_conversion/this%salinity_denom * this%melt_values
-    call salt%set_temp()
   end function dallaston2015_salt
 
   function dallaston2015_melt_rate(this) result(melt)
     class(dallaston2015_melt), intent(in) :: this
-    class(scalar_field), allocatable      :: melt
+    class(scalar_field), pointer          :: melt
       !! The melt rate from the ice into the plume water.
     if (.not. allocated(this%melt_values)) error stop ('Melt values not allocated')
     call this%melt_values%allocate_scalar_field(melt)
     melt = this%melt_conversion * this%melt_values
-    call melt%set_temp()
   end function dallaston2015_melt_rate
 
   pure function dallaston2015_has_heat(this) result(has_heat)

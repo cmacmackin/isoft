@@ -137,7 +137,9 @@ contains
     integer                                   :: i, n, pos
     logical                                   :: use_cached
     real(r8), dimension(:), allocatable, save :: cached_dx_c
-    class(vector_field), allocatable          :: grid
+    real(r8), save                            :: cached_upper_bound, &
+                                                 cached_lower_bound
+    class(vector_field), pointer              :: grid
     class(abstract_field), allocatable, save  :: cached_field_type
     real(r8), dimension(:,:), allocatable     :: domain
 
@@ -158,8 +160,8 @@ contains
     ! Try to use cached copy of inverse grid spacing, if available and suitable 
     if (allocated(cached_field_type)) then
       use_cached = same_type_as(template, cached_field_type) .and. &
-                   abs(domain(1,1) - minval(cached_dx_c)) < 1e-10 .and. &
-                   abs(domain(1,2) - maxval(cached_dx_c)) < 1e-10 .and. &
+                   abs(domain(1,1) - cached_lower_bound) < 1e-10 .and. &
+                   abs(domain(1,2) - cached_upper_bound) < 1e-10 .and. &
                    n==size(cached_dx_c)
     else
       use_cached = .false.
@@ -175,6 +177,8 @@ contains
       call logger%debug('fin_diff_block','Calculating and caching '// &
                        'grid spacings.')
 #endif
+      cached_lower_bound = domain(1,1)
+      cached_upper_bound = domain(1,2)
       allocate(cached_field_type, mold=template)
       allocate(cached_dx_c(n))
       call template%allocate_vector_field(grid)
@@ -241,7 +245,7 @@ contains
     class(fin_diff_block), intent(inout) :: this
     class(scalar_field), intent(in)      :: rhs
       !! The right hand side of the linear(ised) system.
-    class(scalar_field), allocatable     :: solution
+    class(scalar_field), pointer         :: solution
     real(r8), dimension(:), allocatable  :: sol_vector
 
     integer                                   :: flag, n, i
@@ -282,11 +286,11 @@ contains
       call logger%debug('fin_diff_block%solve_for',msg)
 #endif
     end if
-    allocate(solution, mold=rhs)
+    call rhs%allocate_scalar_field(solution)
+    call solution%unset_temp()
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
-    call rhs%clean_temp()
-    call solution%set_temp()
+    call rhs%clean_temp(); call solution%set_temp()
   end function fin_diff_block_solve_scalar
 
 
@@ -308,11 +312,11 @@ contains
     class(fin_diff_block), intent(inout)   :: this
     class(cheb1d_vector_field), intent(in) :: rhs
       !! The right hand side of the linear(ised) system.
-    class(vector_field), allocatable       :: solution
+    class(vector_field), pointer           :: solution
     real(r8), dimension(:), allocatable    :: sol_vector
 
     integer                          :: flag, n, i
-    class(scalar_field), allocatable :: component
+    class(scalar_field), pointer     :: component
     integer                          :: m
     real(r8)                         :: forward_err, &
                                         backward_err, &
@@ -337,6 +341,7 @@ contains
     end if
 
     call rhs%allocate_scalar_field(component)
+    call component%guard_temp()
     do i = 1, rhs%vector_dimensions()
       if (i > 1) factor = 'F'
       component = rhs%component(i)
@@ -347,6 +352,7 @@ contains
                     this%pivots, factor, 'N', forward_err, backward_err,   &
                     condition_num, flag)
     end do
+    call component%clean_temp()
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//str(flag)
       call logger%error('fin_diff_block%solve_for',msg)
@@ -357,11 +363,11 @@ contains
       call logger%debug('fin_diff_block%solve_for',msg)
 #endif
     end if
-    allocate(solution, mold=rhs)
+    call rhs%allocate_vector_field(solution)
+    call solution%unset_temp()
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
-    call rhs%clean_temp()
-    call solution%set_temp()
+    call rhs%clean_temp(); call solution%set_temp()
   end function fin_diff_block_solve_vector
 
 end module finite_difference_block_mod

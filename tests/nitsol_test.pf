@@ -42,7 +42,6 @@ contains
 
   !@Test
   subroutine test_solve_dallaston2015()
-    type(array_1d) :: tmp
     real(r8), dimension(n_tot) :: x_guess, f_guess, jacob, dx, dxprime
     real(r8), dimension(n_tot) :: expected
     real(r8), dimension(n_tot) :: residual
@@ -61,8 +60,7 @@ contains
 !    input(7) = 1
 !    input(8) = 1
 !    input(10) = 3
-    tmp = collocation_points(points-1,lower_bound,upper_bound)
-    xvals = tmp%array
+    xvals = collocation_points(points-1,lower_bound,upper_bound)
 
     expected(1:points)            = xvals - lower_bound
     expected(points+1:2*points)   = q_g**(1.0_r8/3.0_r8)
@@ -267,15 +265,13 @@ contains
   
   @Test
   subroutine test_gmres_integrate()
-    type(array_1d) :: tmp    
     real(r8), dimension(points) :: actual, expected, rhs, xvals
     real(r8) :: res
     integer :: i, flag
     logical :: scs
     real(r8), dimension(1) :: rtmp
     integer, dimension(1) :: itmp
-    tmp = collocation_points(points-1,lower_bound,upper_bound)
-    xvals = tmp%array
+    xvals = collocation_points(points-1,lower_bound,upper_bound)
     expected = 0.25*xvals**2
     rhs = 0.5*xvals
     actual = expected*0.9_r8 + 0.01_r8

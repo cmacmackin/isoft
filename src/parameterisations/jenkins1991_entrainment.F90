@@ -107,13 +107,14 @@ contains
     real(r8), intent(in), optional             :: time
       !! The time at which the entrainment is being calculated. If not
       !! present then assumed to be same as previous value passed.
-    class(scalar_field), allocatable           :: entrainment
+    class(scalar_field), pointer               :: entrainment
       !! The value of the entrainment
-    class(vector_field), allocatable           :: tmp
+    class(vector_field), pointer               :: tmp
     call velocity%guard_temp(); call thickness%guard_temp(); call depth%guard_temp()
     call depth%allocate_scalar_field(entrainment)
     call depth%allocate_vector_field(tmp)
     entrainment = velocity%norm()
+    call entrainment%unset_temp()
     tmp = .grad. depth
     entrainment = tmp%norm() ! Needed due to ICE when try to put all on one line. TODO: Create minimal example and submit bug report.
     entrainment = this%coefficient * entrainment * velocity%norm()

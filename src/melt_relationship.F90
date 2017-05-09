@@ -99,7 +99,7 @@ module melt_relationship_mod
       import :: abstract_melt_relationship
       import :: scalar_field
       class(abstract_melt_relationship), intent(in) :: this
-      class(scalar_field), allocatable :: property
+      class(scalar_field), pointer :: property
         !! The value of whatever property is being returned.
     end function get_scalar
 

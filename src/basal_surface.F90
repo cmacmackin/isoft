@@ -82,7 +82,7 @@ module basal_surface_mod
       import :: basal_surface
       import :: scalar_field
       class(basal_surface), intent(in) :: this
-      class(scalar_field), allocatable :: property
+      class(scalar_field), pointer     :: property
         !! The value of whatever property of the basal surface is being
         !! returned.
     end function get_scalar

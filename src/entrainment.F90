@@ -58,19 +58,19 @@ module entrainment_mod
       import :: scalar_field
       import :: r8
       class(abstract_entrainment), intent(in) :: this
-      class(vector_field), intent(in)  :: velocity
+      class(vector_field), intent(in) :: velocity
         !! The velocity field of the plume into which fluid is being 
         !! entrained.
-      class(scalar_field), intent(in)  :: thickness
+      class(scalar_field), intent(in) :: thickness
         !! The thickness of the plume into which fluid is being
         !! entrained
-      class(scalar_field), intent(in)  :: depth
+      class(scalar_field), intent(in) :: depth
         !! The depth of the upper surface of the plume into which
         !! fluid is being entrained
-      real(r8), intent(in), optional   :: time
+      real(r8), intent(in), optional  :: time
         !! The time at which the entrainment is being calculated. If not
         !! present then assumed to be same as previous value passed.
-      class(scalar_field), allocatable :: property
+      class(scalar_field), pointer    :: property
         !! The value of the entrainment
     end function get_entrainment
   end interface

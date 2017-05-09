@@ -542,11 +542,10 @@ contains
     ! Computes and returns the melt rate at the bottom of the ice
     ! shelf due to interaction with the plume.
     !
-    class(plume), intent(in)         :: this
-    class(scalar_field), allocatable :: melt
+    class(plume), intent(in)     :: this
+    class(scalar_field), pointer :: melt
       !! The melt rate at the base of the ice shelf.
-    allocate(melt, source=this%melt_formulation%melt_rate())
-    call melt%set_temp()
+    melt => this%melt_formulation%melt_rate()
   end function plume_melt
 
 
@@ -560,10 +559,11 @@ contains
     ! of the ice shelf, but this method is present so that there is a
     ! consistent interface with the [[ground(type)]] data type.
     !
-    class(plume), intent(in)         :: this
-    class(scalar_field), allocatable :: drag
+    class(plume), intent(in)     :: this
+    class(scalar_field), pointer :: drag
       !! The melt rate at the base of the ice sheet.
-    allocate(uniform_scalar_field :: drag)
+    type(uniform_scalar_field) :: dummy
+    call dummy%allocate_scalar_field(drag)
     drag = uniform_scalar_field(0.0_r8)
     call drag%set_temp()
 #ifdef DEBUG
@@ -1116,10 +1116,10 @@ contains
       real(r8), dimension(size(v,1)) :: f
 
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
-      type(cheb1d_scalar_field) :: scalar_tmp
+      type(cheb1d_scalar_field) :: scalar_tmp, D_x
       type(cheb1d_vector_field) :: vector_tmp
-      type(cheb1d_scalar_field) :: b, D_x, U, U_x, m, rho, e, S_a, &
-                                   T_a, rho_a
+      class(scalar_field), pointer :: b, U, U_x, m, rho, e, S_a, &
+                                      T_a, rho_a
 
       call this%update(v(:,1))
       call this%boundaries%set_time(this%time)
@@ -1132,22 +1132,24 @@ contains
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
                 mu => this%mu, r => this%r_val, bounds => this%boundaries)
 
-        b = -h/r
+        b => -h/r
+        call b%guard_temp()
         call mf%solve_for_melt(Uvec, b, T, S, D, time)
 
         ! FIXME: Alter this so that can take advantage of
         ! parameterisations returning uniform fields.
-        U = this%velocity%component(1)
-        U_x = this%velocity_dx%component(1)
-        m = mf%melt_rate()
-        rho = this%eos%water_density(T, S)
-        e = this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
-        call S_a%assign_meta_data(m)
-        call T_a%assign_meta_data(m)
-        call rho_a%assign_meta_data(m)
-        S_a = this%ambient_conds%ambient_salinity(b,this%time)
-        T_a = this%ambient_conds%ambient_temperature(b,this%time)
-        rho_a = this%eos%water_density(T_a, S_a)
+        U => this%velocity%component(1)
+        U_x => this%velocity_dx%component(1)
+        m => mf%melt_rate()
+        rho => this%eos%water_density(T, S)
+        e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
+        S_a => this%ambient_conds%ambient_salinity(b,this%time)
+        T_a => this%ambient_conds%ambient_temperature(b,this%time)
+        call U%guard_temp(); call U_x%guard_temp(); call m%guard_temp()
+        call rho%guard_temp(); call e%guard_temp(); call S_a%guard_temp()
+        call T_a%guard_temp()
+        rho_a => this%eos%water_density(T_a, S_a)
+        call rho_a%guard_temp()
 
         ! Thickness
         call bounds%thickness_bound_info(-1, btype_l, bdepth_l)
@@ -1292,6 +1294,10 @@ contains
         st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
+
+        call b%clean_temp(); call U%clean_temp(); call U_x%clean_temp()
+        call m%clean_temp(); call rho%clean_temp(); call e%clean_temp()
+        call S_a%clean_temp(); call T_a%clean_temp(); call rho_a%clean_temp()
       end associate
     end function f
 

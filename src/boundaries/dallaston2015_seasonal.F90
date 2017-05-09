@@ -43,6 +43,8 @@ module dallaston2015_seasonal_mod
   use boundary_types_mod, only: free_boundary, dirichlet, neumann
   implicit none
   private
+
+  type(uniform_scalar_field) :: dummy
   
   type, extends(plume_boundary), public :: dallaston2015_seasonal_boundary
     !* Author: Chris MacMackin
@@ -220,8 +222,8 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(scalar_field), allocatable                   :: bound
-    allocate(uniform_scalar_field :: bound)
+    class(scalar_field), pointer                       :: bound
+    call dummy%allocate_scalar_field(bound)
     select case(location)
     case(-1)
       bound = uniform_scalar_field(this%thickness)
@@ -244,8 +246,8 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(vector_field), allocatable                   :: bound
-    allocate(uniform_vector_field :: bound)
+    class(vector_field), pointer                       :: bound
+    call dummy%allocate_vector_field(bound)
     select case(location)
     case(-1)
       bound = uniform_vector_field([this%discharge**(1._r8/3._r8),0._r8])
@@ -270,8 +272,8 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(scalar_field), allocatable                   :: bound
-    allocate(uniform_scalar_field :: bound)
+    class(scalar_field), pointer                       :: bound
+    call dummy%allocate_scalar_field(bound)
     select case(location)
     case(-1)
       bound = uniform_scalar_field(this%temperature)
@@ -296,8 +298,8 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(scalar_field), allocatable                   :: bound
-    allocate(uniform_scalar_field :: bound)
+    class(scalar_field), pointer                       :: bound
+    call dummy%allocate_scalar_field(bound)
     select case(location)
     case(-1)
       bound = uniform_scalar_field(this%discharge**(2._r8/3._r8)/this%thickness)

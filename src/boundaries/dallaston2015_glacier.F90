@@ -202,10 +202,10 @@ contains
       !! are stored in the order: lower thickness boundary, upper
       !! thickness boundary, lower velocity boundary, and upper
       !! velocity boundary.
-    class(scalar_field), allocatable :: thickness_bound,      &
-                                        velocity_bound_upper, &
-                                        velocity_deriv
-    class(vector_field), allocatable :: velocity_bound_lower
+    class(scalar_field), pointer :: thickness_bound,      &
+                                    velocity_bound_upper, &
+                                    velocity_deriv
+    class(vector_field), pointer :: velocity_bound_lower
     call thickness%guard_temp(); call velocity%guard_temp(); call viscosity%guard_temp()
     call thickness%allocate_scalar_field(thickness_bound)
     thickness_bound = thickness%get_boundary(-1,1) - this%thickness

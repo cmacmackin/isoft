@@ -123,8 +123,9 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(scalar_field), allocatable :: scalar_bound
-    allocate(uniform_scalar_field :: scalar_bound)
+    class(scalar_field), pointer :: scalar_bound
+    type(uniform_scalar_field) :: dummy
+    call dummy%allocate_scalar_field(scalar_bound)
     scalar_bound = uniform_scalar_field(0.0_r8)
   end function scalar_bound
 
@@ -142,8 +143,9 @@ contains
       !! `abs(boundary)`. If the argument is negative, then the lower
       !! boundary is returned. If positive, then the upper boundary is
       !! returned.
-    class(vector_field), allocatable  :: vector_bound
-    allocate(uniform_vector_field :: vector_bound)
+    class(vector_field), pointer  :: vector_bound
+    type(uniform_scalar_field) :: dummy
+    call dummy%allocate_vector_field(vector_bound)
     vector_bound = uniform_vector_field([0.0_r8,0.0_r8])
   end function vector_bound
 

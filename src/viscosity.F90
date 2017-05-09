@@ -66,7 +66,7 @@ module viscosity_mod
       real(r8), intent(in), optional  :: time
         !! The time at which the viscosity is being calculated. If not
         !! present then assumed to be same as previous value passed.
-      class(scalar_field), allocatable :: property
+      class(scalar_field), pointer    :: property
         !! The value of the viscosity
     end function get_viscosity
   end interface

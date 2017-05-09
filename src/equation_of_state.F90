@@ -63,7 +63,7 @@ module equation_of_state_mod
         !! A field containing the temperature of the water
       class(scalar_field), intent(in)      :: salinity
         !! A field containing the salinity of the water
-      class(scalar_field), allocatable     :: density
+      class(scalar_field), pointer         :: density
         !! A field containing the density of the water
     end function get_property
 
@@ -85,7 +85,7 @@ module equation_of_state_mod
         !! water, in the same direction as `dir`
       integer, intent(in)                  :: dir
         !! The direction in which to take the derivative
-      class(scalar_field), allocatable     :: d_density
+      class(scalar_field), pointer         :: d_density
         !! A field containing the derivative of the density of the
         !! water in direction `dir`
     end function get_property_dx

@@ -77,7 +77,7 @@ contains
       !! The thickness of the plume, from which the salinity is calculated.
     type(prescribed_eos)            :: this
     call thickness%guard_temp()
-    call thickness%allocate_scalar_field(this%density)
+    allocate(this%density, mold=thickness)
     this%density = const*beta_s/thickness
     call thickness%clean_temp()
   end function constructor
@@ -94,16 +94,16 @@ contains
       !! A field containing the temperature of the water
     class(scalar_field), intent(in)   :: salinity
       !! A field containing the salinity of the water
-    class(scalar_field), allocatable  :: density
+    class(scalar_field), pointer  :: density
       !! A field containing the density of the water
     call temperature%guard_temp(); call salinity%guard_temp()
     if (temperature == uniform_scalar_field(0._r8) .and. &
         salinity == uniform_scalar_field(0._r8)) then
       ! Kludge to ensure correct ambient density is returned
-      allocate(uniform_scalar_field :: density)
+      call temperature%allocate_scalar_field(density)       
       density = uniform_scalar_field(0._r8)
     else
-      allocate(density, mold=this%density)
+      call this%density%allocate_scalar_field(density)
       density = this%density
     end if
     call temperature%clean_temp(); call salinity%clean_temp()

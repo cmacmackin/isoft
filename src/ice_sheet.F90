@@ -271,8 +271,8 @@ contains
     !
     ! Returns the thickness of the ice sheet across its domain.
     !
-    class(ice_sheet), intent(in)     :: this
-    class(scalar_field), allocatable :: thickness !! The ice thickness.
+    class(ice_sheet), intent(in) :: this
+    class(scalar_field), pointer :: thickness !! The ice thickness.
   end function sheet_thickness
 
   function sheet_velocity(this) result(velocity)

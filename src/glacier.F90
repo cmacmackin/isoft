@@ -95,8 +95,8 @@ module glacier_mod
     function get_scalar(this) result(property)
       import :: glacier
       import :: scalar_field
-      class(glacier), intent(in)       :: this
-      class(scalar_field), allocatable :: property
+      class(glacier), intent(in)   :: this
+      class(scalar_field), pointer :: property
         !! The value of whatever property of the glacier is being returned.
     end function get_scalar
     

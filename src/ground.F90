@@ -83,8 +83,8 @@ contains
     ! Computes and returns the melt rate at the bottom of the ice
     ! sheet due to interaction with the ground.
     !
-    class(ground), intent(in)        :: this
-    class(scalar_field), allocatable :: melt
+    class(ground), intent(in)    :: this
+    class(scalar_field), pointer :: melt
       !! The melt rate at the base of the ice sheet.
   end function ground_melt
 
@@ -99,8 +99,8 @@ contains
     ! description of this method is left deliberately vague so that as not
     ! to constrain how the drag is parameterized.
     !
-    class(ground), intent(in)        :: this
-    class(scalar_field), allocatable :: drag
+    class(ground), intent(in)    :: this
+    class(scalar_field), pointer :: drag
       !! The value of a paramter describing the drag of the ground on the
       !! ice sheet.
   end function ground_drag_parameter

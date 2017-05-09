@@ -79,13 +79,13 @@ contains
     real(r8), intent(in), optional         :: time
       !! The time at which the viscosity is being calculated. If not
       !! present then assumed to be same as previous value passed.
-    class(scalar_field), allocatable       :: viscosity
+    class(scalar_field), pointer           :: viscosity
       !! The value of the viscosity
+    type(uniform_scalar_field) :: dummy
     call velocity%guard_temp()
-    allocate(uniform_scalar_field :: viscosity)
+    call dummy%allocate_scalar_field(viscosity)
     viscosity = uniform_scalar_field(this%viscosity_value)
     call velocity%clean_temp()
-    call viscosity%set_temp()
   end function newtonian_ice_viscosity
 
 end module newtonian_viscosity_mod
