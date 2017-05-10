@@ -919,7 +919,7 @@ contains
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
                            1.e-9_r8*size(solution), precond=preconditioner, &
-                           iter_max=30, krylov_dim=100)
+                           iter_max=30, krylov_dim=100, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
     call logger%debug('plume%solve','QLM solver required '//         &
