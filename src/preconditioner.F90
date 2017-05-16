@@ -31,6 +31,7 @@ module preconditioner_mod
   use iso_fortran_env, only: r8 => real64
   use factual_mod, only: scalar_field, vector_field, maxval, abs
   use logger_mod, only: logger => master_logger
+  use penf, only: str
   use jacobian_block_mod, only: jacobian_block
   implicit none
   private
@@ -129,7 +130,9 @@ contains
     logical                                        :: first
     character(len=msg_len)                         :: msg
     
+#ifdef DEBUG
     call logger%debug('preconditioner_apply','Entering function `precondition`.')
+#endif
     call vector%guard_temp(); call estimate%guard_temp()
     n = size(vector)
     allocate(prev_estimate(n), mold=estimate)
@@ -171,15 +174,20 @@ contains
       ! the tolerance, stop iterations
       if (max_err < this%tolerance) then
         write(msg,success_format) max_err, i
+#ifdef DEBUG
         call logger%debug('preconditioner%apply',msg)
         call logger%debug('preconditioner%apply','Exiting function `precondition`.')
+#endif
         call vector%clean_temp(); call estimate%clean_temp()
         return
       end if
       if (i > 1 .and. old_max_err <= max_err) then
         call logger%trivia('preconditioner%apply','Iterations diverging. Exiting '// &
-                           'and returning previous iterate.')
+                           'and returning previous iterate, with maximum error '//    &
+                           str(old_max_err)//'.')
+#ifdef DEBUG
         call logger%debug('preconditioner%apply','Exiting function `precondition`.')
+#endif
         estimate = prev_estimate
         call vector%clean_temp(); call estimate%clean_temp()
         return

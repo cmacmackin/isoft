@@ -103,13 +103,13 @@ contains
     ! ODEs. Consider $$ L^{(n)}\vec{u}(x) = \vec{f}(\vec{u}(x),
     ! \vec{u}^{(1)}(x), \ldots, \vec{u}^{n-1}(x), x), \qquad \vec{u}
     ! \in \mathbb{R}^{m}. $$ For a domain from \( (0,b) \), boundary
-    ! conditions are specified by $$ g_k(\vec{u}(0), \vec{u}^{(1)}(0),
-    ! \ldots, \vec{u}^{n-1}(0)), \qquad k = 1, \ldots, l $$ $$
-    ! g_k(\vec{u}(b), \vec{u}^{(1)}(b), \ldots, \vec{u}^{n-1}(b)),
-    ! \qquad k = l+1, \ldots, mn. $$ Here, \(L^{(n)}\) is an \(n\)th
-    ! order ordinary differential operator, and \(\vec{f}, g_1, g_2,
-    ! \ldots, g_{nm}\) are nonlinear functions of \(\vec{u}(x)\) and
-    ! its first \(n-1\) derivatives.
+    ! conditions are specified by $$ g_k(\vec{u}(0) = 0,
+    ! \vec{u}^{(1)}(0), \ldots, \vec{u}^{n-1}(0)), \qquad k = 1,
+    ! \ldots, l $$ $$ g_k(\vec{u}(b), \vec{u}^{(1)}(b), \ldots,
+    ! \vec{u}^{n-1}(b)) = 0, \qquad k = l+1, \ldots, mn. $$ Here,
+    ! \(L^{(n)}\) is an \(n\)th order ordinary differential operator,
+    ! and \(\vec{f}, g_1, g_2, \ldots, g_{nm}\) are nonlinear
+    ! functions of \(\vec{u}(x)\) and its first \(n-1\) derivatives.
     ! 
     ! With quasilinearisation method, we iterate according to $$
     ! L^{(n)}\vec{u}_{r+1}(x) = \vec{f}(\vec{u}_r(x),

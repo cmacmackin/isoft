@@ -191,7 +191,6 @@ contains
     !
     class(cryosphere), intent(in) :: this
     real(r8), dimension(:), allocatable :: state_vector
-    integer :: state_size
     state_vector = [this%ice%state_vector(), this%sub_ice%state_vector()]
   end function state_vector
     
@@ -229,8 +228,8 @@ contains
                               this%ice%ice_temperature(), this%time, success)
       this%first_integration = .false.
       if (.not. success) then
-        call logger%fatal('cryosphere%integrate','Failed to integrate '//  &
-                          'glacier to time '//trim(str(t))//'! Writing '// &
+        call logger%fatal('cryosphere%integrate','Failed to solve plume '// &
+                          'with initial ice configuration. Writing '//      &
                           'cryosphere state to file "'//hdf_crash_file//'".')
         call this%write_data(hdf_crash_file)
         error stop
@@ -258,7 +257,7 @@ contains
                             'glacier to time '//trim(str(t))//'! Writing '// &
                             'cryosphere state to file "'//hdf_crash_file//'".')
           call this%write_data(hdf_crash_file)
-          iplvl = 4
+          iplvl = 2
           t = min(old_t + this%ice%time_step(), time)
           call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                                   this%sub_ice%basal_drag_parameter(),     &
@@ -276,11 +275,20 @@ contains
         call logger%trivia('cryosphere%integrate','Successfully integrated '// &
                            'cryosphere to time '//trim(str(t)))
       else
-        call logger%fatal('cryosphere%integrate','Failed to solve plume '//   &
-                          'at time '//trim(str(t))//'! Writing cryosphere '// &
-                          'state to file "'//hdf_crash_file//'".')
-        call this%write_data(hdf_crash_file)
-        error stop
+        this%ice = old_glaciers(1)
+        if (this%dt_factor > this%min_dt_factor) then
+          call logger%warning('cryosphere%integrate','Failure in plume '// &
+                              'solver. Reducing time step and trying again.')
+          call this%reduce_time_step()
+          t = min(old_t + this%time_step(), time) ! Not quite right...
+          cycle
+        else
+          call logger%fatal('cryosphere%integrate','Failed to solve plume '//   &
+                            'at time '//trim(str(t))//'! Writing cryosphere '// &
+                            'state to file "'//hdf_crash_file//'".')
+          call this%write_data(hdf_crash_file)
+          error stop
+        end if
       end if
 
       call this%increase_time_step()

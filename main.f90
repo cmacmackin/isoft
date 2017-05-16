@@ -69,7 +69,7 @@ program isoft
   ! Output parameters
   real(r8) :: output_interval
   character(len=:), allocatable :: hdf_base_name, logfile
-  integer  :: stdout_lim, stderr_lim, logfile_lim
+  integer  :: stdout_lim, stderr_lim, logfile_lim, output_start
 
   ! Ice shelf parameters
   real(r8) :: chi, lambda, ice_temperature, courant
@@ -130,14 +130,14 @@ program isoft
   call cpu_time(cpu_start)
 
   ! Initialise variables to defaults
-  grid_points = 50
+  grid_points = 100
   domain(1,:) = [0._r8, 2.5_r8]
   domain(2,:) = [-1._r8, 1._r8]
-  end_time = 5.5_r8
-  restart_file = "steadystate50.h5"
+  end_time = 3.0_r8
+  restart_file = "isoft-0020.h5"
   end_on_steady = .true.
-  restart_from_file = .true.
-  restart_at_0 = .true.
+  restart_from_file = .false.
+  restart_at_0 = .false.
 
   output_interval = 0.5_r8
   hdf_base_name = "isoft"
@@ -145,11 +145,12 @@ program isoft
   stdout_lim = info
   stderr_lim = error
   logfile_lim = trivia
+  output_start = 0
 
   chi = 4._r8
   lambda = 0.37_r8
   ice_temperature = -1._r8
-  courant = 0.5_r8
+  courant = 50.0_r8
 
   visc_coefficient = 1._r8
 
@@ -159,7 +160,7 @@ program isoft
   ent_coefficient = 1._r8
 
   delta = 3.6e-2_r8
-  nu = 1e-2_r8
+  nu = 1e-3_r8
   mu = 1.27_r8
   r_val = 1.12_r8
 
@@ -214,13 +215,13 @@ program isoft
   allocate(eos,                                                          &
            source=linear_eos(ref_density, ref_temperature, ref_salinity, &
            beta_t, beta_s))
-!  allocate(water_bound, &
-!           source=simple_plume_boundary(plume_thickness_lower, &
-!           plume_velocity_lower, plume_temperature_lower, &
-!           plume_salinity_lower))
   allocate(water_bound, &
-           source=dallaston2015_seasonal_boundary(plume_thickness_lower, &
-           69.115_r8, 0.9_r8, 1.0_r8, plume_temperature_lower))
+           source=simple_plume_boundary(plume_thickness_lower, &
+           plume_velocity_lower, plume_temperature_lower, &
+           plume_salinity_lower))
+!  allocate(water_bound, &
+!           source=dallaston2015_seasonal_boundary(plume_thickness_lower, &
+!           13.823_r8, 0.9_r8, 1.0_r8, plume_temperature_lower))
   allocate(water)
   call water%initialise(domain, [grid_points], D, U_plume, T, S,      &
                         entrainment, melt_relationship, ambient, eos, &
@@ -239,12 +240,12 @@ program isoft
                    trim(str(cpu_setup-cpu_start))//'s.')
 
   ! Run simulation
-  i = 0
+  i = output_start
   time = system%get_time()
-  do while (time < end_time)
+  do while (end_time - time > courant*1.e-5_r8/grid_points)
     write(hdf_filename, hdf_file_format) hdf_base_name, i
-    call system%write_data(trim(hdf_filename))
     time = min(time + output_interval, end_time)
+    call system%write_data(trim(hdf_filename))
     call system%integrate(time)
     i = i + 1
   end do
@@ -331,6 +332,7 @@ contains
     theta = plume_salinity_lower - a12*phi
     if (theta < 1e-17_r8) theta = 0._r8
     S = theta*s1(x(1)) + phi*s2(x(1))
+    S = plume_salinity_lower + x(1)*(x(1) - domain(1,2))
   end function S
 
   pure function T(x)
@@ -346,6 +348,7 @@ contains
     theta = plume_temperature_lower - zeta - a12*phi
     if (theta < 1e-17_r8) theta = 0._r8
     T = theta*s1(x(1)) + phi*s2(x(1)) + zeta
+    T = plume_temperature_lower - x(1)*(x(1) - domain(1,2))
   end function T
 
   

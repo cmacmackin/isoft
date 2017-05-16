@@ -355,7 +355,7 @@ contains
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
     type(cheb1d_scalar_field) :: scalar_tmp
-    class(scalar_field), pointer :: eta, u
+    class(scalar_field), pointer :: eta, u, u_old
     integer :: start, finish, bounds_start, bounds_finish
     integer, dimension(:), allocatable :: lower, upper
     real(r8), dimension(:), allocatable :: bounds
@@ -375,6 +375,8 @@ contains
       ! TODO: Either move the function results over to proper
       ! assignment or figure out some way to have temporary results in
       ! associate constructs.
+      u_old => previous_states(1)%velocity%component(1)
+      call u_old%guard_temp()
       associate(h => this%thickness, h_old => previous_states(1)%thickness,   &
                 uvec => this%velocity, m => melt_rate, lambda => this%lambda, &
                 chi => this%chi, t_old => previous_states(1)%time)
@@ -402,11 +404,12 @@ contains
         bounds_finish = this%thickness_lower_bound_size
         residual(start:finish) = bounds(bounds_start:bounds_finish)
         start = finish + 1
-  
+
         ! Momentum equation, x-component
         scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
-        scalar_tmp = scalar_tmp%d_dx(1) - 2.0_r8*chi*h*h%d_dx(1)
-        
+        scalar_tmp = (h*u - h_old*u_old)/(this%time - t_old) - scalar_tmp%d_dx(1) &
+                     + 2.0_r8*chi*h*h%d_dx(1)
+
         lower = this%boundaries%velocity_lower_bound()
         upper = this%boundaries%velocity_upper_bound()
         ! TODO: Figure out how to make this independent of order which
@@ -434,7 +437,7 @@ contains
     end select
 
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
-    call eta%clean_temp(); call u%clean_temp()
+    call eta%clean_temp(); call u%clean_temp(); call u_old%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
 #endif
@@ -520,7 +523,7 @@ contains
     delta_shelf%thickness_size = this%thickness_size
     delta_shelf%velocity_size = this%velocity_size
     call delta_shelf%update(delta_state)
-    ! WARNIGN: POTENTIAL LEAK IN OBJECT POOL!!!
+    ! WARNING: POTENTIAL LEAK IN OBJECT POOL!!!
     eta => this%viscosity_law%ice_viscosity(this%velocity, &
                           this%ice_temperature(), this%time)
     call eta%guard_temp()
@@ -553,12 +556,14 @@ contains
         lower_type = this%boundaries%velocity_lower_type()
         boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
 
-        this%jacobian(2,1) = jacobian_block(4._r8*eta*u%d_dx(1) - 2._r8*chi*h, 1, &
-                                            boundary_locs=boundary_locations,     &
-                                            boundary_operations=jacobian_bounds_2_1)
-        this%jacobian(2,2) = jacobian_block(4._r8*eta*h, 1, 1,                &
+        this%jacobian(2,1) = jacobian_block(-4._r8*eta*u%d_dx(1) + 2._r8*chi*h, 1,    &
+                                            boundary_locs=boundary_locations,        &
+                                            boundary_operations=jacobian_bounds_2_1) &
+                                            + u/delta_t
+        this%jacobian(2,2) = jacobian_block(-4._r8*eta*h, 1, 1,                &
                                             boundary_locs=boundary_locations, &
-                                            boundary_types=boundary_types)
+                                            boundary_types=boundary_types)    &
+                                            + h/delta_t
         this%jacobian_time = this%time
       end if
 

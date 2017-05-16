@@ -288,7 +288,7 @@ contains
     integer :: i, steps
     type(cheb1d_scalar_field) :: melt, drag
     logical :: success
-    time = 3._r8
+    time = 5._r8
     t = this%shelf4%time_step()
     melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
                                this%upper1)
@@ -308,7 +308,7 @@ contains
     @assertTrue(success,message='Integration of shelf failed.')
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
-    @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-6_r8)
+    @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-5_r8)
     iplvl = 0
   end subroutine test_integrate
 

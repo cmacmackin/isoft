@@ -160,19 +160,25 @@ module jacobian_block_mod
     integer, dimension(:), allocatable  :: boundary_types
       !! The types of boundary conditions, specified using the
       !! parameters found in [[boundary_types_mod]].
-    real(r8)                            :: scalar_increment
+    real(r8)                            :: real_increment
       !! A scalar value which is to be added to this Jacobian block
       !! (i.e. to the diagonal).
-    logical                             :: has_increment = .false.
-      !! Indicates whether or not there has been a `scalar_increment`
-      !! added to this block.
+    class(scalar_field), allocatable    :: field_increment
+      !! A scalar field which is to be added to this Jacobian block
+      !! (i.e. to the diagonal).
+    integer                             :: has_increment = 0
+      !! Indicates whether or not there has been an increment added to
+      !! this block. If not, then 0. If a scalar real value has been
+      !! added, then 1. If a scalar value has been added, then 2.
   contains
     private
     procedure :: jacobian_block_multiply
-    procedure :: jacobian_block_add
+    procedure :: jacobian_block_add_real
+    procedure :: jacobian_block_add_field
     procedure :: jacobian_block_assign
     generic, public :: operator(*) => jacobian_block_multiply
-    generic, public :: operator(+) => jacobian_block_add
+    generic, public :: operator(+) => jacobian_block_add_real, &
+                                      jacobian_block_add_field
     generic, public :: assignment(=) => jacobian_block_assign
     procedure, public :: solve_for => jacobian_block_solve
   end type jacobian_block
@@ -276,22 +282,34 @@ contains
     call this%contents%allocate_scalar_field(product)
     call product%unset_temp()
     if (this%extra_derivative==no_extra_derivative) then
-      if (this%has_increment) then
-        product = (this%derivative + this%scalar_increment) * rhs &
-                + this%contents * rhs%d_dx(this%direction)
-      else
+      select case(this%has_increment)
+      case(0)
         product = this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
-      end if
+      case(1)
+        product = (this%derivative + this%real_increment) * rhs &
+                + this%contents * rhs%d_dx(this%direction)
+      case(2)
+        product = (this%derivative + this%field_increment) * rhs &
+                + this%contents * rhs%d_dx(this%direction)
+      case default
+        error stop ('Invalid increment has been added.')
+      end select
     else
       allocate(tmp, mold=rhs)
       tmp = rhs%d_dx(this%extra_derivative)
       call tmp%guard_temp()
-      if (this%has_increment) then
-        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
-                + this%scalar_increment*rhs
-      else
+      select case(this%has_increment)
+      case(0)
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
-      end if
+      case(1)
+        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
+                + this%real_increment*rhs
+      case(2)
+        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
+                + this%field_increment*rhs
+      case default
+        error stop ('Invalid increment has been added.')
+      end select
       call tmp%clean_temp()
     end if
     call this%get_boundaries(this%contents,this%derivative,rhs,      &
@@ -308,12 +326,15 @@ contains
     call product%set_temp()
   end function jacobian_block_multiply
 
-  function jacobian_block_add(this, rhs) result(sum)
+  function jacobian_block_add_real(this, rhs) result(sum)
     !* Author: Chris MacMackin 
     !  Date: December 2016
     !
-    ! Provides a matrix multiplication operator between a Jacobian
-    ! block and a scalar field (which corresponds to a state vector).
+    ! Produces a Jacobian block which has been offset by some constant
+    ! increment.
+    !
+    ! @Warning This operation will overwrite any previous sums which
+    ! have been performed to produce `this`.
     !
     class(jacobian_block), intent(in) :: this
     real(r8), intent(in)              :: rhs
@@ -322,12 +343,37 @@ contains
     sum = this
     call sum%contents%set_temp()
     call sum%derivative%set_temp()
-    sum%scalar_increment = rhs
-    sum%has_increment = .true.
+    sum%real_increment = rhs
+    sum%has_increment = sum%has_increment + 1
 #ifdef DEBUG
-    call logger%debug('jacobian_block%add','Added scalar to a Jacobian block.')
+    call logger%debug('jacobian_block%add','Added real to a Jacobian block.')
 #endif
-  end function jacobian_block_add
+  end function jacobian_block_add_real
+
+  function jacobian_block_add_field(this, rhs) result(sum)
+    !* Author: Chris MacMackin 
+    !  Date: May 2017
+    !
+    ! Produces a Jacobian block which has been offset by a scalar
+    ! field.
+    !
+    ! @Warning This operation will overwrite any previous sums which
+    ! have been performed to produce `this`.
+    !
+    class(jacobian_block), intent(in) :: this
+    class(scalar_field), intent(in)   :: rhs
+      !! A scalar which should be added to this block
+    type(jacobian_block)              :: sum
+    sum = this
+    call sum%contents%set_temp()
+    call sum%derivative%set_temp()
+    allocate(sum%field_increment, mold=rhs)
+    sum%field_increment = rhs
+    sum%has_increment = sum%has_increment + 2
+#ifdef DEBUG
+    call logger%debug('jacobian_block%add','Added field to a Jacobian block.')
+#endif
+  end function jacobian_block_add_field
 
   subroutine jacobian_block_assign(this, rhs)
     !* Author: Chris MacMackin 
@@ -357,7 +403,9 @@ contains
     end if
     if (allocated(rhs%boundary_locs)) this%boundary_locs = rhs%boundary_locs
     if (allocated(rhs%boundary_types)) this%boundary_types = rhs%boundary_types
-    this%scalar_increment = rhs%scalar_increment
+    this%real_increment = rhs%real_increment
+    if(allocated(rhs%field_increment)) &
+         allocate(this%field_increment, source=rhs%field_increment)
     this%has_increment = rhs%has_increment
   end subroutine jacobian_block_assign
 
@@ -473,9 +521,12 @@ contains
         ! Create the tridiagonal matrix when there is no additional
         ! differentiation operator on the RHS
         this%diagonal = this%derivative%raw()
-        if (this%has_increment) then
-          this%diagonal = this%diagonal + this%scalar_increment
-        end if
+        select case(this%has_increment)
+        case(1)
+          this%diagonal = this%diagonal + this%real_increment
+        case(2)
+          this%diagonal = this%diagonal + this%field_increment%raw()
+        end select
         this%diagonal(1) = this%diagonal(1) - cont(1)*cached_dx_c(1)
         this%diagonal(n) = this%diagonal(n) + cont(n)*cached_dx_c(n)
         this%super_diagonal = cont(1:n-1) * cached_dx_c(1:n-1)
@@ -491,9 +542,12 @@ contains
                          - deriv(1) * cached_dx_c(1)
         this%diagonal(n) = cont(n) * cached_dx2_ud(n) &
                          + deriv(n) * cached_dx_c(n)
-        if (this%has_increment) then
-          this%diagonal = this%diagonal + this%scalar_increment
-        end if
+        select case(this%has_increment)
+        case(1)
+          this%diagonal = this%diagonal + this%real_increment
+        case(2)
+          this%diagonal = this%diagonal + this%field_increment%raw()
+        end select
         allocate(this%super_diagonal(n-1))
         this%super_diagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &
                                    + deriv(2:n-1) * cached_dx_c(2:n-1)
