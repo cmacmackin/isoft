@@ -522,10 +522,14 @@ contains
         ! differentiation operator on the RHS
         this%diagonal = this%derivative%raw()
         select case(this%has_increment)
+        case(0)
+          continue
         case(1)
           this%diagonal = this%diagonal + this%real_increment
         case(2)
           this%diagonal = this%diagonal + this%field_increment%raw()
+        case default
+          error stop ('Invalid increment has been added.')
         end select
         this%diagonal(1) = this%diagonal(1) - cont(1)*cached_dx_c(1)
         this%diagonal(n) = this%diagonal(n) + cont(n)*cached_dx_c(n)
@@ -543,10 +547,14 @@ contains
         this%diagonal(n) = cont(n) * cached_dx2_ud(n) &
                          + deriv(n) * cached_dx_c(n)
         select case(this%has_increment)
+        case(0)
+          continue
         case(1)
           this%diagonal = this%diagonal + this%real_increment
         case(2)
           this%diagonal = this%diagonal + this%field_increment%raw()
+        case default
+          error stop ('Invalid increment has been added.')
         end select
         allocate(this%super_diagonal(n-1))
         this%super_diagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &

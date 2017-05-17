@@ -33,7 +33,7 @@ module jacobian_block_test
   @TestCase
   type, extends(testcase), public :: test_jacobian
     type(jacobian_block)      :: block1, block2, block3, block4, &
-                                 block5, block6, block7
+                                 block5, block6, block7, block8
     type(cheb1d_scalar_field) :: ones, contents, vector, rhs1,   &
                                  rhs2, rhs3, rhs4, dvector,      &
                                  d2vector
@@ -179,6 +179,9 @@ contains
                                   boundary_operations=bounds1) + 1._r8
     this%block7 = jacobian_block(this%contents, 1, 1, [1,resolution], &
                                  [neumann,dirichlet]) + 5._r8
+    this%block8 = jacobian_block(this%contents, 1, boundary_locs=[resolution], &
+                                  boundary_types=[neumann], &
+                                  boundary_operations=bounds1) + this%ones
     ! Create vectors for solving/multiplying with
     ! Must mess around with some of them to make boundary conditions work.
     this%vector = cheb1d_scalar_field(resolution, g)
@@ -216,6 +219,8 @@ contains
     call this%rhs4%set_element(1,0._r8)
     call this%rhs4%set_element(resolution,0._r8)
     @assertEqual(this%rhs4%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+    actual = this%block8 * this%vector
+    @assertEqual(this%rhs3%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
   end subroutine test_jacobian_multiply
 
   @Test
@@ -234,6 +239,8 @@ contains
     @assertEqual(this%vector%raw(),actual%raw(),tolerance=5.e-2_r8,message='Failed to solve Jacobian block system.')
     actual = this%block7%solve_for(this%rhs4)
     @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
+    actual = this%block8%solve_for(this%rhs3)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=5.e-2_r8,message='Failed to solve Jacobian block system.')
   end subroutine test_jacobian_solve
 
 end module jacobian_block_test

@@ -100,15 +100,15 @@ class Plume(object):
 
     @property
     def Uvec(self):
-        return self.data['velocity'][...]
+        return self.data['velocity'][...].T
 
     @property
     def U(self):
-        return self.Uvec[0,...]
+        return self.Uvec[...,0]
 
     @property
     def V(self):
-        return self.Uvec[1,...]
+        return self.Uvec[...,1]
 
     @property
     def S(self):
