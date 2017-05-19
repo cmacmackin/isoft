@@ -107,6 +107,8 @@ module ice_shelf_mod
       !! The time at which the Jacobian was last updated.
     type(jacobian_block), dimension(2,2) :: jacobian
       !! A representation of the Jacobian for this ice shelf.
+    type(jacobian_block), pointer        :: tmp_block
+      !! A block which will be added to the one at (2,2) in the Jacobian.
     type(preconditioner)      :: precondition_obj
       !! An object with a method to apply a block-Jacobian
       !! preconditioner, with the specified convergence properties.
@@ -249,7 +251,7 @@ contains
 
     this%time = 0.0_r8
     this%jacobian_time = -1._r8
-    this%precondition_obj = preconditioner(1.e-3_r8, 10)
+    this%precondition_obj = preconditioner(1.e-3_r8, 20)
 #ifdef DEBUG
     call logger%debug('ice_shelf','Initialised new ice shelf object')
 #endif
@@ -407,8 +409,8 @@ contains
 
         ! Momentum equation, x-component
         scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
-        scalar_tmp = (h*u - h_old*u_old)/(this%time - t_old) - scalar_tmp%d_dx(1) &
-                     + 2.0_r8*chi*h*h%d_dx(1)
+        scalar_tmp = (h*u - h_old*u_old)/(this%time - t_old) + .div. (h*uvec*u) &
+                     - scalar_tmp%d_dx(1) + 2.0_r8*chi*h*h%d_dx(1)
 
         lower = this%boundaries%velocity_lower_bound()
         upper = this%boundaries%velocity_upper_bound()
@@ -556,14 +558,16 @@ contains
         lower_type = this%boundaries%velocity_lower_type()
         boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
 
-        this%jacobian(2,1) = jacobian_block(-4._r8*eta*u%d_dx(1) + 2._r8*chi*h, 1,    &
+        this%jacobian(2,1) = jacobian_block(u**2 - 4._r8*eta*u%d_dx(1) + 2._r8*chi*h, 1,    &
                                             boundary_locs=boundary_locations,        &
                                             boundary_operations=jacobian_bounds_2_1) &
                                             + u/delta_t
+        if (.not. associated(this%tmp_block)) allocate(this%tmp_block)
+        this%tmp_block = jacobian_block(2._r8*h*u, 1)
         this%jacobian(2,2) = jacobian_block(-4._r8*eta*h, 1, 1,                &
                                             boundary_locs=boundary_locations, &
                                             boundary_types=boundary_types)    &
-                                            + h/delta_t
+                                            + h/delta_t + this%tmp_block
         this%jacobian_time = this%time
       end if
 

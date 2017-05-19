@@ -166,6 +166,8 @@ module jacobian_block_mod
     class(scalar_field), allocatable    :: field_increment
       !! A scalar field which is to be added to this Jacobian block
       !! (i.e. to the diagonal).
+    type(jacobian_block), pointer       :: block_increment => null()
+      !! Another Jacobian block which is to be added to this one
     integer                             :: has_increment = 0
       !! Indicates whether or not there has been an increment added to
       !! this block. If not, then 0. If a scalar real value has been
@@ -175,10 +177,13 @@ module jacobian_block_mod
     procedure :: jacobian_block_multiply
     procedure :: jacobian_block_add_real
     procedure :: jacobian_block_add_field
+    procedure :: jacobian_block_add_block
     procedure :: jacobian_block_assign
+    procedure :: get_tridiag => jacobian_block_get_tridiag
     generic, public :: operator(*) => jacobian_block_multiply
-    generic, public :: operator(+) => jacobian_block_add_real, &
-                                      jacobian_block_add_field
+    generic, public :: operator(+) => jacobian_block_add_real,  &
+                                      jacobian_block_add_field, &
+                                      jacobian_block_add_block
     generic, public :: assignment(=) => jacobian_block_assign
     procedure, public :: solve_for => jacobian_block_solve
   end type jacobian_block
@@ -259,11 +264,9 @@ contains
 #ifdef DEBUG
     call logger%debug('jacobian_block','Instantiated a Jacobian block object.')
 #endif
-    call this%contents%set_temp()
-    call this%derivative%set_temp()
   end function constructor
 
-  function jacobian_block_multiply(this, rhs) result(product)
+  recursive function jacobian_block_multiply(this, rhs) result(product)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
@@ -312,6 +315,9 @@ contains
       end select
       call tmp%clean_temp()
     end if
+    if (associated(this%block_increment)) then
+      product = product + this%block_increment*rhs
+    end if
     call this%get_boundaries(this%contents,this%derivative,rhs,      &
                             this%boundary_locs,this%boundary_types, &
                             bounds)
@@ -341,8 +347,6 @@ contains
       !! A scalar which should be added to this block
     type(jacobian_block)              :: sum
     sum = this
-    call sum%contents%set_temp()
-    call sum%derivative%set_temp()
     sum%real_increment = rhs
     sum%has_increment = sum%has_increment + 1
 #ifdef DEBUG
@@ -365,8 +369,6 @@ contains
       !! A scalar which should be added to this block
     type(jacobian_block)              :: sum
     sum = this
-    call sum%contents%set_temp()
-    call sum%derivative%set_temp()
     allocate(sum%field_increment, mold=rhs)
     sum%field_increment = rhs
     sum%has_increment = sum%has_increment + 2
@@ -374,6 +376,25 @@ contains
     call logger%debug('jacobian_block%add','Added field to a Jacobian block.')
 #endif
   end function jacobian_block_add_field
+
+  function jacobian_block_add_block(this, rhs) result(sum)
+    !* Author: Chris MacMackin 
+    !  Date: May 2017
+    !
+    ! Produces a Jacobian block which is the sum of two existing
+    ! blocks. Boundary conditions are set by the first operand
+    ! (`this`).
+    !
+    class(jacobian_block), intent(in)         :: this
+    class(jacobian_block), target, intent(in) :: rhs
+      !! A second block which should be added to this block
+    type(jacobian_block)                      :: sum
+    sum = this
+    sum%block_increment => rhs
+#ifdef DEBUG
+    call logger%debug('jacobian_block%add','Added field to a Jacobian block.')
+#endif
+  end function jacobian_block_add_block
 
   subroutine jacobian_block_assign(this, rhs)
     !* Author: Chris MacMackin 
@@ -404,10 +425,190 @@ contains
     if (allocated(rhs%boundary_locs)) this%boundary_locs = rhs%boundary_locs
     if (allocated(rhs%boundary_types)) this%boundary_types = rhs%boundary_types
     this%real_increment = rhs%real_increment
-    if(allocated(rhs%field_increment)) &
+    if (allocated(rhs%field_increment)) &
          allocate(this%field_increment, source=rhs%field_increment)
+    if (associated(rhs%block_increment)) this%block_increment => rhs%block_increment
     this%has_increment = rhs%has_increment
   end subroutine jacobian_block_assign
+
+  recursive subroutine jacobian_block_get_tridiag(this, diagonal, subdiagonal, &
+                                                  superdiagonal)
+    !* Author: Chris MacMackin
+    !  Date: May 2017
+    !
+    ! Computes the tridiagonal matrix used to solve for this Jacobian block.
+    !
+    class(jacobian_block), intent(in)                :: this
+    real(r8), dimension(:), allocatable, intent(out) :: diagonal
+    real(r8), dimension(:), allocatable, intent(out) :: subdiagonal
+    real(r8), dimension(:), allocatable, intent(out) :: superdiagonal
+
+    integer                                   :: n, i, pos
+    class(vector_field), pointer              :: grid
+    logical                                   :: use_cached
+    class(scalar_field), allocatable, save    :: cached_field_type
+    real(r8), dimension(:), allocatable, save :: cached_dx_c,   &
+                                                 cached_dx2_uc, &
+                                                 cached_dx2_ud, &
+                                                 cached_dx2_dc
+    real(r8), save                            :: cached_upper_bound, &
+                                                 cached_lower_bound
+    real(r8), dimension(:), allocatable       :: cont, deriv, diag, &
+                                                 subdiag, supdiag
+    real(r8), dimension(:,:), allocatable     :: domain
+
+    n = this%contents%raw_size()
+    domain = this%contents%domain()
+    ! Try to use cached copy of inverse grid spacing, if available and suitable 
+    if (allocated(cached_field_type)) then
+      use_cached = same_type_as(this%contents, cached_field_type) .and. &
+                   abs(domain(1,1) - cached_lower_bound) < 1e-10 .and.  &
+                   abs(domain(1,2) - cached_upper_bound) < 1e-10 .and.  &
+                   n==size(cached_dx_c)
+    else
+      use_cached = .false.
+    end if
+    ! Construct an array containing the distance between grid
+    ! points, if necessary
+    if (.not. use_cached) then
+      if (allocated(cached_field_type)) then   
+        deallocate(cached_field_type)
+        deallocate(cached_dx_c)
+        deallocate(cached_dx2_uc)
+        deallocate(cached_dx2_dc)
+        deallocate(cached_dx2_ud)
+      end if
+#ifdef DEBUG
+      call logger%debug('jacobian_block%get_tridiag','Calculating and caching '// &
+                       'grid spacings.')
+#endif
+      cached_lower_bound = domain(1,1)
+      cached_upper_bound = domain(1,2)
+      allocate(cached_field_type, mold=this%contents)
+      allocate(cached_dx_c(n))
+      allocate(cached_dx2_uc(n-1))
+      allocate(cached_dx2_dc(n-1))
+      allocate(cached_dx2_ud(n))
+      call this%contents%allocate_vector_field(grid)
+      grid = this%contents%grid_spacing()
+      ! Use this array to temporarily hold the grid spacings
+      cached_dx_c = grid%raw()
+      ! Work out the upwinded grid spacings
+      cached_dx2_uc(1) = cached_dx_c(1)
+      do i = 2, n-1
+        cached_dx2_uc(i) = 2*cached_dx_c(i) - cached_dx2_uc(i-1)
+      end do
+      ! Work out the inverse of the downwinded grid spacings
+      cached_dx2_dc(1:n-2) = 1._r8/cached_dx2_uc(1:n-2)
+      cached_dx2_dc(n-1) = 1._r8/cached_dx_c(n)
+      ! Work out the -2 times product of the inverse up- and
+      ! down-winded grid spacings
+      cached_dx2_ud(1) = cached_dx2_uc(1)**(-2)
+      cached_dx2_ud(2:n-1) = -2 * cached_dx2_dc(2:n-1)/cached_dx2_uc(1:n-2)
+      cached_dx2_ud(n) = cached_dx2_dc(n-1)**2
+      ! Work out the inverse of product of the up-winded and
+      ! centred grid spacings
+      cached_dx2_uc(1) = -cached_dx2_uc(1)**(-2)
+      cached_dx2_uc(2:n-1) = 1._r8/(cached_dx2_uc(2:n-1) * cached_dx_c(2:n-1))
+      ! Work out the inverse of the product of the down-winded and
+      ! centred grid spacings
+      cached_dx2_dc(1:n-2) = cached_dx2_dc(1:n-2) / cached_dx_c(2:n-1)
+      cached_dx2_dc(n-1) = -cached_dx2_dc(n-1)**2
+      ! Work out half the inverse of the grid spacing
+      cached_dx_c(2:n-1) = 0.5_r8/cached_dx_c(2:n-1)
+      cached_dx_c(1) = 1._r8/cached_dx_c(1)
+      cached_dx_c(n) = 1._r8/cached_dx_c(n)
+    end if
+    cont = this%contents%raw()
+    if (this%extra_derivative == no_extra_derivative) then
+      ! Create the tridiagonal matrix when there is no additional
+      ! differentiation operator on the RHS
+      diagonal = this%derivative%raw()
+      select case(this%has_increment)
+      case(0)
+        continue
+      case(1)
+        diagonal = diagonal + this%real_increment
+      case(2)
+        diagonal = diagonal + this%field_increment%raw()
+      case default
+        error stop ('Invalid increment has been added.')
+      end select
+      diagonal(1) = diagonal(1) - cont(1)*cached_dx_c(1)
+      diagonal(n) = diagonal(n) + cont(n)*cached_dx_c(n)
+      superdiagonal = cont(1:n-1) * cached_dx_c(1:n-1)
+      subdiagonal = -cont(2:n) * cached_dx_c(2:n)
+    else if (this%extra_derivative == this%direction) then
+      ! Create the tridiagonal matrix when the additional
+      ! differentiation operator on the RHS operates in the same
+      ! direction as the derivative of the contents.
+      deriv = this%derivative%raw()
+      allocate(diagonal(n))
+      diagonal(2:n-1) = cont(2:n-1) * cached_dx2_ud(2:n-1)
+      diagonal(1) = cont(1) * cached_dx2_ud(1) &
+                       - deriv(1) * cached_dx_c(1)
+      diagonal(n) = cont(n) * cached_dx2_ud(n) &
+                       + deriv(n) * cached_dx_c(n)
+      select case(this%has_increment)
+      case(0)
+        continue
+      case(1)
+        diagonal = diagonal + this%real_increment
+      case(2)
+        diagonal = diagonal + this%field_increment%raw()
+      case default
+        error stop ('Invalid increment has been added.')
+      end select
+      allocate(superdiagonal(n-1))
+      superdiagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &
+                           + deriv(2:n-1) * cached_dx_c(2:n-1)
+      superdiagonal(1) = -2 * cont(1) * cached_dx2_uc(1) &
+                       + deriv(1) * cached_dx_c(1)
+      allocate(subdiagonal(n-1))
+      subdiagonal(1:n-2) = cont(2:n-1) * cached_dx2_dc(1:n-2) &
+                         - deriv(2:n-1) * cached_dx_c(2:n-1)
+      subdiagonal(n-1) = -2 * cont(n) * cached_dx2_dc(n-1) &
+                       - deriv(n) * cached_dx_c(n)
+    else
+      call logger%fatal('jacobian_block%solve_for', 'Currently no support '// &
+                        'for extra derivatives other than in the 1-direction')
+      error stop
+    end if
+    if (associated(this%block_increment)) then
+      call this%block_increment%get_tridiag(diag, subdiag, supdiag)
+      diagonal = diagonal + diag
+      subdiagonal = subdiagonal + subdiag
+      superdiagonal = superdiagonal + supdiag
+    end if
+    ! Set the boundary conditions for this problem
+    do i = 1, size(this%boundary_locs)
+      pos = this%boundary_locs(i)
+      if (this%boundary_types(i) == dirichlet) then
+        diagonal(pos) = 1._r8
+        if (pos < n) superdiagonal(pos) = 0._r8
+        if (pos > 1) subdiagonal(pos-1) = 0._r8
+      else if (this%boundary_types(i) == neumann) then
+        if (pos == n) then
+          diagonal(n) = cached_dx_c(n)
+          subdiagonal(n-1) = -cached_dx_c(n)
+        else if (pos == 1) then
+          diagonal(1) = -cached_dx_c(1)
+          superdiagonal(1) = cached_dx_c(1)
+        else
+          superdiagonal(pos) = cached_dx_c(pos)
+          subdiagonal(pos-1) = cached_dx_c(pos)
+          diagonal(pos) = 0._r8
+        end if
+      else
+        call logger%fatal('jacobian_block%solve_for','Boundary condition of '// &
+                          'type other than Dirichlet or Neumann encountered.')
+        error stop
+      end if
+    end do
+#ifdef DEBUG
+    call logger%debug('jacobian_block%get_tridiag','Constructed tridiagonal matrix.')
+#endif
+  end subroutine jacobian_block_get_tridiag
 
   function jacobian_block_solve(this, rhs) result(solution)
     !* Author: Chris MacMackin
@@ -431,173 +632,22 @@ contains
     real(r8)                                  :: forward_err, &
                                                  backward_err, &
                                                  condition_num
+    real(r8), dimension(:), allocatable       :: diag, subdiag, supdiag
     character(len=1)                          :: factor
     character(len=:), allocatable             :: msg
-    class(vector_field), pointer              :: grid
-    logical                                   :: use_cached
-    class(scalar_field), allocatable, save    :: cached_field_type
-    real(r8), dimension(:), allocatable, save :: cached_dx_c,   &
-                                                 cached_dx2_uc, &
-                                                 cached_dx2_ud, &
-                                                 cached_dx2_dc
-    real(r8), save                            :: cached_upper_bound, &
-                                                 cached_lower_bound
-    real(r8), dimension(:), allocatable       :: cont, deriv
-    real(r8), dimension(:,:), allocatable     :: domain
-    integer                                   :: i, pos
 
     call rhs%guard_temp()
     allocate(sol_vector(rhs%raw_size()))
     ! Construct tridiagonal matrix for this operation, if necessary
     if (.not. allocated(this%pivots)) then
-#ifdef DEBUG
-      call logger%debug('jacobian_block%solve_for','Constructing tridiagonal matrix.')
-#endif
       factor = 'N'
-      n = this%contents%raw_size()
-      domain = this%contents%domain()
-      ! Try to use cached copy of inverse grid spacing, if available and suitable 
-      if (allocated(cached_field_type)) then
-        use_cached = same_type_as(this%contents, cached_field_type) .and. &
-                     abs(domain(1,1) - cached_lower_bound) < 1e-10 .and.  &
-                     abs(domain(1,2) - cached_upper_bound) < 1e-10 .and.  &
-                     n==size(cached_dx_c)
-      else
-        use_cached = .false.
-      end if
-      ! Construct an array containing the distance between grid
-      ! points, if necessary
-      if (.not. use_cached) then
-        if (allocated(cached_field_type)) then   
-          deallocate(cached_field_type)
-          deallocate(cached_dx_c)
-          deallocate(cached_dx2_uc)
-          deallocate(cached_dx2_dc)
-          deallocate(cached_dx2_ud)
-        end if
-#ifdef DEBUG
-        call logger%debug('jacobian_block%solve_for','Calculating and caching '// &
-                         'grid spacings.')
-#endif
-        cached_lower_bound = domain(1,1)
-        cached_upper_bound = domain(1,2)
-        allocate(cached_field_type, mold=this%contents)
-        allocate(cached_dx_c(n))
-        allocate(cached_dx2_uc(n-1))
-        allocate(cached_dx2_dc(n-1))
-        allocate(cached_dx2_ud(n))
-        call this%contents%allocate_vector_field(grid)
-        grid = this%contents%grid_spacing()
-        ! Use this array to temporarily hold the grid spacings
-        cached_dx_c = grid%raw()
-        ! Work out the upwinded grid spacings
-        cached_dx2_uc(1) = cached_dx_c(1)
-        do i = 2, n-1
-          cached_dx2_uc(i) = 2*cached_dx_c(i) - cached_dx2_uc(i-1)
-        end do
-        ! Work out the inverse of the downwinded grid spacings
-        cached_dx2_dc(1:n-2) = 1._r8/cached_dx2_uc(1:n-2)
-        cached_dx2_dc(n-1) = 1._r8/cached_dx_c(n)
-        ! Work out the -2 times product of the inverse up- and
-        ! down-winded grid spacings
-        cached_dx2_ud(1) = cached_dx2_uc(1)**(-2)
-        cached_dx2_ud(2:n-1) = -2 * cached_dx2_dc(2:n-1)/cached_dx2_uc(1:n-2)
-        cached_dx2_ud(n) = cached_dx2_dc(n-1)**2
-        ! Work out the inverse of product of the up-winded and
-        ! centred grid spacings
-        cached_dx2_uc(1) = -cached_dx2_uc(1)**(-2)
-        cached_dx2_uc(2:n-1) = 1._r8/(cached_dx2_uc(2:n-1) * cached_dx_c(2:n-1))
-        ! Work out the inverse of the product of the down-winded and
-        ! centred grid spacings
-        cached_dx2_dc(1:n-2) = cached_dx2_dc(1:n-2) / cached_dx_c(2:n-1)
-        cached_dx2_dc(n-1) = -cached_dx2_dc(n-1)**2
-        ! Work out half the inverse of the grid spacing
-        cached_dx_c(2:n-1) = 0.5_r8/cached_dx_c(2:n-1)
-        cached_dx_c(1) = 1._r8/cached_dx_c(1)
-        cached_dx_c(n) = 1._r8/cached_dx_c(n)
-      end if
-      cont = this%contents%raw()
-      if (this%extra_derivative == no_extra_derivative) then
-        ! Create the tridiagonal matrix when there is no additional
-        ! differentiation operator on the RHS
-        this%diagonal = this%derivative%raw()
-        select case(this%has_increment)
-        case(0)
-          continue
-        case(1)
-          this%diagonal = this%diagonal + this%real_increment
-        case(2)
-          this%diagonal = this%diagonal + this%field_increment%raw()
-        case default
-          error stop ('Invalid increment has been added.')
-        end select
-        this%diagonal(1) = this%diagonal(1) - cont(1)*cached_dx_c(1)
-        this%diagonal(n) = this%diagonal(n) + cont(n)*cached_dx_c(n)
-        this%super_diagonal = cont(1:n-1) * cached_dx_c(1:n-1)
-        this%sub_diagonal = -cont(2:n) * cached_dx_c(2:n)
-      else if (this%extra_derivative == this%direction) then
-        ! Create the tridiagonal matrix when the additional
-        ! differentiation operator on the RHS operates in the same
-        ! direction as the derivative of the contents.
-        deriv = this%derivative%raw()
-        allocate(this%diagonal(n))
-        this%diagonal(2:n-1) = cont(2:n-1) * cached_dx2_ud(2:n-1)
-        this%diagonal(1) = cont(1) * cached_dx2_ud(1) &
-                         - deriv(1) * cached_dx_c(1)
-        this%diagonal(n) = cont(n) * cached_dx2_ud(n) &
-                         + deriv(n) * cached_dx_c(n)
-        select case(this%has_increment)
-        case(0)
-          continue
-        case(1)
-          this%diagonal = this%diagonal + this%real_increment
-        case(2)
-          this%diagonal = this%diagonal + this%field_increment%raw()
-        case default
-          error stop ('Invalid increment has been added.')
-        end select
-        allocate(this%super_diagonal(n-1))
-        this%super_diagonal(2:n-1) = cont(2:n-1) * cached_dx2_uc(2:n-1) &
-                                   + deriv(2:n-1) * cached_dx_c(2:n-1)
-        this%super_diagonal(1) = -2 * cont(1) * cached_dx2_uc(1) &
-                               + deriv(1) * cached_dx_c(1)
-        allocate(this%sub_diagonal(n-1))
-        this%sub_diagonal(1:n-2) = cont(2:n-1) * cached_dx2_dc(1:n-2) &
-                                 - deriv(2:n-1) * cached_dx_c(2:n-1)
-        this%sub_diagonal(n-1) = -2 * cont(n) * cached_dx2_dc(n-1) &
-                               - deriv(n) * cached_dx_c(n)
-      else
-        call logger%fatal('jacobian_block%solve_for', 'Currently no support '// &
-                          'for extra derivatives other than in the 1-direction')
-        error stop
-      end if
-      ! Set the boundary conditions for this problem
-      do i = 1, size(this%boundary_locs)
-        pos = this%boundary_locs(i)
-        if (this%boundary_types(i) == dirichlet) then
-          this%diagonal(pos) = 1._r8
-          if (pos < n) this%super_diagonal(pos) = 0._r8
-          if (pos > 1) this%sub_diagonal(pos-1) = 0._r8
-        else if (this%boundary_types(i) == neumann) then
-          if (pos == n) then
-            this%diagonal(n) = cached_dx_c(n)
-            this%sub_diagonal(n-1) = -cached_dx_c(n)
-          else if (pos == 1) then
-            this%diagonal(1) = -cached_dx_c(1)
-            this%super_diagonal(1) = cached_dx_c(1)
-          else
-            this%super_diagonal(pos) = cached_dx_c(pos)
-            this%sub_diagonal(pos-1) = cached_dx_c(pos)
-            this%diagonal(pos) = 0._r8
-          end if
-        else
-          call logger%fatal('jacobian_block%solve_for','Boundary condition of '// &
-                            'type other than Dirichlet or Neumann encountered.')
-          error stop
-        end if
-      end do
       ! Allocate the arrays used to hold the factorisation of the
       ! tridiagonal matrix
+      call this%get_tridiag(diag, subdiag, supdiag)
+      call move_alloc(diag, this%diagonal)
+      call move_alloc(subdiag, this%sub_diagonal)
+      call move_alloc(supdiag, this%super_diagonal)
+      n = this%contents%raw_size()
       allocate(this%l_multipliers(n-1))
       allocate(this%u_diagonal(n))
       allocate(this%u_superdiagonal1(n-1))
