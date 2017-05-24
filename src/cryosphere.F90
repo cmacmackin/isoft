@@ -207,7 +207,7 @@ contains
       !! The time to which to integrate the cryosphere
     class(glacier), dimension(:), allocatable :: old_glaciers
     logical :: success
-    real(r8) :: t, old_t
+    real(r8) :: t, old_t, dt
 
     if (time <= this%time) then
       call logger%warning('cryosphere%integrate','Request made to '// &
@@ -250,7 +250,14 @@ contains
           call logger%warning('cryosphere%integrate','Failure in nonlinear '// &
                               'solver. Reducing time step and trying again.')
           call this%reduce_time_step()
-          t = min(old_t + this%time_step(), time, 0.5_r8*(time + old_t))
+          dt = this%time_step()
+          if (dt < 0.5_r8*(time - old_t)) then
+            t = old_t + dt
+          else if (old_t + dt > time) then
+            t = time
+          else
+            t = 0.5_r8*(time + old_t)
+          end if
           cycle
         else
           call logger%fatal('cryosphere%integrate','Failed to integrate '//  &
@@ -294,7 +301,14 @@ contains
       call this%increase_time_step()
       if (t >= time) exit
       old_t = t
-      t = min(t + this%time_step(), time, 0.5_r8*(time + t))
+      dt = this%time_step()
+      if (dt < 0.5_r8*(time - t)) then
+        t = t + dt
+      else if (t + dt > time) then
+        t = time
+      else
+        t = 0.5_r8*(time + t)
+      end if
       this%time = t
     end do
 
