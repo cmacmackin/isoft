@@ -238,7 +238,7 @@ contains
     allocate(old_glaciers(1), mold=this%ice)
 
     old_t = this%time
-    t = min(this%time + this%time_step(), time)
+    t = min(this%time + this%time_step(), time, 0.5_r8*(this%time + time))
     do while (t <= time)
       old_glaciers(1) = this%ice
       call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
@@ -250,7 +250,7 @@ contains
           call logger%warning('cryosphere%integrate','Failure in nonlinear '// &
                               'solver. Reducing time step and trying again.')
           call this%reduce_time_step()
-          t = min(old_t + this%time_step(), time) ! Not quite right...
+          t = min(old_t + this%time_step(), time, 0.5_r8*(time + old_t))
           cycle
         else
           call logger%fatal('cryosphere%integrate','Failed to integrate '//  &
@@ -258,7 +258,7 @@ contains
                             'cryosphere state to file "'//hdf_crash_file//'".')
           call this%write_data(hdf_crash_file)
           iplvl = 2
-          t = min(old_t + this%ice%time_step(), time)
+          t = min(old_t + this%ice%time_step(), time, 0.5_r8*(time + old_t))
           call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                                   this%sub_ice%basal_drag_parameter(),     &
                                   this%sub_ice%water_density(), t, success)
@@ -294,7 +294,7 @@ contains
       call this%increase_time_step()
       if (t >= time) exit
       old_t = t
-      t = min(t + this%time_step(), time)
+      t = min(t + this%time_step(), time, 0.5_r8*(time + t))
       this%time = t
     end do
 

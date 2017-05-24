@@ -296,11 +296,11 @@ contains
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
-    ! Integrates the glacier's state forward in time by one time
-    ! step. This is done using the NITSOL package of iterative Krylov
-    ! solvers. If a different algorithm for the integration is
-    ! desired, then this method may be overridden in the concrete
-    ! implementations of the glacier type.
+    ! Integrates the glacier's state to `time`. This is done using the
+    ! NITSOL package of iterative Krylov solvers. If a different
+    ! algorithm for the integration is desired, then this method may
+    ! be overridden in the concrete implementations of the glacier
+    ! type.
     !
     class(glacier), intent(inout)            :: this
     class(glacier), dimension(:), intent(in) :: old_states
@@ -333,7 +333,7 @@ contains
     first_call = .true.
     nval = this%data_size()
     if (allocated(work)) then
-      if (size(work) /= nval*(kdmax+5) + kdmax*(kdmax+3)) then
+      if (size(work) < nval*(kdmax+5) + kdmax*(kdmax+3)) then
         deallocate(work)
         allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
       end if

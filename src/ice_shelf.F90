@@ -44,6 +44,7 @@ module ice_shelf_mod
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
   use jacobian_block_mod, only: jacobian_block
   use preconditioner_mod, only: preconditioner
+  use nitsol_mod
   use hdf5
   use h5lt
   use logger_mod, only: logger => master_logger
@@ -55,6 +56,7 @@ module ice_shelf_mod
   character(len=9), parameter, public :: hdf_thickness = 'thickness'
   character(len=8), parameter, public :: hdf_velocity = 'velocity'
   character(len=6), parameter, public :: hdf_lambda = 'lambda'
+  character(len=4), parameter, public :: hdf_zeta = 'zeta'
   character(len=3), parameter, public :: hdf_chi = 'chi'
 
   type, extends(glacier), public :: ice_shelf
@@ -73,8 +75,13 @@ module ice_shelf_mod
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
     real(r8)                  :: chi
-      !! The dimensionless ratio
-      !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
+      !! The dimensionless ratio $\chi \equiv
+      !! \frac{\rho_igh_0x_0}{2\eta_0u_0} \left(1 -
+      !! \frac{\rho_i}{\rho_o}\right)$
+    real(r8)                  :: zeta
+      !! The dimensionless ratio $\zeta \equiv
+      !! \frac{\rho_iu_0x_0}{\eta_0}$, corresponding to the Reynolds
+      !! number
     real(r8)                  :: courant
       !! The Courant number to use when calculating the time step.
     class(abstract_viscosity), allocatable :: viscosity_law
@@ -127,6 +134,8 @@ module ice_shelf_mod
     procedure :: read_data => shelf_read_data
     procedure :: write_data => shelf_write_data
     procedure :: time_step => shelf_time_step
+    procedure :: solve_velocity => shelf_solve_velocity
+!    procedure :: integrate => shelf_integrate
     procedure, private :: assign => shelf_assign
   end type ice_shelf
 
@@ -138,7 +147,7 @@ contains
   
   subroutine shelf_initialise(this, domain, resolution, thickness, velocity, &
                               temperature, viscosity_law, boundaries,  &
-                              lambda, chi, courant)
+                              lambda, chi, zeta, courant)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -174,11 +183,15 @@ contains
       !! shelf. Will be unallocated on return.
     real(r8), intent(in), optional       :: lambda
       !! The dimensionless ratio 
-      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH_0u_0}$.
+      !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_ih_0u_0}$.
     real(r8), intent(in), optional       :: chi
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}\left(1 -
       !! \frac{\rho_i}{\rho_0}\right)$.
+    real(r8), intent(in), optional       :: zeta
+      !! The dimensionless ratio $\zeta \equiv
+      !! \frac{\rho_iu_0x_0}{\eta_0}$, corresponding to the Reynolds
+      !! number
     real(r8), intent(in), optional       :: courant
       !! The Courant number to use when calculating the time
       !! step. Defaults to 100. Too large a value will pose
@@ -221,6 +234,12 @@ contains
       this%chi = chi
     else
       this%chi = 4.0_r8
+    end if
+
+    if (present(zeta)) then
+      this%zeta = zeta
+    else
+      this%zeta = 1.3e-11_r8
     end if
 
     if (present(courant)) then
@@ -381,7 +400,8 @@ contains
       call u_old%guard_temp()
       associate(h => this%thickness, h_old => previous_states(1)%thickness,   &
                 uvec => this%velocity, m => melt_rate, lambda => this%lambda, &
-                chi => this%chi, t_old => previous_states(1)%time)
+                chi => this%chi, zeta => this%zeta,                           &
+                t_old => previous_states(1)%time)
         ! Boundary conditions
         bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
 
@@ -409,8 +429,9 @@ contains
 
         ! Momentum equation, x-component
         scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
-        scalar_tmp = (h*u - h_old*u_old)/(this%time - t_old) + .div. (h*uvec*u) &
-                     - scalar_tmp%d_dx(1) + 2.0_r8*chi*h*h%d_dx(1)
+        scalar_tmp = zeta*((h*u - h_old*u_old)/(this%time - t_old) + &
+                     .div. (h*uvec*u)) - scalar_tmp%d_dx(1) +        &
+                     2.0_r8*chi*h*h%d_dx(1)
 
         lower = this%boundaries%velocity_lower_bound()
         upper = this%boundaries%velocity_upper_bound()
@@ -533,7 +554,7 @@ contains
     vector(2) = delta_shelf%velocity%component(1)
     u = this%velocity%component(1)
 
-    associate(h => this%thickness, chi => this%chi)
+    associate(h => this%thickness, chi => this%chi, zeta => this%zeta)
       if (this%jacobian_time < this%time) then
         sl = this%thickness_size - this%thickness_lower_bound_size + 1
         el = this%thickness_size
@@ -558,16 +579,16 @@ contains
         lower_type = this%boundaries%velocity_lower_type()
         boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
 
-        this%jacobian(2,1) = jacobian_block(u**2 - 4._r8*eta*u%d_dx(1) + 2._r8*chi*h, 1,    &
-                                            boundary_locs=boundary_locations,        &
-                                            boundary_operations=jacobian_bounds_2_1) &
-                                            + u/delta_t
+        this%jacobian(2,1) = jacobian_block(zeta*u**2 - 4._r8*eta*u%d_dx(1) + 2._r8*chi*h, &
+                                            1, boundary_locs=boundary_locations,           &
+                                            boundary_operations=jacobian_bounds_2_1)       &
+                                            + (zeta/delta_t)*u
         if (.not. associated(this%tmp_block)) allocate(this%tmp_block)
-        this%tmp_block = jacobian_block(2._r8*h*u, 1)
+        this%tmp_block = jacobian_block(2._r8*zeta*h*u, 1)
         this%jacobian(2,2) = jacobian_block(-4._r8*eta*h, 1, 1,                &
                                             boundary_locs=boundary_locations, &
                                             boundary_types=boundary_types)    &
-                                            + h/delta_t + this%tmp_block
+                                            + (zeta/delta_t)*h + this%tmp_block
         this%jacobian_time = this%time
       end if
 
@@ -731,6 +752,9 @@ contains
     call h5ltget_attribute_double_f(file_id, group_name, hdf_chi, &
                                     param, error)
     this%chi = param(1)
+    call h5ltget_attribute_double_f(file_id, group_name, hdf_zeta, &
+                                    param, error)
+    this%zeta = param(1)
     if (error /= 0) then
       call logger%warning('ice_shelf%read_data','Error code '//  &
                           trim(str(error))//' returned when '//  &
@@ -809,6 +833,8 @@ contains
                                     [this%lambda], 1_size_t, error)
     call h5ltset_attribute_double_f(file_id, group_name, hdf_chi, &
                                     [this%chi], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_zeta, &
+                                    [this%zeta], 1_size_t, error)
     if (error /= 0) then
       call logger%warning('ice_shelf%write_data','Error code '// &
                           trim(str(error))//' returned when '//  &
@@ -869,6 +895,228 @@ contains
   end function shelf_time_step
 
 
+  subroutine shelf_solve_velocity(this, basal_drag, success)
+    !* Author: Chris MacMackin
+    !  Date: May 2017
+    !
+    ! Computes the ice shelf velocity at the current time with the
+    ! current ice thickness.
+    !
+    class(ice_shelf), intent(inout)          :: this
+    class(scalar_field), intent(in)          :: basal_drag
+      !! A paramter, e.g. coefficient of friction, needed to calculate
+      !! the drag on basal surface of the glacier.
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+    
+    integer, save                             :: nval, kdmax = 20
+    real(r8), dimension(:), allocatable       :: state
+    integer, dimension(10)                    :: input
+    integer, dimension(6)                     :: info
+    real(r8), dimension(:), allocatable, save :: work
+    real(r8), dimension(1)                    :: real_param
+    integer, dimension(1)                     :: int_param
+    integer                                   :: flag
+ 
+    call basal_drag%guard_temp()
+    nval = this%data_size()
+    if (allocated(work)) then
+      if (size(work) < nval*(kdmax+5) + kdmax*(kdmax+3)) then
+        deallocate(work)
+        allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
+      end if
+    else
+      allocate(work(nval*(kdmax+5) + kdmax*(kdmax+3)))
+    end if
+
+    input = 0
+    input(4) = kdmax
+    input(5) = 1
+    input(9) = -1
+    input(10) = 3
+    state = this%velocity%raw()
+    call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
+                1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
+                int_param, flag, ddot, dnrm2)
+    print*,flag
+    call this%velocity%set_from_raw(state)
+
+    select case(flag)
+    case(0)
+      call logger%trivia('ice_shelf%solve_velocity','Found ice velocity at time '// &
+                         trim(str(this%time)))
+      success = .true.
+    case(1)
+      call logger%error('ice_shelf%solve_velocity','Reached maximum number of'// &
+                        ' iterations finding ice velocity')
+      success = .false.
+    case default
+      call logger%error('ice_shelf%solve_velocity','NITSOL failed when finding'// &
+                        ' ice velocity with error code '//trim(str(flag)))
+      success = .false.
+    end select
+    
+    !call basal_drag%clean_temp()
+
+  contains
+    
+    subroutine nitsol_residual(n, xcur, fcur, rpar, ipar, itrmf)
+      !! A routine matching the interface expected by NITSOL which
+      !! returns the residual for the glacier.
+      integer, intent(in)                   :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(out)   :: fcur
+        !! Array of length `n` containing f(xcur) on output
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      integer, intent(out)                  :: itrmf
+        !! Termination flag. 0 means normal termination, 1 means
+        !! failure to produce f(xcur)
+
+      class(scalar_field), pointer :: eta
+      type(cheb1d_scalar_field) :: scalar_tmp
+      integer :: start, finish, bounds_start, bounds_finish
+      integer, dimension(:), allocatable :: lower, upper
+      real(r8), dimension(:), allocatable :: bounds
+
+      call this%velocity%set_from_raw(xcur)
+
+      associate(h => this%thickness, uvec => this%velocity, chi => this%chi, &
+                zeta => this%zeta)
+        eta => this%viscosity_law%ice_viscosity(uvec, this%ice_temperature(), this%time)
+        call eta%guard_temp()
+        bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
+
+        scalar_tmp = 4.0_r8*eta*h*.div. uvec
+        scalar_tmp = 2.0_r8*chi*h*h%d_dx(1) - scalar_tmp%d_dx(1)
+
+        lower = this%boundaries%velocity_lower_bound()
+        upper = this%boundaries%velocity_upper_bound()
+        ! TODO: Figure out how to make this independent of order which
+        ! values are stored in the field
+        start = 1
+        finish = start + this%velocity_upper_bound_size - 1
+        bounds_start = this%thickness_lower_bound_size &
+                     + this%thickness_upper_bound_size &
+                     + this%velocity_lower_bound_size + 1
+        bounds_finish = bounds_start + this%velocity_upper_bound_size - 1
+        fcur(start:finish) = bounds(bounds_start:bounds_finish)
+        start = finish + 1
+        finish = start + scalar_tmp%raw_size(lower,upper) - 1
+        fcur(start:finish) = scalar_tmp%raw(lower,upper)
+        start = finish + 1
+        finish = start + this%velocity_lower_bound_size - 1
+        bounds_start = this%thickness_lower_bound_size &
+                     + this%thickness_upper_bound_size + 1
+        bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
+        fcur(start:finish) = bounds(bounds_start:bounds_finish)
+      end associate
+      call eta%clean_temp()
+      itrmf = 0
+    end subroutine nitsol_residual
+
+    subroutine nitsol_precondition(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! A subroutine matching the interface expected by NITSOL, which
+      !! acts as a preconditioner.
+      integer, intent(in)                   :: n
+        ! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        ! Array of lenght `n` containing the current $x$ value
+      real(r8), dimension(n), intent(in)    :: fcur
+        ! Array of lenght `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        ! Integer flat indicating which product is desired. 0
+        ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(n), intent(in)    :: v
+        ! An array of length `n` to be multiplied
+      real(r8), dimension(n), intent(out)   :: z
+        ! An array of length n containing the desired product on
+        ! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        ! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        ! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        ! Termination flag. 0 indcates normal termination, 1
+        ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
+        ! failure to produce \(P^{-1}\vec{v}\)
+
+      type(jacobian_block) :: jacobian
+      class(scalar_field), pointer :: eta
+      type(cheb1d_scalar_field) :: delta_u
+      integer :: i, sl, el, su, eu
+      integer, dimension(2) :: upper_type, lower_type
+      integer, dimension(:), allocatable :: boundary_types, boundary_locations
+
+      if (ijob /= 1) then
+        itrmjv = 0
+        return
+      end if
+
+      call delta_u%assign_meta_data(this%velocity)
+      call delta_u%set_from_raw(v)
+      eta => this%viscosity_law%ice_viscosity(this%velocity, this%ice_temperature(), &
+                                             this%time)
+      call eta%guard_temp()
+      sl = this%velocity_size - this%velocity_lower_bound_size + 1
+      el = this%velocity_size
+      su = 1
+      eu = this%velocity_upper_bound_size
+      boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
+      upper_type = this%boundaries%velocity_upper_type()
+      lower_type = this%boundaries%velocity_lower_type()
+      boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
+      associate(h => this%thickness, chi => this%chi, zeta => this%zeta)
+        jacobian = jacobian_block(-4._r8*eta*h, 1, 1,               &
+                                  boundary_locs=boundary_locations, &
+                                  boundary_types=boundary_types)
+        delta_u = jacobian%solve_for(delta_u)
+        z(1:n) = delta_u%raw()
+      end associate
+      call eta%clean_temp()
+      itrmjv = 0
+    end subroutine nitsol_precondition
+
+  end subroutine shelf_solve_velocity
+
+
+  subroutine shelf_integrate(this, old_states, basal_melt, basal_drag, &
+                             water_density, time, success)
+    !* Author: Chris MacMackin
+    !  Date: May 2017
+    !
+    ! Integrates the glacier's state forward to `time`. This is done
+    ! using an explicit method for the thickness and a Newton's solver
+    ! for velocity.
+    !
+    class(ice_shelf), intent(inout)          :: this
+    class(glacier), dimension(:), intent(in) :: old_states
+      !! Previous states of the glacier, with the most recent one
+      !! first.
+    class(scalar_field), intent(in)          :: basal_melt
+      !! The melt rate that the bottom of the glacier experiences
+      !! during this time step.
+    class(scalar_field), intent(in)          :: basal_drag
+      !! A paramter, e.g. coefficient of friction, needed to calculate
+      !! the drag on basal surface of the glacier.
+    real(r8), intent(in)                     :: water_density
+      !! The density of the water below the glacier.
+    real(r8), intent(in)                     :: time
+      !! The time to which the glacier should be integrated
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+    
+    associate(h => this%thickness, uvec => this%velocity, m => basal_melt, &
+              lambda => this%lambda, chi => this%chi, zeta => this%zeta,   &
+              t_old => this%time)
+      this%thickness = this%thickness - (time - t_old)*(lambda*m + .div.(h*uvec))
+    end associate
+  end subroutine shelf_integrate
+
   subroutine shelf_assign(this, rhs)
     !* Author: Chris MacMackin
     !  Date: February 2017
@@ -891,6 +1139,7 @@ contains
       this%velocity = rhs%velocity
       this%lambda = rhs%lambda
       this%chi = rhs%chi
+      this%zeta = rhs%zeta
       this%courant = rhs%courant
       allocate(this%viscosity_law, source=rhs%viscosity_law)
       allocate(this%boundaries, source=rhs%boundaries)
