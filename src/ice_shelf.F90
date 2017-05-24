@@ -919,7 +919,7 @@ contains
     integer                                   :: flag
  
     call basal_drag%guard_temp()
-    nval = this%data_size()
+    nval = this%velocity%raw_size()
     if (allocated(work)) then
       if (size(work) < nval*(kdmax+5) + kdmax*(kdmax+3)) then
         deallocate(work)
@@ -936,9 +936,8 @@ contains
     input(10) = 3
     state = this%velocity%raw()
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
-                1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
+                1.e-10_r8, 1.e-10_r8, input, info, work, real_param, &
                 int_param, flag, ddot, dnrm2)
-    print*,flag
     call this%velocity%set_from_raw(state)
 
     select case(flag)
@@ -984,7 +983,7 @@ contains
       real(r8), dimension(:), allocatable :: bounds
 
       call this%velocity%set_from_raw(xcur)
-
+      fcur = -1._r8
       associate(h => this%thickness, uvec => this%velocity, chi => this%chi, &
                 zeta => this%zeta)
         eta => this%viscosity_law%ice_viscosity(uvec, this%ice_temperature(), this%time)
