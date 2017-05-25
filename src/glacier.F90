@@ -353,8 +353,8 @@ contains
     call logger%debug('glacier%integrate','Calling NITSOL (nonlinear solver)')
 #endif
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
-                1.e-7_r8, 1.e-7_r8, input, info, work, real_param, &
-                int_param, flag, ddot, dnrm2)
+                1.e-10_r8*nval, 1.e-10_r8*nval, input, info, work, &
+                real_param, int_param, flag, ddot, dnrm2)
     call this%update(state)
 !!$    if (flag == 6 .and. input(9) > -1) then
 !!$      input(9) = -1

@@ -936,8 +936,8 @@ contains
     input(10) = 3
     state = this%velocity%raw()
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
-                1.e-10_r8, 1.e-10_r8, input, info, work, real_param, &
-                int_param, flag, ddot, dnrm2)
+                1.e-10_r8*nval, 1.e-10_r8*nval, input, info, work, &
+                real_param, int_param, flag, ddot, dnrm2)
     call this%velocity%set_from_raw(state)
 
     select case(flag)
@@ -990,8 +990,9 @@ contains
         call eta%guard_temp()
         bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
 
-        scalar_tmp = 4.0_r8*eta*h*.div. uvec
-        scalar_tmp = 2.0_r8*chi*h*h%d_dx(1) - scalar_tmp%d_dx(1)
+        scalar_tmp = uvec%component(1)
+        scalar_tmp = 4.0_r8*eta*h*scalar_tmp%d_dx(1)
+        scalar_tmp = -2.0_r8*chi*h*h%d_dx(1) + scalar_tmp%d_dx(1)
 
         lower = this%boundaries%velocity_lower_bound()
         upper = this%boundaries%velocity_upper_bound()
@@ -1070,7 +1071,7 @@ contains
       lower_type = this%boundaries%velocity_lower_type()
       boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
       associate(h => this%thickness, chi => this%chi, zeta => this%zeta)
-        jacobian = jacobian_block(-4._r8*eta*h, 1, 1,               &
+        jacobian = jacobian_block(4._r8*eta*h, 1, 1,               &
                                   boundary_locs=boundary_locations, &
                                   boundary_types=boundary_types)
         delta_u = jacobian%solve_for(delta_u)
