@@ -86,6 +86,7 @@ module ice_sheet_mod
     procedure :: set_time => sheet_set_time
     procedure :: data_size => sheet_data_size
     procedure :: state_vector => sheet_state_vector
+    procedure :: solve_velocity => sheet_solve_velocity
     procedure :: read_data => sheet_read_data
     procedure :: write_data => sheet_write_data
     procedure :: time_step => sheet_time_step
@@ -412,6 +413,7 @@ contains
       !! The number of elements in the ice sheet's state vector.
   end function sheet_data_size
 
+
   pure function sheet_state_vector(this) result(state_vector) 
     !* Author: Christopher MacMackin
     !  Date: April 2016
@@ -423,6 +425,23 @@ contains
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice sheet.
   end function sheet_state_vector
+
+
+  subroutine sheet_solve_velocity(this, basal_drag, success)
+    !* Author: Chris MacMackin
+    !  Date: May 2017
+    !
+    ! Computes the ice sheet velocity at the current time with the
+    ! current ice thickness.
+    !
+    class(ice_sheet), intent(inout)          :: this
+    class(scalar_field), intent(in)          :: basal_drag
+      !! A paramter, e.g. coefficient of friction, needed to calculate
+      !! the drag on basal surface of the glacier.
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+  end subroutine sheet_solve_velocity
+
 
   subroutine sheet_read_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
@@ -443,6 +462,7 @@ contains
       !! Flag indicating whether routine ran without error. If no
       !! error occurs then has value 0.
   end subroutine sheet_read_data
+
 
   subroutine sheet_write_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin

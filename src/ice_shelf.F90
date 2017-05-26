@@ -303,7 +303,6 @@ contains
     class(vector_field), pointer :: velocity !! The ice velocity.
     call this%velocity%allocate_vector_field(velocity)
     velocity = this%velocity
-    call velocity%set_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%velocity','Returned ice shelf velocity')
 #endif
@@ -380,6 +379,7 @@ contains
     integer :: start, finish, bounds_start, bounds_finish
     integer, dimension(:), allocatable :: lower, upper
     real(r8), dimension(:), allocatable :: bounds
+    logical :: success
 
     call melt_rate%guard_temp(); call basal_drag_parameter%guard_temp()
     allocate(residual(this%data_size()))
@@ -387,8 +387,8 @@ contains
 
     eta => this%viscosity_law%ice_viscosity(this%velocity, &
                          this%ice_temperature(), this%time)
-    u => this%velocity%component(1)
-    call eta%guard_temp(); call u%guard_temp()
+!    u => this%velocity%component(1)
+    call eta%guard_temp()!; call u%guard_temp()
 
     ! Use same or similar notation for variables as in equations
     select type(previous_states)
@@ -396,8 +396,8 @@ contains
       ! TODO: Either move the function results over to proper
       ! assignment or figure out some way to have temporary results in
       ! associate constructs.
-      u_old => previous_states(1)%velocity%component(1)
-      call u_old%guard_temp()
+!      u_old => previous_states(1)%velocity%component(1)
+!      call u_old%guard_temp()
       associate(h => this%thickness, h_old => previous_states(1)%thickness,   &
                 uvec => this%velocity, m => melt_rate, lambda => this%lambda, &
                 chi => this%chi, zeta => this%zeta,                           &
@@ -428,30 +428,30 @@ contains
         start = finish + 1
 
         ! Momentum equation, x-component
-        scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
-        scalar_tmp = zeta*((h*u - h_old*u_old)/(this%time - t_old) + &
-                     .div. (h*uvec*u)) - scalar_tmp%d_dx(1) +        &
-                     2.0_r8*chi*h*h%d_dx(1)
-
-        lower = this%boundaries%velocity_lower_bound()
-        upper = this%boundaries%velocity_upper_bound()
-        ! TODO: Figure out how to make this independent of order which
-        ! values are stored in the field
-        finish = start + this%velocity_upper_bound_size - 1
-        bounds_start = this%thickness_lower_bound_size &
-                     + this%thickness_upper_bound_size &
-                     + this%velocity_lower_bound_size + 1
-        bounds_finish = bounds_start + this%velocity_upper_bound_size - 1
-        residual(start:finish) = bounds(bounds_start:bounds_finish)
-        start = finish + 1
-        finish = start + scalar_tmp%raw_size(lower,upper) - 1
-        residual(start:finish) = scalar_tmp%raw(lower,upper)
-        start = finish + 1
-        finish = start + this%velocity_lower_bound_size - 1
-        bounds_start = this%thickness_lower_bound_size &
-                     + this%thickness_upper_bound_size + 1
-        bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
-        residual(start:finish) = bounds(bounds_start:bounds_finish)
+!        scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
+!        scalar_tmp = zeta*((h*u - h_old*u_old)/(this%time - t_old) + &
+!                     .div. (h*uvec*u)) - scalar_tmp%d_dx(1) +        &
+!                     2.0_r8*chi*h*h%d_dx(1)
+!
+!        lower = this%boundaries%velocity_lower_bound()
+!        upper = this%boundaries%velocity_upper_bound()
+!        ! TODO: Figure out how to make this independent of order which
+!        ! values are stored in the field
+!        finish = start + this%velocity_upper_bound_size - 1
+!        bounds_start = this%thickness_lower_bound_size &
+!                     + this%thickness_upper_bound_size &
+!                     + this%velocity_lower_bound_size + 1
+!        bounds_finish = bounds_start + this%velocity_upper_bound_size - 1
+!        residual(start:finish) = bounds(bounds_start:bounds_finish)
+!        start = finish + 1
+!        finish = start + scalar_tmp%raw_size(lower,upper) - 1
+!        residual(start:finish) = scalar_tmp%raw(lower,upper)
+!        start = finish + 1
+!        finish = start + this%velocity_lower_bound_size - 1
+!        bounds_start = this%thickness_lower_bound_size &
+!                     + this%thickness_upper_bound_size + 1
+!        bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
+!        residual(start:finish) = bounds(bounds_start:bounds_finish)
       end associate
     class default
       call logger%fatal('ice_shelf%residual','Type other than `ice_shelf` '// &
@@ -460,7 +460,7 @@ contains
     end select
 
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
-    call eta%clean_temp(); call u%clean_temp(); call u_old%clean_temp()
+    call eta%clean_temp()!; call u%clean_temp(); call u_old%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
 #endif
@@ -482,8 +482,8 @@ contains
     integer :: i
     !TODO: Add some assertion-like checks that the state vector is the right size
     call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
-    i = 1 + this%thickness_size
-    call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
+    !i = 1 + this%thickness_size
+    !call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
 #ifdef DEBUG
     call logger%debug('ice_shelf%update','Updated state of ice shelf.')
 #endif
@@ -592,16 +592,18 @@ contains
         this%jacobian_time = this%time
       end if
 
-      elem = h%elements()
-      do i = 1, size(estimate)
-        estimate(i) = cheb1d_scalar_field(elem)
-        call estimate(i)%assign_meta_data(vector(i))
-      end do
-      call this%precondition_obj%apply(this%jacobian, vector, estimate)
+!      elem = h%elements()
+!      do i = 1, size(estimate)
+!        estimate(i) = cheb1d_scalar_field(elem)
+!        call estimate(i)%assign_meta_data(vector(i))
+!      end do
+!      call this%precondition_obj%apply(this%jacobian, vector, estimate)
+      vector(2) = this%jacobian(1,1)%solve_for(vector(1))
     end associate
     
-    preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
+!    preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
 
+    preconditioned = vector(2)%raw()
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
     call eta%clean_temp()
 #ifdef DEBUG
@@ -680,7 +682,7 @@ contains
     class(ice_shelf), intent(in) :: this
     integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
-    shelf_data_size = this%thickness_size + this%velocity_size
+    shelf_data_size = this%thickness_size! + this%velocity_size
 #ifdef DEBUG
     call logger%debug('ice_shelf%data_size','Ice shelf has '//   &
                       trim(str(shelf_data_size))//' elements '// &
@@ -699,7 +701,7 @@ contains
     class(ice_shelf), intent(in)        :: this
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice shelf.
-    state_vector = [this%thickness%raw(),this%velocity%raw()]
+    state_vector = this%thickness%raw()!,this%velocity%raw()]
 #ifdef DEBUG
     call logger%debug('ice_shelf%state_vector','Returning state vector '// &
                       'for ice shelf.')
@@ -955,7 +957,7 @@ contains
       success = .false.
     end select
     
-    !call basal_drag%clean_temp()
+    call basal_drag%clean_temp()
 
   contains
     

@@ -64,6 +64,8 @@ module glacier_mod
       !! glacier.
     procedure(precond), deferred      :: precondition
       !! Applies a preconditioner to the passed state vector.
+    procedure(solve_vel), deferred    :: solve_velocity
+      !! Solves for the velocity field using the current thickness.
     procedure(setter), deferred       :: update
       !! Sets the state of the glacier.
     procedure(time_setter), deferred  :: set_time
@@ -168,7 +170,18 @@ module glacier_mod
       real(r8), dimension(:), allocatable      :: preconditioned
         !! The result of applying the preconditioner to `delta_state`.
     end function precond
-    
+
+    subroutine solve_vel(this, basal_drag, success)
+      import :: glacier
+      import :: scalar_field
+      class(glacier), intent(inout)   :: this
+      class(scalar_field), intent(in) :: basal_drag
+        !! A paramter, e.g. coefficient of friction, needed to calculate
+        !! the drag on basal surface of the glacier.
+      logical, intent(out)            :: success
+        !! True if the integration is successful, false otherwise
+    end subroutine solve_vel
+
     function get_r81d(this) result(state_vector)
       import :: glacier
       import :: r8
@@ -424,6 +437,8 @@ contains
       integer, intent(out)                  :: itrmf
         !! Termination flag. 0 means normal termination, 1 means
         !! failure to produce f(xcur)
+
+      logical :: success
       ! If this is the first call of this routine then the
       ! basal_surface object will already be in the same state as
       ! reflected in xcur
@@ -431,6 +446,11 @@ contains
         first_call = .false.
       else
         call this%update(xcur(1:n))
+      end if
+      call this%solve_velocity(basal_drag, success)
+      if (.not. success) then
+        itrmf = 1
+        return
       end if
       fcur(1:n) = this%residual(old_states,basal_melt,basal_drag,water_density)
       !print*, fcur(1:n)
