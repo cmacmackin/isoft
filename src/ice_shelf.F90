@@ -67,20 +67,22 @@ module ice_shelf_mod
     ! integrated model of an ice shelf. This model is 1-dimensional only.
     !
     private
-    type(cheb1d_scalar_field) :: thickness 
-      !! Thickness of ice shelf, $h$
-    type(cheb1d_vector_field) :: velocity  
-      !! Flow velocity of ice shelf, $\vec{u}$
+    type(cheb1d_scalar_field) :: thickness
+      !! Thickness of ice shelf, \(h\)
+    type(cheb1d_vector_field) :: velocity
+      !! Flow velocity of ice shelf, \(\vec{u}\)
+    type(cheb1d_scalar_field) :: eta
+      !! Viscosity of the ice, \(\eta\)
     real(r8)                  :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
     real(r8)                  :: chi
-      !! The dimensionless ratio $\chi \equiv
+      !! The dimensionless ratio \(\chi \equiv
       !! \frac{\rho_igh_0x_0}{2\eta_0u_0} \left(1 -
-      !! \frac{\rho_i}{\rho_o}\right)$
+      !! \frac{\rho_i}{\rho_o}\right)\)
     real(r8)                  :: zeta
-      !! The dimensionless ratio $\zeta \equiv
-      !! \frac{\rho_iu_0x_0}{\eta_0}$, corresponding to the Reynolds
+      !! The dimensionless ratio \(\zeta \equiv
+      !! \frac{\rho_iu_0x_0}{\eta_0}\), corresponding to the Reynolds
       !! number
     real(r8)                  :: courant
       !! The Courant number to use when calculating the time step.
@@ -110,15 +112,14 @@ module ice_shelf_mod
     integer                   :: velocity_upper_bound_size
       !! The number of data values needed to represent the upper
       !! boundary conditions for thickness.
-    real(r8)                  :: jacobian_time
-      !! The time at which the Jacobian was last updated.
-    type(jacobian_block), dimension(2,2) :: jacobian
-      !! A representation of the Jacobian for this ice shelf.
-    type(jacobian_block), pointer        :: tmp_block
-      !! A block which will be added to the one at (2,2) in the Jacobian.
-    type(preconditioner)      :: precondition_obj
-      !! An object with a method to apply a block-Jacobian
-      !! preconditioner, with the specified convergence properties.
+    type(jacobian_block)      :: thickness_jacobian
+      !! A representation of the Jacobian for the ice shelf thickness.
+    type(jacobian_block)      :: velocity_jacobian
+      !! A representation of the Jacobian for the ice shelf velocity.
+    logical                   :: stale_eta
+      !! Indicates whether the viscosity needs updating.
+    logical                   :: stale_jacobian
+      !! Indicates if the Jacobians are stale and in need of updating.
   contains
     procedure :: initialise => shelf_initialise
     procedure :: ice_thickness => shelf_thickness
@@ -201,8 +202,12 @@ contains
 
     integer, dimension(:), allocatable :: lower, upper
 
-    this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
-    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
+    this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1), &
+                                         domain(1,2))
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1), &
+                                        domain(1,2))
+    this%eta = cheb1d_scalar_field(resolution(1), lower_bound=domain(1,1), &
+                                   upper_bound=domain(1,2))
     this%thickness_size = this%thickness%raw_size()
     this%velocity_size = this%velocity%raw_size()
 
@@ -269,8 +274,8 @@ contains
                         - this%velocity_upper_bound_size
 
     this%time = 0.0_r8
-    this%jacobian_time = -1._r8
-    this%precondition_obj = preconditioner(1.e-3_r8, 20)
+    this%stale_eta = .true.
+    this%stale_jacobian = .true.
 #ifdef DEBUG
     call logger%debug('ice_shelf','Initialised new ice shelf object')
 #endif
@@ -375,7 +380,6 @@ contains
     real(r8), dimension(:), allocatable      :: residual
       !! The residual of the system of equations describing the glacier.
     type(cheb1d_scalar_field) :: scalar_tmp
-    class(scalar_field), pointer :: eta, u, u_old
     integer :: start, finish, bounds_start, bounds_finish
     integer, dimension(:), allocatable :: lower, upper
     real(r8), dimension(:), allocatable :: bounds
@@ -385,25 +389,20 @@ contains
     allocate(residual(this%data_size()))
     start = 1
 
-    eta => this%viscosity_law%ice_viscosity(this%velocity, &
-                         this%ice_temperature(), this%time)
-!    u => this%velocity%component(1)
-    call eta%guard_temp()!; call u%guard_temp()
-
     ! Use same or similar notation for variables as in equations
     select type(previous_states)
     class is(ice_shelf)
-      ! TODO: Either move the function results over to proper
-      ! assignment or figure out some way to have temporary results in
-      ! associate constructs.
-!      u_old => previous_states(1)%velocity%component(1)
-!      call u_old%guard_temp()
-      associate(h => this%thickness, h_old => previous_states(1)%thickness,   &
-                uvec => this%velocity, m => melt_rate, lambda => this%lambda, &
-                chi => this%chi, zeta => this%zeta,                           &
-                t_old => previous_states(1)%time)
+      associate(h => this%thickness, h_old => previous_states(1)%thickness, &
+                uvec => this%velocity, m => melt_rate, eta => this%eta,     &
+                lambda => this%lambda, t_old => previous_states(1)%time)
         ! Boundary conditions
-        bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
+        if (this%stale_eta) then
+          bounds = this%boundaries%boundary_residuals(h, uvec, &
+               this%viscosity_law%ice_viscosity(uvec, this%ice_temperature(), &
+                                               this%time), this%time)
+        else
+          bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
+        end if
 
         ! Continuity equation
         scalar_tmp = (h - h_old)/(this%time - t_old) + .div.(h*uvec) + lambda*m
@@ -427,31 +426,6 @@ contains
         residual(start:finish) = bounds(bounds_start:bounds_finish)
         start = finish + 1
 
-        ! Momentum equation, x-component
-!        scalar_tmp = 4.0_r8*eta*h*u%d_dx(1)
-!        scalar_tmp = zeta*((h*u - h_old*u_old)/(this%time - t_old) + &
-!                     .div. (h*uvec*u)) - scalar_tmp%d_dx(1) +        &
-!                     2.0_r8*chi*h*h%d_dx(1)
-!
-!        lower = this%boundaries%velocity_lower_bound()
-!        upper = this%boundaries%velocity_upper_bound()
-!        ! TODO: Figure out how to make this independent of order which
-!        ! values are stored in the field
-!        finish = start + this%velocity_upper_bound_size - 1
-!        bounds_start = this%thickness_lower_bound_size &
-!                     + this%thickness_upper_bound_size &
-!                     + this%velocity_lower_bound_size + 1
-!        bounds_finish = bounds_start + this%velocity_upper_bound_size - 1
-!        residual(start:finish) = bounds(bounds_start:bounds_finish)
-!        start = finish + 1
-!        finish = start + scalar_tmp%raw_size(lower,upper) - 1
-!        residual(start:finish) = scalar_tmp%raw(lower,upper)
-!        start = finish + 1
-!        finish = start + this%velocity_lower_bound_size - 1
-!        bounds_start = this%thickness_lower_bound_size &
-!                     + this%thickness_upper_bound_size + 1
-!        bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
-!        residual(start:finish) = bounds(bounds_start:bounds_finish)
       end associate
     class default
       call logger%fatal('ice_shelf%residual','Type other than `ice_shelf` '// &
@@ -460,7 +434,6 @@ contains
     end select
 
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
-    call eta%clean_temp()!; call u%clean_temp(); call u_old%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%residual','Calculated residual of ice shelf.')
 #endif
@@ -479,11 +452,9 @@ contains
     real(r8), dimension(:), intent(in)  :: state_vector
       !! A real array containing the data describing the state of the
       !! glacier.
-    integer :: i
     !TODO: Add some assertion-like checks that the state vector is the right size
     call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
-    !i = 1 + this%thickness_size
-    !call this%velocity%set_from_raw(state_vector(i:i + this%velocity_size - 1))
+    this%stale_jacobian = .true.
 #ifdef DEBUG
     call logger%debug('ice_shelf%update','Updated state of ice shelf.')
 #endif
@@ -521,14 +492,9 @@ contains
     real(r8), dimension(:), allocatable      :: preconditioned
       !! The result of applying the preconditioner to `delta_state`.
 
-    type(ice_shelf) :: delta_shelf
-    type(cheb1d_scalar_field), dimension(2) :: vector, estimate
-    type(cheb1d_scalar_field) :: u
-    class(scalar_field), pointer :: eta
-    integer :: sl, el, su, eu
-    integer :: i, elem
-    integer, dimension(2) :: upper_type, lower_type
-    integer, dimension(:), allocatable :: boundary_types, boundary_locations
+    type(cheb1d_scalar_field) :: delta_h
+    integer :: i, sl, el, su, eu
+    integer, dimension(:), allocatable :: boundary_locations
     real(r8) :: delta_t
 
     call melt_rate%guard_temp(); call basal_drag_parameter%guard_temp()
@@ -541,114 +507,31 @@ contains
                         'passed to `ice_shelf` object as a previous state.')
       error stop
     end select
-    call delta_shelf%thickness%assign_meta_data(this%thickness)
-    call delta_shelf%velocity%assign_meta_data(this%velocity)
-    delta_shelf%thickness_size = this%thickness_size
-    delta_shelf%velocity_size = this%velocity_size
-    call delta_shelf%update(delta_state)
-    ! WARNING: POTENTIAL LEAK IN OBJECT POOL!!!
-    eta => this%viscosity_law%ice_viscosity(this%velocity, &
-                          this%ice_temperature(), this%time)
-    call eta%guard_temp()
-    vector(1) = delta_shelf%thickness
-    vector(2) = delta_shelf%velocity%component(1)
-    u = this%velocity%component(1)
+    call delta_h%assign_meta_data(this%thickness)
+    call delta_h%set_from_raw(delta_state)
 
-    associate(h => this%thickness, chi => this%chi, zeta => this%zeta)
-      if (this%jacobian_time < this%time) then
+    associate(jac => this%thickness_jacobian, uvec => this%velocity)
+      if (this%stale_jacobian) then
         sl = this%thickness_size - this%thickness_lower_bound_size + 1
         el = this%thickness_size
         su = 1
         eu = this%thickness_upper_bound_size
         boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-        upper_type = this%boundaries%thickness_upper_type()
-        lower_type = this%boundaries%thickness_lower_type()
-        boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
 
-        this%jacobian(1,1) = jacobian_block(u, 1, boundary_locs=boundary_locations) &
-                           + 1._r8/delta_t
-        this%jacobian(1,2) = jacobian_block(h, 1, boundary_locs=boundary_locations, &
-                                            boundary_types=boundary_types)
+        jac = jacobian_block(uvec%component(1), 1, boundary_locs=boundary_locations) &
+            + 1._r8/delta_t
 
-        sl = this%velocity_size - this%velocity_lower_bound_size + 1
-        el = this%velocity_size
-        su = 1
-        eu = this%velocity_upper_bound_size
-        boundary_locations = [(i, i=sl,el), (i, i=su,eu)]
-        upper_type = this%boundaries%velocity_upper_type()
-        lower_type = this%boundaries%velocity_lower_type()
-        boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
-
-        this%jacobian(2,1) = jacobian_block(zeta*u**2 - 4._r8*eta*u%d_dx(1) + 2._r8*chi*h, &
-                                            1, boundary_locs=boundary_locations,           &
-                                            boundary_operations=jacobian_bounds_2_1)       &
-                                            + (zeta/delta_t)*u
-        if (.not. associated(this%tmp_block)) allocate(this%tmp_block)
-        this%tmp_block = jacobian_block(2._r8*zeta*h*u, 1)
-        this%jacobian(2,2) = jacobian_block(-4._r8*eta*h, 1, 1,                &
-                                            boundary_locs=boundary_locations, &
-                                            boundary_types=boundary_types)    &
-                                            + (zeta/delta_t)*h + this%tmp_block
-        this%jacobian_time = this%time
+        this%stale_jacobian = .false.
       end if
 
-!      elem = h%elements()
-!      do i = 1, size(estimate)
-!        estimate(i) = cheb1d_scalar_field(elem)
-!        call estimate(i)%assign_meta_data(vector(i))
-!      end do
-!      call this%precondition_obj%apply(this%jacobian, vector, estimate)
-      vector(2) = this%jacobian(1,1)%solve_for(vector(1))
+      delta_h = jac%solve_for(delta_h)
     end associate
     
-!    preconditioned = [(estimate(i)%raw(), i=1,size(estimate))]
-
-    preconditioned = vector(2)%raw()
+    preconditioned = delta_h%raw()
     call melt_rate%clean_temp(); call basal_drag_parameter%clean_temp()
-    call eta%clean_temp()
 #ifdef DEBUG
     call logger%debug('ice_shelf%precondition','Applied preconditioner for ice shelf.')
 #endif
-
-  contains
-    
-    subroutine jacobian_bounds_2_1(contents, derivative, rhs,     &
-                                   boundary_locs, boundary_types, &
-                                   boundary_values)
-      !* Author: Chris MacMackin
-      !  Date: January 2016
-      !
-      ! Specifies the boundary values for the result multiplying the
-      ! thickness field by the bottom-left Jacobian block.
-      !
-      class(scalar_field), intent(in)                  :: contents
-        !! The field used to construct the Jacobian block
-      class(scalar_field), intent(in)                  :: derivative
-        !! The first spatial derivative of the field used to construct
-        !! the Jacobian block, in the direction specified
-      class(scalar_field), intent(in)                  :: rhs
-        !! The scalar field representing the vector being multiplied
-        !! by Jacobian
-      integer, dimension(:), allocatable, intent(in)   :: boundary_locs
-        !! The locations in the raw representation of `rhs` containing
-        !! the boundaries.
-      integer, dimension(:), allocatable, intent(in)   :: boundary_types
-        !! Integers specifying the type of boundary condition. The type
-        !! of boundary condition corresponding to a given integer is
-        !! specified in [[boundary_types_mod]]. Only Dirichlet and
-        !! Neumann conditions are supported. The storage order must
-        !! correspond to that of `boundary_locs`.
-      real(r8), dimension(:), allocatable, intent(out) :: boundary_values
-        !! The values to go at the boundaries when multiplying a field
-        !! by the Jacobian block. The storage order must be the same as
-        !! for `boundary_locs`.
-      integer :: n
-      n = size(boundary_locs)
-      allocate(boundary_values(n))
-      !TODO: Make this general
-      boundary_values = [0._r8,-this%thickness%get_element(boundary_locs(n))/ &
-                         eta%get_element(boundary_locs(n))*.25_r8*this%chi]
-    end subroutine jacobian_bounds_2_1
   end function shelf_precondition
 
 
@@ -682,7 +565,7 @@ contains
     class(ice_shelf), intent(in) :: this
     integer                      :: shelf_data_size
       !! The number of elements in the ice shelf's state vector.
-    shelf_data_size = this%thickness_size! + this%velocity_size
+    shelf_data_size = this%thickness_size
 #ifdef DEBUG
     call logger%debug('ice_shelf%data_size','Ice shelf has '//   &
                       trim(str(shelf_data_size))//' elements '// &
@@ -701,7 +584,7 @@ contains
     class(ice_shelf), intent(in)        :: this
     real(r8), dimension(:), allocatable :: state_vector
       !! The state vector describing the ice shelf.
-    state_vector = this%thickness%raw()!,this%velocity%raw()]
+    state_vector = this%thickness%raw()
 #ifdef DEBUG
     call logger%debug('ice_shelf%state_vector','Returning state vector '// &
                       'for ice shelf.')
@@ -941,6 +824,9 @@ contains
                 1.e-10_r8*nval, 1.e-10_r8*nval, input, info, work, &
                 real_param, int_param, flag, ddot, dnrm2)
     call this%velocity%set_from_raw(state)
+    this%eta = this%viscosity_law%ice_viscosity(this%velocity, this%ice_temperature(), &
+                                               this%time)
+    this%stale_jacobian = .true.
 
     select case(flag)
     case(0)
@@ -978,18 +864,17 @@ contains
         !! Termination flag. 0 means normal termination, 1 means
         !! failure to produce f(xcur)
 
-      class(scalar_field), pointer :: eta
       type(cheb1d_scalar_field) :: scalar_tmp
       integer :: start, finish, bounds_start, bounds_finish
       integer, dimension(:), allocatable :: lower, upper
       real(r8), dimension(:), allocatable :: bounds
 
       call this%velocity%set_from_raw(xcur)
-      fcur = -1._r8
+      this%stale_jacobian = .true.
       associate(h => this%thickness, uvec => this%velocity, chi => this%chi, &
-                zeta => this%zeta)
-        eta => this%viscosity_law%ice_viscosity(uvec, this%ice_temperature(), this%time)
-        call eta%guard_temp()
+                zeta => this%zeta, eta => this%eta)
+        eta = this%viscosity_law%ice_viscosity(uvec, this%ice_temperature(), &
+                                               this%time)
         bounds = this%boundaries%boundary_residuals(h, uvec, eta, this%time)
 
         scalar_tmp = uvec%component(1)
@@ -1017,7 +902,6 @@ contains
         bounds_finish = bounds_start + this%velocity_lower_bound_size - 1
         fcur(start:finish) = bounds(bounds_start:bounds_finish)
       end associate
-      call eta%clean_temp()
       itrmf = 0
     end subroutine nitsol_residual
 
@@ -1047,8 +931,6 @@ contains
         ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
         ! failure to produce \(P^{-1}\vec{v}\)
 
-      type(jacobian_block) :: jacobian
-      class(scalar_field), pointer :: eta
       type(cheb1d_scalar_field) :: delta_u
       integer :: i, sl, el, su, eu
       integer, dimension(2) :: upper_type, lower_type
@@ -1061,9 +943,7 @@ contains
 
       call delta_u%assign_meta_data(this%velocity)
       call delta_u%set_from_raw(v)
-      eta => this%viscosity_law%ice_viscosity(this%velocity, this%ice_temperature(), &
-                                             this%time)
-      call eta%guard_temp()
+      
       sl = this%velocity_size - this%velocity_lower_bound_size + 1
       el = this%velocity_size
       su = 1
@@ -1072,14 +952,17 @@ contains
       upper_type = this%boundaries%velocity_upper_type()
       lower_type = this%boundaries%velocity_lower_type()
       boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
-      associate(h => this%thickness, chi => this%chi, zeta => this%zeta)
-        jacobian = jacobian_block(4._r8*eta*h, 1, 1,               &
-                                  boundary_locs=boundary_locations, &
+      associate(h => this%thickness, chi => this%chi, zeta => this%zeta, &
+                jac => this%velocity_jacobian)
+        if (this%stale_jacobian) then
+          jac = jacobian_block(4._r8*this%eta*h, 1, 1,           &
+                               boundary_locs=boundary_locations, &
                                   boundary_types=boundary_types)
-        delta_u = jacobian%solve_for(delta_u)
+          this%stale_jacobian = .false.
+        end if
+        delta_u = jac%solve_for(delta_u)
         z(1:n) = delta_u%raw()
       end associate
-      call eta%clean_temp()
       itrmjv = 0
     end subroutine nitsol_precondition
 
@@ -1153,7 +1036,8 @@ contains
       this%thickness_upper_bound_size = rhs%thickness_upper_bound_size
       this%velocity_lower_bound_size = rhs%velocity_lower_bound_size
       this%velocity_upper_bound_size = rhs%velocity_upper_bound_size
-      this%precondition_obj = rhs%precondition_obj
+      this%stale_jacobian = .true.
+      this%stale_eta = .true.
     class default
       call logger%fatal('ice_shelf%assign','Type other than `ice_shelf` '// &
                         'requested to be assigned.')
