@@ -953,11 +953,10 @@ contains
       lower_type = this%boundaries%velocity_lower_type()
       boundary_types = [(lower_type(1), i=sl,el), (upper_type(1), i=su,eu)]
       associate(h => this%thickness, chi => this%chi, zeta => this%zeta, &
-                jac => this%velocity_jacobian)
+                jac => this%velocity_jacobian, eta => this%eta)
         if (this%stale_jacobian) then
-          jac = jacobian_block(4._r8*this%eta*h, 1, 1,           &
-                               boundary_locs=boundary_locations, &
-                                  boundary_types=boundary_types)
+          jac = jacobian_block(4._r8*eta*h, 1, 1, boundary_locs=boundary_locations, &
+                               boundary_types=boundary_types)
           this%stale_jacobian = .false.
         end if
         delta_u = jac%solve_for(delta_u)
@@ -1022,6 +1021,7 @@ contains
     class is(ice_shelf)
       this%thickness = rhs%thickness
       this%velocity = rhs%velocity
+      this%eta = rhs%eta
       this%lambda = rhs%lambda
       this%chi = rhs%chi
       this%zeta = rhs%zeta

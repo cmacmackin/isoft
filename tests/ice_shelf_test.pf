@@ -129,7 +129,7 @@ contains
     call this%shelf5%initialise(domain1, [this%nodes], thickness1, velocity3, &
                             this%temperature, visc, bound, this%lambda,       &
                             this%chi, this%zeta)
-    call this%shelf5%set_time(1.0_r8)
+    !call this%shelf5%set_time(1.0_r8)
   end subroutine setup
 
   @Test
@@ -261,16 +261,19 @@ contains
   subroutine test_solve_u(this)
     !! Tests that the velocity solver converges properly
     class(test_shelf), intent(inout) :: this
-    type(cheb1d_scalar_field) :: drag
+    type(cheb1d_scalar_field) :: drag, melt
     real(r8), dimension(:), allocatable :: actual, expected
     logical :: success
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
     call this%shelf5%solve_velocity(drag, success)
     @assertTrue(success,message='Integration failed.')
-    actual = this%shelf5%state_vector()
-    expected = this%shelf3%state_vector()
-    @assertEqual(expected,actual,message='Shelve velocity did not converge',tolerance=1.e-6_r8)
+    actual = this%shelf5%residual([this%shelf3],melt,drag,1.0_r8)
+    allocate(expected(size(actual)))
+    expected = 0._r8
+    @assertEqual(expected,actual,message='Shelve velocity did not converge',tolerance=3.e-9_r8)
   end subroutine test_solve_u
 
   @Test
