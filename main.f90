@@ -72,7 +72,7 @@ program isoft
   integer  :: stdout_lim, stderr_lim, logfile_lim, output_start
 
   ! Ice shelf parameters
-  real(r8) :: chi, lambda, ice_temperature, courant
+  real(r8) :: chi, lambda, zeta, ice_temperature, courant
 
   ! Viscosity parameters
   real(r8) :: visc_coefficient
@@ -130,7 +130,7 @@ program isoft
   call cpu_time(cpu_start)
 
   ! Initialise variables to defaults
-  grid_points = 100
+  grid_points = 50
   domain(1,:) = [0._r8, 2.5_r8]
   domain(2,:) = [-1._r8, 1._r8]
   end_time = 3.0_r8
@@ -149,6 +149,7 @@ program isoft
 
   chi = 4._r8
   lambda = 0.37_r8
+  zeta = 1e-11_r8
   ice_temperature = -1._r8
   courant = 50.0_r8
 
@@ -204,7 +205,7 @@ program isoft
            ice_velocity_lower(1), chi))
   allocate(shelf)
   call shelf%initialise(domain, [grid_points], h, u_ice, ice_temperature, &
-                        viscosity, ice_bound, lambda, chi, courant)
+                        viscosity, ice_bound, lambda, chi, zeta, courant)
 
   allocate(entrainment, source=jenkins1991_entrainment(ent_coefficient))
   allocate(melt_relationship,                                     &

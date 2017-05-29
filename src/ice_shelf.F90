@@ -83,7 +83,7 @@ module ice_shelf_mod
     real(r8)                  :: zeta
       !! The dimensionless ratio \(\zeta \equiv
       !! \frac{\rho_iu_0x_0}{\eta_0}\), corresponding to the Reynolds
-      !! number
+      !! number. Currently unused.
     real(r8)                  :: courant
       !! The Courant number to use when calculating the time step.
     class(abstract_viscosity), allocatable :: viscosity_law
@@ -192,7 +192,7 @@ contains
     real(r8), intent(in), optional       :: zeta
       !! The dimensionless ratio $\zeta \equiv
       !! \frac{\rho_iu_0x_0}{\eta_0}$, corresponding to the Reynolds
-      !! number
+      !! number. Currently this is unused and always treated as 0.
     real(r8), intent(in), optional       :: courant
       !! The Courant number to use when calculating the time
       !! step. Defaults to 100. Too large a value will pose
