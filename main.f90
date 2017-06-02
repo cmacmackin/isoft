@@ -47,7 +47,7 @@ program isoft
   use entrainment_mod, only: abstract_entrainment
   use jenkins1991_entrainment_mod, only: jenkins1991_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
-  use dallaston2015_melt_mod, only: dallaston2015_melt
+  use one_equation_melt_mod, only: one_equation_melt
   use ambient_mod, only: ambient_conditions
   use uniform_ambient_mod, only: uniform_ambient_conditions
   use equation_of_state_mod, only: equation_of_state
@@ -85,10 +85,12 @@ program isoft
   real(r8) :: ent_coefficient
 
   ! Plume parameters
-  real(r8) :: delta, nu, mu, r_val
+  real(r8) :: delta, nu, mu, r_val, nu_init
+  logical  :: initialise_iteratively
+  integer  :: initial_steps
 
   ! Melt parameters
-  real(r8) :: beta, epsilon_g, epsilon_m
+  real(r8) :: alpha1, alpha2
 
   ! Ambient condition parameters
   real(r8) :: ambient_salinity, ambient_temperature
@@ -131,9 +133,9 @@ program isoft
 
   ! Initialise variables to defaults
   grid_points = 50
-  domain(1,:) = [0._r8, 2.5_r8]
+  domain(1,:) = [0._r8, 6._r8]
   domain(2,:) = [-1._r8, 1._r8]
-  end_time = 3.0_r8
+  end_time = 10.0_r8
   restart_file = "isoft-0020.h5"
   end_on_steady = .true.
   restart_from_file = .false.
@@ -148,9 +150,9 @@ program isoft
   output_start = 0
 
   chi = 4._r8
-  lambda = 0.37_r8
-  zeta = 1e-11_r8
-  ice_temperature = -1._r8
+  lambda = 1e2_r8
+  zeta = 1e-11_r8 ! Not actually used
+  ice_temperature = -7._r8
   courant = 50.0_r8
 
   visc_coefficient = 1._r8
@@ -161,29 +163,32 @@ program isoft
   ent_coefficient = 1._r8
 
   delta = 3.6e-2_r8
-  nu = 1e-3_r8
-  mu = 1.27_r8
+  nu = 3.69e-2_r8
+  mu = 0.799_r8
   r_val = 1.12_r8
+  nu_init = 6.71e1_r8
+  initialise_iteratively = .true.
+  initial_steps = 6
+  nu = 369.
 
-  beta = 2.4e-2_r8
-  epsilon_m = 6.9e-4_r8
-  epsilon_g = 1.1e-3_r8
+  alpha1 = 0.0182_r8
+  alpha2 = 0.0238
 
-  ambient_salinity = 0._r8
-  ambient_temperature = 0._r8
+  ambient_salinity = 50._r8
+  ambient_temperature = 50._r8
 
   ref_density = 1.0_r8
-  ref_temperature = 0._r8
-  ref_salinity = 0._r8
-  beta_s = -1.0_r8
+  ref_temperature = 1._r8
+  ref_salinity = 1._r8
+  beta_s = 0.0271_r8
   beta_t = 0._r8
 
-  discharge = 1._r8
-  offset = 0.1_r8
+  discharge = 1.178e-3_r8
+  offset = 0.001_r8
   plume_thickness_lower = offset
-  plume_temperature_lower = -1._r8
-  plume_salinity_lower = discharge**(2._r8/3._r8)/plume_thickness_lower
-  plume_velocity_lower = [discharge**(1._r8/3._r8), 0._r8]
+  plume_temperature_lower = 0._r8
+  plume_salinity_lower = 0._r8
+  plume_velocity_lower = [discharge/plume_thickness_lower, 0._r8]
   alpha = discharge**(1._r8/3._r8)/nu
 
   ! Set up IO
@@ -208,8 +213,7 @@ program isoft
                         viscosity, ice_bound, lambda, chi, zeta, courant)
 
   allocate(entrainment, source=jenkins1991_entrainment(ent_coefficient))
-  allocate(melt_relationship,                                     &
-           source=dallaston2015_melt(beta, epsilon_m, epsilon_g))
+  allocate(melt_relationship, source=one_equation_melt(alpha1, alpha2))
   allocate(ambient,                                               &
            source=uniform_ambient_conditions(ambient_temperature, &
            ambient_salinity))
@@ -227,6 +231,11 @@ program isoft
   call water%initialise(domain, [grid_points], D, U_plume, T, S,      &
                         entrainment, melt_relationship, ambient, eos, &
                         water_bound, delta, nu, mu, r_val)
+
+  if (initialise_iteratively) then
+    ! Start by solving for plume at high diffusivity and reduce to
+    ! desired value.
+  end if
 
   call move_alloc(shelf, ice)
   call move_alloc(water, sub_ice)
@@ -274,11 +283,7 @@ contains
     !! Initial ice thickness.
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: h
-    real(r8), dimension(1) :: vel
-    real(r8)               :: big_x
-    big_x = 1._r8/lambda
-    vel = u_ice(x)
-    h = (1._r8 - x(1)/big_x)/vel(1)
+    h = ice_thickness_lower*(1._r8 - x(1)/(1.1_r8*domain(1,2)))
   end function h
 
   pure function u_ice(x)
@@ -288,15 +293,15 @@ contains
     real(r8) :: big_x
     big_x = 1._r8/lambda
     allocate(u_ice(1))
-    u_ice(1) = sqrt(1._r8 + 0.25_r8*chi*big_x - &
-                    0.25_r8*chi*big_x*(1._r8 - x(1)/big_x)**2)
+    u_ice(1) = ice_velocity_lower(1) + 0.25_r8*ice_thickness_lower*chi*(x(1) &
+             - x(1)**2/(2.2*domain(1,2)))
   end function u_ice
 
   pure function D(x)
     !! Initial guess for plume thickness
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: D
-    D = offset + (h([0._r8]) - h(x))/r_val
+    D = offset + 1_r8*(h([0._r8]) - h(x))/r_val
   end function D
 
   pure function U_plume(x)
@@ -304,52 +309,21 @@ contains
     real(r8), dimension(:), intent(in)  :: x
     real(r8), dimension(:), allocatable :: U_plume
     allocate(U_plume(1))
-    U_plume = discharge**(1._r8/3._r8)
+    U_plume = plume_velocity_lower(1)!/(0.5*x(1) + 1._r8)
   end function U_plume
-
-  pure function s1(x)
-    !! First component of analytic solution for plume salinity
-    real(r8), intent(in) :: x
-    real(r8)             :: s1
-    s1 = exp(alpha*x)
-  end function s1
-
-  pure function s2(x)
-    !! Second component of analytic solution for plume salinity
-    real(r8), intent(in) :: x
-    real(r8)             :: s2
-    s2 = s1(x)*ei(-alpha*(x+offset))
-  end function s2
 
   pure function S(x)
     !! Initial guess of the plume salinity
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: S
-    real(r8) :: a12, a21, a22, phi, theta
-    a12 = ei(-alpha*offset)
-    a21 = alpha*s1(domain(1,2))
-    a22 = alpha*s2(domain(1,2)) + exp(-alpha*offset)/(domain(1,2) + offset)
-    phi = -a21 * plume_salinity_lower/(a22 - a21*a12)
-    theta = plume_salinity_lower - a12*phi
-    if (theta < 1e-17_r8) theta = 0._r8
-    S = theta*s1(x(1)) + phi*s2(x(1))
-    S = plume_salinity_lower + x(1)*(x(1) - domain(1,2))
+    S = plume_salinity_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))!*exp(x(1)/domain(1,2))! - 0.0001_r8*x(1)*(x(1) - 2*domain(1,2))
   end function S
 
   pure function T(x)
     !! Initial guess of the plume temperature
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: T
-    real(r8) :: zeta, a12, a21, a22, phi, theta
-    zeta = r_val*(beta+1._r8)
-    a12 = ei(-alpha*offset)
-    a21 = alpha*s1(domain(1,2))
-    a22 = alpha*s2(domain(1,2)) + exp(-alpha*offset)/(domain(1,2) + offset)
-    phi = -a21 * (plume_temperature_lower - zeta)/(a22 - a21*a12)
-    theta = plume_temperature_lower - zeta - a12*phi
-    if (theta < 1e-17_r8) theta = 0._r8
-    T = theta*s1(x(1)) + phi*s2(x(1)) + zeta
-    T = plume_temperature_lower - x(1)*(x(1) - domain(1,2))
+    T = plume_temperature_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))!*exp(x(1)/domain(1,2))! - 0.0001_r8*x(1)*(x(1) - 2*domain(1,2))
   end function T
 
   

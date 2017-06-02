@@ -249,12 +249,15 @@ contains
     i = 0
     stagnant_iters = 0
 
+!iplvl = 4
+!
     u_prev = get_derivs(solution)
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     old_resid = 5*resid_norm
-
+!print*, L(solution) - f_prev
     do while(resid_norm > eta)
+      print*,resid_norm
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
         stagnant_iters = stagnant_iters + 1
@@ -276,7 +279,7 @@ contains
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
-                       iter_max=gitmax, krylov_dim=kdim)
+                       iter_max=gitmax, krylov_dim=50)!kdim)
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
@@ -297,6 +300,7 @@ contains
       f_prev = f(u_prev)
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     end do
+      print*,resid_norm
 
     if (present(info)) then
       info(1) = 1 + i + tnlhs + tnrpre
@@ -306,7 +310,7 @@ contains
       info(5) = i
     end if
     flag = 0
-    
+
   contains
 
     function get_derivs(v)

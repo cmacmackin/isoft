@@ -1150,6 +1150,7 @@ contains
         call T_a%guard_temp()
         rho_a => this%eos%water_density(T_a, S_a)
         call rho_a%guard_temp()
+        !print*,e%raw()
 
         ! Thickness
         call bounds%thickness_bound_info(-1, btype_l, bdepth_l)
@@ -1231,9 +1232,15 @@ contains
         en = st + this%temperature_size - 1
         f(st:en) = scalar_tmp%raw()
 
+        scalar_tmp = mf%heat_equation_terms()
+        print*, T_x%raw()
+        print*,'-------------------------------------------'
+        scalar_tmp = nu*D_x*T_x
+        print*, scalar_tmp%raw()
+        print*,'==========================================='
         if (mf%has_heat_terms()) then
           scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
-                       - nu*D_x*T_x - mf%heat_equation_terms())/(nu*D)
+                       - nu*D_x*T_x + mf%heat_equation_terms())/(nu*D)
         else
           scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
                        - nu*D_x*T_x)/(nu*D)
@@ -1272,7 +1279,7 @@ contains
 
         if (mf%has_salt_terms()) then
           scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
-                       - nu*D_x*S_x - mf%salt_equation_terms())/(nu*D)
+                       - nu*D_x*S_x + mf%salt_equation_terms())/(nu*D)
         else
           scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
                        - nu*D_x*S_x)/(nu*D)
