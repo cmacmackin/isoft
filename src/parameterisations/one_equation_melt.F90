@@ -99,8 +99,8 @@ contains
       !! get the melt rate, \(c_oT_0/L\).
     type(one_equation_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%coef1 = -coef1
-    this%coef2 = -coef2
+    this%coef1 = coef1!*(-1)
+    this%coef2 = coef2!*(-1)
   end function constructor
 
   subroutine one_equation_solve(this, velocity, pressure, temperature, &

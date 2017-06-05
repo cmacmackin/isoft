@@ -127,7 +127,8 @@ program isoft
   class(equation_of_state), allocatable          :: eos
   class(ambient_conditions), allocatable         :: ambient
   class(plume_boundary), allocatable             :: water_bound
-  real(r8)                                       :: alpha
+  real(r8)                                       :: alpha, nu_tmp, nu_fact
+  logical                                        :: success
 
   call cpu_time(cpu_start)
 
@@ -166,16 +167,16 @@ program isoft
   nu = 3.69e-2_r8
   mu = 0.799_r8
   r_val = 1.12_r8
-  nu_init = 6.71e1_r8
-  initialise_iteratively = .true.
-  initial_steps = 6
-  nu = 369.
+  nu_init = 6.71e2_r8
+  initialise_iteratively = .false.
+  initial_steps = 217
+  nu = 369
 
   alpha1 = 0.0182_r8
   alpha2 = 0.0238
 
-  ambient_salinity = 50._r8
-  ambient_temperature = 50._r8
+  ambient_salinity = 1._r8
+  ambient_temperature = 1._r8
 
   ref_density = 1.0_r8
   ref_temperature = 1._r8
@@ -232,9 +233,32 @@ program isoft
                         entrainment, melt_relationship, ambient, eos, &
                         water_bound, delta, nu, mu, r_val)
 
-  if (initialise_iteratively) then
+  if (initialise_iteratively .and. .not. restart_from_file) then
     ! Start by solving for plume at high diffusivity and reduce to
     ! desired value.
+    nu_tmp = nu_init
+    nu_fact = (nu/nu_init)**(1._r8/real(initial_steps, r8))
+    do i = 1, initial_steps
+      water%nu = nu_tmp
+      print*, 'Nu = ', water%nu
+      call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
+                       shelf%ice_temperature(), time, success)
+      if (.not. success) then
+        call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
+                          'with diffusivity '//str(nu_tmp))
+        error stop
+      end if
+      nu_tmp = nu_fact*nu_tmp
+    end do
+    water%nu = nu
+    print*, 'Nu = ', water%nu
+    call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
+                     shelf%ice_temperature(), time, success)
+    if (.not. success) then
+      call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
+                        'with diffusivity '//str(nu))
+      error stop
+    end if    
   end if
 
   call move_alloc(shelf, ice)
