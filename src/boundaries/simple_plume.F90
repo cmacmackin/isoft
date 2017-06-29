@@ -233,7 +233,7 @@ contains
       bound = uniform_vector_field([0._r8, 0._r8])
     case default
       bound = uniform_vector_field([0._r8, 0._r8])
-    end select    
+    end select
   end function simple_velocity_bound
 
   function simple_temperature_bound(this, location) result(bound)

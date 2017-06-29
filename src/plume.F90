@@ -36,7 +36,7 @@ module plume_mod
   use iso_fortran_env, only: r8 => real64
   use basal_surface_mod, only: basal_surface, hdf_type_attr
   use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field, &
-                         uniform_scalar_field
+                         uniform_scalar_field, uniform_vector_field
   use ode_solvers_mod, only: quasilinear_solve
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
@@ -106,7 +106,7 @@ module plume_mod
       !! An object specifying the boundary conditions for the plume.
     real(r8)                  :: delta
       !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
-    real(r8)                  :: nu
+    real(r8), public                  :: nu
       !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
     real(r8)                  :: mu
       !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
@@ -1023,7 +1023,7 @@ contains
       if (btype_u == neumann) then
         call vector_tmp%set_boundary(1, bdepth_u, &
                                      this%velocity_dx%get_boundary(1, bdepth_u))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
+      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
         call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
                           'Neumann or free velocity boundaries.')
         error stop
@@ -1060,7 +1060,7 @@ contains
       if (btype_u == neumann) then
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%temperature_dx%get_boundary(1, bdepth_u))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
+      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
         call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
                           'Neumann or free temperature boundaries.')
         error stop
@@ -1097,7 +1097,7 @@ contains
       if (btype_u == neumann) then
         call scalar_tmp%set_boundary(1, bdepth_u, &
                                      this%salinity_dx%get_boundary(1, bdepth_u))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
+      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
         call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
                           'Neumann or free salinity boundaries.')
         error stop
@@ -1232,12 +1232,6 @@ contains
         en = st + this%temperature_size - 1
         f(st:en) = scalar_tmp%raw()
 
-        scalar_tmp = mf%heat_equation_terms()
-        print*, T_x%raw()
-        print*,'-------------------------------------------'
-        scalar_tmp = nu*D_x*T_x
-        print*, scalar_tmp%raw()
-        print*,'==========================================='
         if (mf%has_heat_terms()) then
           scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
                        - nu*D_x*T_x + mf%heat_equation_terms())/(nu*D)
@@ -1308,11 +1302,11 @@ contains
       end associate
     end function f
 
-    function preconditioner(v, u, L_op, f_op, Lcur, fcur)
+    function preconditioner(v, state, L_op, f_op, Lcur, fcur)
       !! The preconditioner, which approximates an inverse of `L`.
       real(r8), dimension(:), intent(in)   :: v
         !! The vector to be preconditioned.
-      real(r8), dimension(:,:), intent(in) :: u
+      real(r8), dimension(:,:), intent(in) :: state
         !! The current state vector for the system of differential
         !! equations, and its derivatives. Column \(i\) represents the
         !! \(i-1\) derivative.
@@ -1328,9 +1322,11 @@ contains
         !! The result of applying the preconditioner.
 
       integer :: st, en
+      real(r8) :: nu
       type(plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
+      class(scalar_field), pointer :: U, U_x
 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)
@@ -1345,43 +1341,57 @@ contains
       call v_plume%salinity_dx%assign_meta_data(this%salinity_dx)
       call v_plume%update(v)
 
-      v_plume%thickness = this%thickness_precond%solve_for(v_plume%thickness)
+      call this%update(state(:,1))
+      U => this%velocity%component(1)
+      U_x => this%velocity_dx%component(1)
+      call U%guard_temp(); call U_x%guard_temp()
+      nu = this%nu
+
+      v_plume%thickness = this%thickness_precond%solve_for(v_plume%thickness, U_x/U)
       st = 1
       en = st + this%thickness_size - 1
       preconditioner(st:en) = v_plume%thickness%raw()
-
+  
       v_plume%velocity = this%velocity_precond%solve_for(v_plume%velocity)
       st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity%raw()
-
+  
+      ! Store diagonal offset in unused field
+      v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
       v_plume%velocity_dx = &
-           this%velocity_dx_precond%solve_for(v_plume%velocity_dx)
+           this%velocity_dx_precond%solve_for(v_plume%velocity_dx)!, v_plume%velocity)
       st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity_dx%raw()
-
+  
       v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature%raw()
-
+  
+      ! Store diagonal offset in unused field
+      v_plume%thickness = U/(-nu)
       v_plume%temperature_dx = &
-           this%temperature_dx_precond%solve_for(v_plume%temperature_dx)
+           this%temperature_dx_precond%solve_for(v_plume%temperature_dx, &
+                                                v_plume%thickness)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
-
+  
       v_plume%salinity = this%salinity_precond%solve_for(v_plume%salinity)
       st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity%raw()
-
+  
       v_plume%salinity_dx = &
-           this%salinity_dx_precond%solve_for(v_plume%salinity_dx)
+           this%salinity_dx_precond%solve_for(v_plume%salinity_dx, &
+                                                v_plume%thickness)
       st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
+
+      call U%clean_temp(); call U_x%clean_temp()
     end function preconditioner
   end subroutine plume_solve
 

@@ -30,7 +30,7 @@ program isoft
   use iso_fortran_env, only: r8 => real64
   use logger_mod, only: debug, trivia, info, warning, error, fatal, &
                         logger => master_logger, logger_init
-  use hdf5, only: h5open_f, h5close_f
+  use hdf5!, only: h5open_f, h5close_f
   use penf, only: str
   use meta_mod
   use cryosphere_mod, only: cryosphere
@@ -106,7 +106,7 @@ program isoft
   real(r8), dimension(2) :: plume_velocity_lower
 
   ! Variables for use in the program
-  integer                      :: i, hdf_err
+  integer                      :: i, hdf_err, file_id
   real(r8)                     :: time
   real                         :: cpu_start, cpu_setup, cpu_end
   character(len=18), parameter :: hdf_file_format = '(a,"-",i0.4,".h5")'
@@ -133,7 +133,7 @@ program isoft
   call cpu_time(cpu_start)
 
   ! Initialise variables to defaults
-  grid_points = 50
+  grid_points = 201
   domain(1,:) = [0._r8, 6._r8]
   domain(2,:) = [-1._r8, 1._r8]
   end_time = 10.0_r8
@@ -163,33 +163,33 @@ program isoft
 
   ent_coefficient = 1._r8
 
-  delta = 3.6e-2_r8
-  nu = 3.69e-2_r8
-  mu = 0.799_r8
+  delta = 03.6e-2_r8
+  nu = 3.69e-3_r8
+  mu = 0!.799_r8
   r_val = 1.12_r8
-  nu_init = 6.71e2_r8
-  initialise_iteratively = .false.
-  initial_steps = 217
-  nu = 369
+  nu_init = 2e2_r8
+  initialise_iteratively = .true.
+  initial_steps = 2
+  !nu = 369
 
   alpha1 = 0.0182_r8
-  alpha2 = 0.0238
+  alpha2 = 0.0238_r8
 
   ambient_salinity = 1._r8
   ambient_temperature = 1._r8
 
-  ref_density = 1.0_r8
+  ref_density = 3.05e2_r8!/9.8
   ref_temperature = 1._r8
   ref_salinity = 1._r8
   beta_s = 0.0271_r8
   beta_t = 0._r8
 
-  discharge = 1.178e-3_r8
-  offset = 0.001_r8
+  discharge = 1e-3_r8
+  offset = 0.01_r8
   plume_thickness_lower = offset
   plume_temperature_lower = 0._r8
   plume_salinity_lower = 0._r8
-  plume_velocity_lower = [discharge/plume_thickness_lower, 0._r8]
+  plume_velocity_lower = [discharge/offset, 0._r8]
   alpha = discharge**(1._r8/3._r8)/nu
 
   ! Set up IO
@@ -243,6 +243,12 @@ program isoft
       print*, 'Nu = ', water%nu
       call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
                        shelf%ice_temperature(), time, success)
+
+    call h5fcreate_f('nu'//trim(str(i))//'.h5', H5F_ACC_TRUNC_F, file_id, hdf_err)
+    call water%write_data(file_id, 'basal_surface', hdf_err)
+    call shelf%write_data(file_id, 'glacier', hdf_err)
+    call h5fclose_f(file_id, hdf_err)
+
       if (.not. success) then
         call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
                           'with diffusivity '//str(nu_tmp))
@@ -254,6 +260,7 @@ program isoft
     print*, 'Nu = ', water%nu
     call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
                      shelf%ice_temperature(), time, success)
+
     if (.not. success) then
       call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
                         'with diffusivity '//str(nu))
@@ -307,7 +314,7 @@ contains
     !! Initial ice thickness.
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: h
-    h = ice_thickness_lower*(1._r8 - x(1)/(1.1_r8*domain(1,2)))
+    h = ice_thickness_lower*(1._r8 - 0.5*x(1)/(1.1_r8*domain(1,2)))
   end function h
 
   pure function u_ice(x)
@@ -332,22 +339,26 @@ contains
     !! Initial guess for plume velocity
     real(r8), dimension(:), intent(in)  :: x
     real(r8), dimension(:), allocatable :: U_plume
+!    real(r8) :: steady
     allocate(U_plume(1))
-    U_plume = plume_velocity_lower(1)!/(0.5*x(1) + 1._r8)
+!    steady = 1.95_r8*discharge**(1._r8/3._r8)/0.1965_r8
+    U_plume = plume_velocity_lower(1)
+!    U_plume = (steady - plume_velocity_lower(1))/(domain(1,2)-domain(1,1))*x(1) + plume_velocity_lower(1)
+!    U_plume = plume_velocity_lower(1) + (1._r8 - exp(-x(1)/0.1_r8))*(steady - plume_velocity_lower(1))
   end function U_plume
 
   pure function S(x)
     !! Initial guess of the plume salinity
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: S
-    S = plume_salinity_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))!*exp(x(1)/domain(1,2))! - 0.0001_r8*x(1)*(x(1) - 2*domain(1,2))
+    S = plume_salinity_lower - 0.2*x(1)*(x(1) - 2*domain(1,2))
   end function S
 
   pure function T(x)
     !! Initial guess of the plume temperature
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: T
-    T = plume_temperature_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))!*exp(x(1)/domain(1,2))! - 0.0001_r8*x(1)*(x(1) - 2*domain(1,2))
+    T = plume_temperature_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))
   end function T
 
   

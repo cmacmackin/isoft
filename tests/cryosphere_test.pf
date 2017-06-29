@@ -140,9 +140,9 @@ contains
     a12 = ei(-alpha*offset/big_x)
     a21 = alpha*s1(length)
     a22 = alpha*s2(length) + exp(-alpha*offset/big_x)/(length + offset)
-    phi = -a21 * (temp_st - zeta)/(a22 - a21*a12)
-    theta = temp_st -zeta - a12*phi
-    temp = theta*s1(location(1)) + phi*s2(location(1)) + zeta
+    phi = -a21 * (temp_st + zeta)/(a22 - a21*a12)
+    theta = temp_st + zeta - a12*phi
+    temp = theta*s1(location(1)) + phi*s2(location(1)) - zeta
   end function t
 
   subroutine setup(this)

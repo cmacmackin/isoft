@@ -1,5 +1,5 @@
 !
-!  jacobian_block.f90
+!  fin_diff_block.f90
 !  This file is part of ISOFT.
 !  
 !  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
@@ -33,6 +33,7 @@ module finite_difference_block_mod
   use factual_mod!, only: abstract_field, scalar_field, vector_field
   use boundary_types_mod, only: dirichlet, neumann, free_boundary
   use f95_lapack, only: la_gtsvx
+  use nitsol_mod, only: dnrm2
   use penf, only: str
   use logger_mod, only: logger => master_logger
   implicit none
@@ -89,6 +90,12 @@ module finite_difference_block_mod
     integer, dimension(:), allocatable  :: boundary_types
       !! The types of boundary conditions, specified using the
       !! parameters found in [[boundary_types_mod]].
+    logical                             :: had_offset = .true.
+      !! True if the factorisation was computed from a tridiagonal
+      !! system in which an offset was added to the diagonal.
+!    real(r8)                            :: magnitude
+!      !! The norm of the superdiagonal of the matrix. If an iterative
+!      !! method is used, this is needed to decide how to do so.
   contains
     private
     procedure :: fin_diff_block_solve_scalar
@@ -197,13 +204,14 @@ contains
     this%super_diagonal = cached_dx_c(1:n-1)
     this%sub_diagonal = -cached_dx_c(2:n)
     ! Apply boundary conditions
+    this%diagonal(1) = this%diagonal(1) + 1e-7
     do i = 1, size(this%boundary_locs)
       pos = this%boundary_locs(i)
       select case(this%boundary_types(i))
       case(dirichlet)
         this%diagonal(pos) = 1._r8
         if (pos < n) this%super_diagonal(pos) = 0._r8
-        if (pos > 1) this%sub_diagonal(pos-1) = 0._r8
+        if (pos > 1) this%sub_diagonal(pos-1) = 1.e-7_r8
       case(neumann)
         if (pos == n) then
           this%diagonal(n) = cached_dx_c(n)
@@ -224,43 +232,118 @@ contains
         error stop
       end select
     end do
-    
+    do i = 1, size(this%boundary_locs)
+      pos = this%boundary_locs(i)
+      select case(this%boundary_types(i))
+      case(dirichlet)
+        this%diagonal(pos) = 1._r8
+        if (pos < n) this%super_diagonal(pos) = 0._r8
+        if (pos > 1) this%sub_diagonal(pos-1) = 1.e-7_r8
+      case(neumann)
+        if (pos == n) then
+          this%diagonal(n) = cached_dx_c(n)
+          this%sub_diagonal(n-1) = -cached_dx_c(n)
+        else if (pos == 1) then
+          this%diagonal(1) = -cached_dx_c(1)
+          this%super_diagonal(1) = cached_dx_c(1)
+        else
+          this%super_diagonal(pos) = cached_dx_c(pos)
+          this%sub_diagonal(pos-1) = cached_dx_c(pos)
+          this%diagonal(pos) = 0._r8
+        end if
+      case(free_boundary)
+        continue
+      case default
+        call logger%fatal('fin_diff_block','Boundary condition of '// &
+                          'type other than Dirichlet or Neumann encountered.')
+        error stop
+      end select
+    end do
+    !this%magnitude = dnrm2(n-1, this%super_diagonal, 1)
 #ifdef DEBUG
     call logger%debug('fin_diff_block','Instantiated a finite difference '// &
                       'block object.')
 #endif
   end function constructor
 
+!  subroutine fin_diff_block_set_bounds(this, subdiag, diag, supdiag)
+!    !* Author: Chris MacMackin
+!    !  Date: June 2017
+!    !
+!    ! Alters the provided tridiagonal vector to incorporate the
+!    ! boundary conditions of this block.
+!    !
+!    class(fin_diff_block), intent(in)     :: this
+!    real(r8), dimension(:), intent(inout) :: subdiag
+!      !! The subdiagonal
+!    real(r8), dimension(:), intent(inout) :: diag
+!      !! The diagonal
+!    real(r8), dimension(:), intent(inout) :: supdiag
+!      !! The diagonal
+!    integer :: i, n, pos
+!    do i = 1, size(this%boundary_locs)
+!      pos = this%boundary_locs(i)
+!      select case(this%boundary_types(i))
+!      case(dirichlet)
+!        diag(pos) = 1._r8
+!        if (pos < n) supdiag(pos) = 0._r8
+!        if (pos > 1) subdiag(pos-1) = 1.e-7_r8
+!      case(neumann)
+!        if (pos == n) then
+!          diag(n) = cached_dx_c(n)
+!          subdiag(n-1) = -cached_dx_c(n)
+!        else if (pos == 1) then
+!          diag(1) = -cached_dx_c(1)
+!          supdiag(1) = cached_dx_c(1)
+!        else
+!          supdiag(pos) = cached_dx_c(pos)
+!          subdiag(pos-1) = cached_dx_c(pos)
+!          diag(pos) = 0._r8
+!        end if
+!      case(free_boundary)
+!        continue
+!      case default
+!        call logger%fatal('fin_diff_block','Boundary condition of '// &
+!                          'type other than Dirichlet or Neumann encountered.')
+!        error stop
+!      end select
+!    end do
+!  end subroutine fin_diff_block_set_bounds
 
-  function fin_diff_block_solve_scalar(this, rhs) result(solution)
+  function fin_diff_block_solve_scalar(this, rhs, offset) result(solution)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
     ! Solves the linear(ised) system represented by this finite
     ! difference block, for a given right hand side state vector
-    ! (represented by a scalar field).
+    ! (represented by a scalar field). Optionally, the differential
+    ! operator can be augmented by adding an offset, i.e. a scalar
+    ! field which is added to the operator.
     !
     ! @Warning Currently this is only implemented for a 1-D field.
     !
-    class(fin_diff_block), intent(inout) :: this
-    class(scalar_field), intent(in)      :: rhs
+    class(fin_diff_block), intent(inout)      :: this
+    class(scalar_field), intent(in)           :: rhs
       !! The right hand side of the linear(ised) system.
-    class(scalar_field), pointer         :: solution
-    real(r8), dimension(:), allocatable  :: sol_vector
+    class(scalar_field), optional, intent(in) :: offset
+      !! An offset to add to the differential operator
+    class(scalar_field), pointer              :: solution
 
-    integer                                   :: flag, n, i
-    real(r8)                                  :: forward_err, &
-                                                 backward_err, &
-                                                 condition_num
-    character(len=1)                          :: factor
-    character(len=:), allocatable             :: msg
+    real(r8), dimension(:), allocatable :: sol_vector, diag_vector
+    integer                             :: flag, n, i, j
+    real(r8)                            :: forward_err, &
+                                           backward_err, &
+                                           condition_num
+    character(len=1)                    :: factor
+    character(len=:), allocatable       :: msg
  
     call rhs%guard_temp()
+    if (present(offset)) call offset%guard_temp()
     allocate(sol_vector(rhs%raw_size()))
     ! Allocate the arrays used to hold the factorisation of the
     ! tridiagonal matrix
+    n = size(this%diagonal)
     if (.not. allocated(this%pivots)) then
-      n = size(this%diagonal)
       allocate(this%l_multipliers(n-1))
       allocate(this%u_diagonal(n))
       allocate(this%u_superdiagonal1(n-1))
@@ -268,21 +351,59 @@ contains
       allocate(this%pivots(n))
       factor = 'N'
     else
-      factor = 'F'
+      if (.not. present(offset) .and. .not. this%had_offset) then
+        factor = 'F'
+      else
+        factor = 'N'
+      end if
     end if
 
-    call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
-                  rhs%raw(), sol_vector, this%l_multipliers, this%u_diagonal, &
-                  this%u_superdiagonal1, this%u_superdiagonal2, this%pivots,  &
-                  factor, 'N', forward_err, backward_err, condition_num,      &
-                  flag)
+    if (present(offset)) then
+#ifdef DEBUG
+      if (offset%elements() /= n) then
+        call logger%fatal('fin_diff_block%solve_for','Offset field has '// &
+                          'different resolution than finite difference block.')
+      end if
+#endif
+      allocate(diag_vector(n))
+
+      where (this%diagonal == 0._r8)
+        diag_vector = this%diagonal + offset%raw()
+      elsewhere
+        diag_vector = this%diagonal
+      end where
+      if (.not. any(1 == this%boundary_locs)) then
+        diag_vector(1) = diag_vector(1) + offset%get_element(1)
+      end if
+      if (.not. any(n == this%boundary_locs)) then
+        diag_vector(n) = diag_vector(n) + offset%get_element(n)
+      end if
+      do i=1, size(this%boundary_locs)
+        j = this%boundary_locs(i)
+        if ((j == 1 .or. j == n) .and. this%boundary_types(i) == free_boundary) then
+          diag_vector(j) = diag_vector(j) + offset%get_element(j)
+        end if
+      end do
+      call la_gtsvx(this%sub_diagonal, diag_vector, this%super_diagonal, &
+                    rhs%raw(), sol_vector, this%l_multipliers,           &
+                    this%u_diagonal, this%u_superdiagonal1,              &
+                    this%u_superdiagonal2, this%pivots, factor, 'N',     &
+                    forward_err, backward_err, condition_num, flag)
+    else
+      call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal,      &
+                    rhs%raw(), sol_vector, this%l_multipliers, this%u_diagonal, &
+                    this%u_superdiagonal1, this%u_superdiagonal2, this%pivots,  &
+                    factor, 'N', forward_err, backward_err, condition_num,      &
+                    flag)
+    end if
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//str(flag)
       call logger%error('fin_diff_block%solve_for',msg)
     else
+      this%had_offset = present(offset)
+#ifdef DEBUG
       msg = 'Tridiagonal matrix solver retunred with estimated condition '// &
             'number '//str(condition_num)
-#ifdef DEBUG
       call logger%debug('fin_diff_block%solve_for',msg)
 #endif
     end if
@@ -290,17 +411,19 @@ contains
     call solution%unset_temp()
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
+    if (present(offset)) call offset%clean_temp()
     call rhs%clean_temp(); call solution%set_temp()
   end function fin_diff_block_solve_scalar
 
-
-  function fin_diff_block_solve_vector(this, rhs) result(solution)
+  function fin_diff_block_solve_vector(this, rhs, offset) result(solution)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
     ! Solves the linear(ised) system represented by this finite
     ! difference block, for a given right hand side state vector
-    ! (represented by a scalar field).
+    ! (represented by a vector field). Optionally, the differential
+    ! operator can be augmented by adding an offset, i.e. a vector
+    ! field which is added to the operator.
     !
     ! @Warning Currently this is only implemented for a 1-D field.
     !
@@ -309,22 +432,25 @@ contains
     ! `class(vector_field)`. Everything works fine if it is
     ! `class(cheb1d_vector_field)`, so this is used as a workaround.
     !
-    class(fin_diff_block), intent(inout)   :: this
-    class(cheb1d_vector_field), intent(in) :: rhs
+    class(fin_diff_block), intent(inout)      :: this
+    class(cheb1d_vector_field), intent(in)    :: rhs
       !! The right hand side of the linear(ised) system.
-    class(vector_field), pointer           :: solution
-    real(r8), dimension(:), allocatable    :: sol_vector
+    class(vector_field), optional, intent(in) :: offset
+      !! An offset to add to the differential operator
+    class(vector_field), pointer              :: solution
 
-    integer                          :: flag, n, i
-    class(scalar_field), pointer     :: component
-    integer                          :: m
-    real(r8)                         :: forward_err, &
-                                        backward_err, &
-                                        condition_num
-    character(len=1)                 :: factor
-    character(len=:), allocatable    :: msg
+    real(r8), dimension(:), allocatable :: sol_vector, diag_vector
+    integer                             :: flag, n, i, j, k
+    class(scalar_field), pointer        :: component, ocomponent
+    integer                             :: m
+    real(r8)                            :: forward_err, &
+                                           backward_err, &
+                                           condition_num
+    character(len=1)                    :: factor
+    character(len=:), allocatable       :: msg
  
     call rhs%guard_temp()
+    if (present(offset)) call offset%guard_temp()
     allocate(sol_vector(rhs%raw_size()))
     n = size(this%diagonal)
     ! Allocate the arrays used to hold the factorisation of the
@@ -337,29 +463,80 @@ contains
       allocate(this%pivots(n))
       factor = 'N'
     else
-      factor = 'F'
+      if (.not. present(offset) .and. .not. this%had_offset) then
+        factor = 'F'
+      else
+        factor = 'N'
+      end if
     end if
 
     call rhs%allocate_scalar_field(component)
     call component%guard_temp()
+    if (present(offset)) then
+#ifdef DEBUG
+      if (offset%elements() /= n) then
+        call logger%fatal('fin_diff_block%solve_for','Offset field has '// &
+                          'different resolution than finite difference block.')
+        error stop
+      else if (offset%vector_dimensions() /= rhs%vector_dimensions()) then
+        call logger%fatal('fin_diff_block%solve_for','Offset field has '// &
+                          'different number of vector components than '// &
+                          'field being solved for.')
+        error stop
+      end if
+#endif
+      call offset%allocate_scalar_field(ocomponent)
+      call ocomponent%guard_temp()
+    end if
+
     do i = 1, rhs%vector_dimensions()
-      if (i > 1) factor = 'F'
+      if (i > 1 .and. .not. present(offset)) factor = 'F'
       component = rhs%component(i)
-      call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal, &
-                    component%raw(), sol_vector((i-1)*n+1:i*n),            &
-                    this%l_multipliers, this%u_diagonal,                   &
-                    this%u_superdiagonal1, this%u_superdiagonal2,          &
-                    this%pivots, factor, 'N', forward_err, backward_err,   &
-                    condition_num, flag)
+      if (present(offset)) then
+        ocomponent = offset%component(i)
+        if (i == 1) allocate(diag_vector(n))
+        where (this%diagonal == 0._r8)
+          diag_vector = this%diagonal + ocomponent%raw()
+        elsewhere
+          diag_vector = this%diagonal
+        end where
+        if (.not. any(1 == this%boundary_locs)) then
+          diag_vector(1) = diag_vector(1) + ocomponent%get_element(1)
+        end if
+        if (.not. any(n == this%boundary_locs)) then
+          diag_vector(n) = diag_vector(n) + ocomponent%get_element(n)
+        end if
+        do j=1, size(this%boundary_locs)
+          k = this%boundary_locs(j)
+          if ((k == 1 .or. k == n) .and. this%boundary_types(j) == free_boundary) then
+            diag_vector(k) = diag_vector(k) + ocomponent%get_element(k)
+          end if
+        end do
+        call la_gtsvx(this%sub_diagonal, diag_vector, this%super_diagonal, &
+                      component%raw(), sol_vector((i-1)*n+1:i*n),          &
+                      this%l_multipliers, this%u_diagonal,                 &
+                      this%u_superdiagonal1, this%u_superdiagonal2,        &
+                      this%pivots, factor, 'N', forward_err, backward_err, &
+                      condition_num, flag)
+      else
+        call la_gtsvx(this%sub_diagonal, this%diagonal, this%super_diagonal, &
+                      component%raw(), sol_vector((i-1)*n+1:i*n),            &
+                      this%l_multipliers, this%u_diagonal,                   &
+                      this%u_superdiagonal1, this%u_superdiagonal2,          &
+                      this%pivots, factor, 'N', forward_err, backward_err,   &
+                      condition_num, flag)
+      end if
     end do
     call component%clean_temp()
+    if(present(offset)) call ocomponent%clean_temp()
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//str(flag)
       call logger%error('fin_diff_block%solve_for',msg)
     else
-      msg = 'Tridiagonal matrix solver retunred with estimated condition '// &
-            'number '//str(condition_num)
+      this%had_offset = present(offset)
 #ifdef DEBUG
+      msg = 'Tridiagonal matrix solver returned with estimated condition '// &
+            'number '//str(condition_num)
       call logger%debug('fin_diff_block%solve_for',msg)
 #endif
     end if
@@ -367,6 +544,7 @@ contains
     call solution%unset_temp()
     call solution%assign_meta_data(rhs)
     call solution%set_from_raw(sol_vector)
+    if (present(offset)) call offset%clean_temp()
     call rhs%clean_temp(); call solution%set_temp()
   end function fin_diff_block_solve_vector
 

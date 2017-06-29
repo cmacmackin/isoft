@@ -208,6 +208,7 @@ contains
     class(glacier), dimension(:), allocatable :: old_glaciers
     logical :: success
     real(r8) :: t, old_t, dt
+    real(r8), allocatable, dimension(:) :: sub_state
 
     if (time <= this%time) then
       call logger%warning('cryosphere%integrate','Request made to '// &
@@ -275,6 +276,7 @@ contains
 
       ! Solve the plume so that it is ready for use in the next step of
       ! the time integration.
+      sub_state = this%sub_ice%state_vector()
       call this%sub_ice%solve(this%ice%ice_thickness(), this%ice%ice_density(), &
                               this%ice%ice_temperature(), t, success)
 
@@ -283,6 +285,7 @@ contains
                            'cryosphere to time '//trim(str(t)))
       else
         this%ice = old_glaciers(1)
+        call this%sub_ice%update(sub_state)
         if (this%dt_factor > this%min_dt_factor) then
           call logger%warning('cryosphere%integrate','Failure in plume '// &
                               'solver. Reducing time step and trying again.')

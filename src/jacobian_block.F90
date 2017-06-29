@@ -664,6 +664,7 @@ contains
                   flag)
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//trim(str(flag))
+      CALL backtrace
       call logger%error('jacobian_block%solve_for',msg)
     else
       msg = 'Tridiagonal matrix solver returned with estimated condition '// &

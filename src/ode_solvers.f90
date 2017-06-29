@@ -211,7 +211,7 @@ contains
 
     integer :: i, stagnant_iters, gmres_flag
     integer :: nlhs, nrpre, nli, tnlhs, tnrpre, tnli
-    real(r8) :: old_resid, gmres_norm
+    real(r8) :: init_resid, old_resid, gmres_norm
     real(r8), dimension(size(solution),order) :: u_prev
     real(r8), dimension(size(solution))       :: f_prev, rhs
 
@@ -254,10 +254,13 @@ contains
     u_prev = get_derivs(solution)
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
-    old_resid = 5*resid_norm
-!print*, L(solution) - f_prev
+    init_resid = resid_norm
+    old_resid = resid_norm * 1e3_r8
+
     do while(resid_norm > eta)
-      print*,resid_norm
+!      print*, '-------------------------------------------------------'
+      print*, resid_norm
+!      print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
         stagnant_iters = stagnant_iters + 1
@@ -270,10 +273,10 @@ contains
         flag = 2
         return
       end if
-      if (old_resid < resid_norm) then
-        flag = 3
-        return
-      end if
+      !if (old_resid < resid_norm) then
+      !  flag = 3
+      !  return
+      !end if
 
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
@@ -284,7 +287,12 @@ contains
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
 
-      if (gmres_flag /= 0) then
+      u_prev = get_derivs(solution)
+      f_prev = f(u_prev)
+      old_resid = resid_norm
+      resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
+
+      if (gmres_flag /= 0 .and. resid_norm > old_resid) then
         if (present(info)) then
           info(1) = i + tnlhs + tnrpre
           info(2) = 2*i + tnlhs
@@ -292,15 +300,14 @@ contains
           info(4) = tnli
           info(5) = i
         end if
-        flag = -gmres_flag
+        if (init_resid < resid_norm) then
+          flag = 3
+        else
+          flag = -gmres_flag
+        end if
         return
       end if
-
-      u_prev = get_derivs(solution)
-      f_prev = f(u_prev)
-      resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     end do
-      print*,resid_norm
 
     if (present(info)) then
       info(1) = 1 + i + tnlhs + tnrpre
