@@ -35,8 +35,9 @@ module plume_mod
   !
   use iso_fortran_env, only: r8 => real64
   use basal_surface_mod, only: basal_surface, hdf_type_attr
-  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field, &
-                         uniform_scalar_field, uniform_vector_field
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field, uniform_scalar_field,       &
+                         uniform_vector_field
   use ode_solvers_mod, only: quasilinear_solve
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
@@ -99,7 +100,7 @@ module plume_mod
     class(ambient_conditions), allocatable :: ambient_conds
       !! An object specifying the temperature and salinity of the
       !! ambient ocean at its interface with the plume.
-    class(equation_of_state), allocatable :: eos
+    class(equation_of_state), allocatable, public :: eos
       !! An object specifying the equation of state relating the plume
       !! water's density to its temperature and salinity.
     class(plume_boundary), allocatable :: boundaries
@@ -909,8 +910,11 @@ contains
     real(r8) :: residual
     integer, dimension(5) :: info
     integer :: flag
+    class(scalar_field), pointer :: b
 
     call ice_thickness%guard_temp()
+    b => -ice_thickness/this%r_val
+    call b%guard_temp()
     this%time = time
 
     solution = this%state_vector()
@@ -949,7 +953,7 @@ contains
       success = .false.
     end select
     
-    call ice_thickness%clean_temp()
+    call ice_thickness%clean_temp(); call b%clean_temp()
 
   contains
 
@@ -1107,6 +1111,86 @@ contains
       L(st:en) = scalar_tmp%raw()
     end function L
 
+    subroutine non_diff_terms(D, Uvec, T, S, b, DU_x, DUU_x, DUT_x, DUS_x)
+      !! Computes the values of \((DU)_x\), \((DU\vec{U})_x\),
+      !! \((DUT)_x\), \((DUS)_x\), when diffusion is not
+      !! included. This should be able to handle uniform field types,
+      !! for use in an ODE solver when integrating near the boundary.
+      class(scalar_field), intent(in)  :: D
+        !! The plume thickness
+      class(vector_field), intent(in)  :: Uvec
+        !! The plume velocity
+      class(scalar_field), intent(in)  :: T
+        !! The plume temperature
+      class(scalar_field), intent(in)  :: S
+        !! The plume salinity
+      class(scalar_field), intent(in)  :: b
+        !! The debth of the base of the ice shelf
+      class(scalar_field), intent(out) :: DU_x
+        !! The derivative of the product DU
+      class(vector_field), intent(out) :: DUU_x
+        !! The derivative of the product DUU
+      class(scalar_field), intent(out) :: DUT_x
+        !! The derivative of the product DUT
+      class(scalar_field), intent(out) :: DUS_x
+        !! The derivative of the product DUS
+     
+      integer :: i, dims
+      class(scalar_field), pointer :: m, rho, e, S_a, U, V, &
+                                      T_a, rho_a, rho_x, Unorm
+      class(scalar_field), allocatable, dimension(:) :: tmp
+      call D%guard_temp(); call Uvec%guard_temp(); call T%guard_temp()
+      call S%guard_temp(); call b%guard_temp()
+
+      e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
+      S_a => this%ambient_conds%ambient_salinity(b,this%time)
+      T_a => this%ambient_conds%ambient_temperature(b,this%time)
+      rho => this%eos%water_density(T, S)
+      U => Uvec%component(1)
+      V => Uvec%component(2)
+      call e%guard_temp(); call S_a%guard_temp(); call T_a%guard_temp()
+      call rho%guard_temp(); call U%guard_temp(); call V%guard_temp()
+      rho_a => this%eos%water_density(T_a, S_a)
+      call rho_a%guard_temp()
+
+      call this%melt_formulation%solve_for_melt(Uvec, b, T, S, D, time)
+      m => this%melt_formulation%melt_rate()
+      call m%guard_temp()
+
+      DU_x = e + m
+      if (this%melt_formulation%has_heat_terms()) then
+        DUT_x = e*T_a - this%melt_formulation%heat_equation_terms()
+      else
+        DUT_x = e*T_a
+      end if
+      if (this%melt_formulation%has_salt_terms()) then
+        DUS_x = e*S_a - this%melt_formulation%salt_equation_terms()
+      else
+        DUS_x = e*S_a
+      end if
+      
+      Unorm => Uvec%norm()
+      rho_x => this%eos%water_density_derivative(T, T%d_dx(1), S, S%d_dx(1), 1)
+      call Unorm%guard_temp()
+      call rho_x%guard_temp()
+      dims = Uvec%raw_size()/Uvec%elements()
+      allocate(tmp(dims), mold=D)
+      tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
+               + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U)/ &
+               (1._r8 - this%delta*(rho_a - rho)/U**2)
+      if (dims > 1) then
+        tmp(2) = -this%mu*Unorm*V
+      end if
+      DUU_x = tmp
+
+      call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
+      call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
+      call U%clean_temp(); call V%clean_temp(); call Unorm%clean_temp()
+      call rho_x%clean_temp()
+      call D%clean_temp(); call Uvec%clean_temp(); call T%clean_temp()
+      call S%clean_temp(); call b%clean_temp()
+    end subroutine non_diff_terms
+
     function f(v)
       !! The nonlinear operator
       real(r8), dimension(:,:), intent(in) :: v
@@ -1116,10 +1200,9 @@ contains
       real(r8), dimension(size(v,1)) :: f
 
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
-      type(cheb1d_scalar_field) :: scalar_tmp, D_x
-      type(cheb1d_vector_field) :: vector_tmp
-      class(scalar_field), pointer :: b, U, U_x, m, rho, e, S_a, &
-                                      T_a, rho_a
+      type(cheb1d_scalar_field) :: scalar_tmp, D_x, D_nd, S_nd, T_nd
+      type(cheb1d_vector_field) :: vector_tmp, U_nd
+      class(scalar_field), pointer :: U, U_x
 
       call this%update(v(:,1))
       call this%boundaries%set_time(this%time)
@@ -1132,30 +1215,18 @@ contains
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
                 mu => this%mu, r => this%r_val, bounds => this%boundaries)
 
-        b => -h/r
-        call b%guard_temp()
-        call mf%solve_for_melt(Uvec, b, T, S, D, time)
+        call non_diff_terms(D, Uvec, T, S, b, D_nd, U_nd, T_nd, S_nd)
 
         ! FIXME: Alter this so that can take advantage of
         ! parameterisations returning uniform fields.
         U => this%velocity%component(1)
         U_x => this%velocity_dx%component(1)
-        m => mf%melt_rate()
-        rho => this%eos%water_density(T, S)
-        e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
-        S_a => this%ambient_conds%ambient_salinity(b,this%time)
-        T_a => this%ambient_conds%ambient_temperature(b,this%time)
-        call U%guard_temp(); call U_x%guard_temp(); call m%guard_temp()
-        call rho%guard_temp(); call e%guard_temp(); call S_a%guard_temp()
-        call T_a%guard_temp()
-        rho_a => this%eos%water_density(T_a, S_a)
-        call rho_a%guard_temp()
-        !print*,e%raw()
+        call U%guard_temp(); call U_x%guard_temp()
 
         ! Thickness
         call bounds%thickness_bound_info(-1, btype_l, bdepth_l)
         call bounds%thickness_bound_info(1, btype_u, bdepth_u)
-        scalar_tmp = (e + m - D*U_x)/U
+        scalar_tmp = (D_nd - D*U_x)/U
         D_x = scalar_tmp
         select case(btype_l)
         case(dirichlet)
@@ -1196,10 +1267,8 @@ contains
         f(st:en) = vector_tmp%raw()
 
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
-        vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec + &
-                      mu*Uvec%norm()*Uvec - nu*D_x*Uvec_x -  &
-                      D*(rho_a - rho)*(.grad.(b - delta*D)) - &
-                      0.5_r8*delta*D**2*(.grad. rho))/(nu*D)
+        vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - &
+                      U_nd - nu*D_x*Uvec_x)/(nu*D)
         if (btype_l == neumann) then
           call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
@@ -1232,13 +1301,7 @@ contains
         en = st + this%temperature_size - 1
         f(st:en) = scalar_tmp%raw()
 
-        if (mf%has_heat_terms()) then
-          scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
-                       - nu*D_x*T_x + mf%heat_equation_terms())/(nu*D)
-        else
-          scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - e*T_a &
-                       - nu*D_x*T_x)/(nu*D)
-        end if
+        scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
@@ -1271,13 +1334,7 @@ contains
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
-        if (mf%has_salt_terms()) then
-          scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
-                       - nu*D_x*S_x + mf%salt_equation_terms())/(nu*D)
-        else
-          scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - e*S_a &
-                       - nu*D_x*S_x)/(nu*D)
-        end if
+        scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
         if (btype_l == neumann) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
         else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
@@ -1296,9 +1353,7 @@ contains
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
-        call b%clean_temp(); call U%clean_temp(); call U_x%clean_temp()
-        call m%clean_temp(); call rho%clean_temp(); call e%clean_temp()
-        call S_a%clean_temp(); call T_a%clean_temp(); call rho_a%clean_temp()
+        call U%clean_temp(); call U_x%clean_temp()
       end associate
     end function f
 
@@ -1321,7 +1376,7 @@ contains
       real(r8), dimension(size(v)) :: preconditioner
         !! The result of applying the preconditioner.
 
-      integer :: st, en
+      integer :: st, en, ust, uen
       real(r8) :: nu
       type(plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
@@ -1347,7 +1402,7 @@ contains
       call U%guard_temp(); call U_x%guard_temp()
       nu = this%nu
 
-      v_plume%thickness = this%thickness_precond%solve_for(v_plume%thickness, U_x/U)
+      v_plume%thickness = this%thickness_precond%solve_for(v_plume%thickness)!, U_x/U)
       st = 1
       en = st + this%thickness_size - 1
       preconditioner(st:en) = v_plume%thickness%raw()
@@ -1357,13 +1412,11 @@ contains
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity%raw()
   
-      ! Store diagonal offset in unused field
-      v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
-      v_plume%velocity_dx = &
-           this%velocity_dx_precond%solve_for(v_plume%velocity_dx)!, v_plume%velocity)
+      ! Precondition the U_x term after have preconditioned values for S and T
       st = en + 1
       en = st + this%velocity_size - 1
-      preconditioner(st:en) = v_plume%velocity_dx%raw()
+      ust = st
+      uen = en
   
       v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature)
       st = en + 1
@@ -1373,8 +1426,8 @@ contains
       ! Store diagonal offset in unused field
       v_plume%thickness = U/(-nu)
       v_plume%temperature_dx = &
-           this%temperature_dx_precond%solve_for(v_plume%temperature_dx, &
-                                                v_plume%thickness)
+           this%temperature_dx_precond%solve_for(v_plume%temperature_dx)!, &
+!                                                v_plume%thickness)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
@@ -1385,11 +1438,20 @@ contains
       preconditioner(st:en) = v_plume%salinity%raw()
   
       v_plume%salinity_dx = &
-           this%salinity_dx_precond%solve_for(v_plume%salinity_dx, &
-                                                v_plume%thickness)
+           this%salinity_dx_precond%solve_for(v_plume%salinity_dx)!, &
+!                                                v_plume%thickness)
       st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
+
+      ! Precondition the U_x term using the values of S and T,
+      ! allowing buoyance to be included.
+      !v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
+      !v_plume%velocity = (.grad. this%thickness)*this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu)
+      !v_plume%velocity = this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu) * v_plume%velocity
+      v_plume%velocity_dx = &
+           this%velocity_dx_precond%solve_for(v_plume%velocity_dx)!, v_plume%velocity)
+      preconditioner(ust:uen) = v_plume%velocity_dx%raw()
 
       call U%clean_temp(); call U_x%clean_temp()
     end function preconditioner

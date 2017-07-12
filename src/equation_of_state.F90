@@ -48,9 +48,13 @@ module equation_of_state_mod
   contains
     procedure(get_property), deferred :: water_density
       !! Returns the water density for the given temperature and salinity.
-!    procedure(get_property_dx), deferred :: water_density_derivative
-!      !! Returns the derivative of the water density for the given
-!      !! temperature and salinity.
+    procedure(get_property_dx), deferred :: water_density_derivative
+      !! Returns the derivative of the water density for the given
+      !! temperature and salinity.
+    procedure(get_coef), deferred    :: haline_contraction
+      !! Returns a (possibly approximated) haline contraction coefficient.
+    procedure(get_coef), deferred    :: thermal_contraction
+      !! Returns a (possibly approximated) therma contraction coefficient.
  end type equation_of_state
 
   abstract interface
@@ -90,6 +94,15 @@ module equation_of_state_mod
         !! water in direction `dir`
     end function get_property_dx
 
+    function get_coef(this, temperature, salinity) result(coef)
+      import :: r8
+      import :: equation_of_state
+      import :: scalar_field
+      class(equation_of_state), intent(in) :: this
+      class(scalar_field), intent(in)      :: temperature
+      class(scalar_field), intent(in)      :: salinity
+      class(scalar_field), allocatable     :: coef
+    end function get_coef
   end interface
 
 end module equation_of_state_mod

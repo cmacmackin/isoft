@@ -34,7 +34,7 @@ module linear_eos_mod
   ! implement an equation of state.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field
+  use factual_mod, only: scalar_field, uniform_scalar_field
   use equation_of_state_mod, only: equation_of_state
   implicit none
   private
@@ -65,6 +65,8 @@ module linear_eos_mod
   contains
     procedure :: water_density => linear_water_density
     procedure :: water_density_derivative => linear_water_deriv
+    procedure :: haline_contraction => linear_haline_contraction
+    procedure :: thermal_contraction => linear_thermal_contraction
   end type linear_eos
 
   interface linear_eos
@@ -122,9 +124,9 @@ contains
     !* Author: Chris MacMackin
     !  Date: November 2016
     !
-    ! Calculates the density of the water from the temperature and
-    ! salinity, using a linear equatino of state, $$ \rho =
-    ! \rho_0[1-\beta_T(T-T_0) + \beta_S(S-S_0)]. $$
+    ! Calculates the derivative of the water density from the
+    ! temperature and salinity, using a linear equatino of state, $$
+    ! \rho = \rho_0[1-\beta_T(T-T_0) + \beta_S(S-S_0)]. $$
     class(linear_eos), intent(in)    :: this
     class(scalar_field), intent(in)  :: temperature
       !! A field containing the temperature of the water
@@ -148,5 +150,33 @@ contains
     call d_temperature%clean_temp(); call d_salinity%clean_temp()
     call d_density%set_temp()
   end function linear_water_deriv
+
+  function linear_haline_contraction(this, temperature, salinity) result(coef)
+    !* Author: Chris MacMackin
+    !  Date: June 2017
+    !
+    ! Returns the haline contraction coefficient.
+    !
+    class(linear_eos), intent(in)    :: this
+    class(scalar_field), intent(in)  :: temperature
+    class(scalar_field), intent(in)  :: salinity
+    class(scalar_field), allocatable :: coef
+    allocate(uniform_scalar_field :: coef)
+    coef = uniform_scalar_field(this%ref_rho*this%beta_s)
+  end function linear_haline_contraction
+
+  function linear_thermal_contraction(this, temperature, salinity) result(coef)
+    !* Author: Chris MacMackin
+    !  Date: June 2017
+    !
+    ! Returns the thermal contraction coefficient.
+    !
+    class(linear_eos), intent(in)    :: this
+    class(scalar_field), intent(in)  :: temperature
+    class(scalar_field), intent(in)  :: salinity
+    class(scalar_field), allocatable :: coef
+    allocate(uniform_scalar_field :: coef)
+    coef = uniform_scalar_field(this%ref_rho*this%beta_t)
+  end function linear_thermal_contraction
 
 end module linear_eos_mod

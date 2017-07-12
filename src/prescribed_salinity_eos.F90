@@ -55,10 +55,15 @@ module prescribed_eos_mod
     private
     class(scalar_field), allocatable :: density
       !! The density calculated from the prescribed salinity
+    real(r8)                         :: beta_s
+      !! The haline contraction coefficient
   contains
     procedure :: water_density => prescribed_water_density
     procedure, pass(rhs) :: prescribed_assign
     generic :: assignment(=) => prescribed_assign
+    procedure :: water_density_derivative => prescribed_water_deriv
+    procedure :: haline_contraction => prescribed_haline_contraction
+    procedure :: thermal_contraction => prescribed_thermal_contraction
   end type prescribed_eos
 
   interface prescribed_eos
@@ -79,6 +84,7 @@ contains
     call thickness%guard_temp()
     allocate(this%density, mold=thickness)
     this%density = const*beta_s/thickness
+    this%beta_s = beta_s
     call thickness%clean_temp()
   end function constructor
 
@@ -100,7 +106,7 @@ contains
     if (temperature == uniform_scalar_field(0._r8) .and. &
         salinity == uniform_scalar_field(0._r8)) then
       ! Kludge to ensure correct ambient density is returned
-      call temperature%allocate_scalar_field(density)       
+      call temperature%allocate_scalar_field(density)
       density = uniform_scalar_field(0._r8)
     else
       call this%density%allocate_scalar_field(density)
@@ -109,6 +115,43 @@ contains
     call temperature%clean_temp(); call salinity%clean_temp()
     call density%set_temp()
   end function prescribed_water_density
+
+  function prescribed_water_deriv(this, temperature, d_temperature, salinity, &
+                             d_salinity, dir) result(d_density)
+    !* Author: Chris MacMackin
+    !  Date: July 2017
+    !
+    ! Calculates the derivative of the water density.
+    class(prescribed_eos), intent(in) :: this
+    class(scalar_field), intent(in)   :: temperature
+      !! A field containing the temperature of the water
+    class(scalar_field), intent(in)   :: d_temperature
+      !! A field containing the derivative of the temperature of the
+      !! water, in teh same direction as `dir`
+    class(scalar_field), intent(in)   :: salinity
+      !! A field containing the salinity of the water
+    class(scalar_field), intent(in)   :: d_salinity
+      !! A field containing the derivative of the salinity of the
+      !! water, in the same direction as `dir`
+    integer, intent(in)               :: dir
+      !! The direction in which to take the derivative
+    class(scalar_field), pointer      :: d_density
+      !! A field containing the density of the water
+    call temperature%guard_temp(); call salinity%guard_temp()
+    call d_temperature%guard_temp(); call d_salinity%guard_temp()
+    if (temperature == uniform_scalar_field(0._r8) .and. &
+        salinity == uniform_scalar_field(0._r8)) then
+      ! Kludge to ensure correct ambient density is returned
+      call temperature%allocate_scalar_field(d_density)
+      d_density = uniform_scalar_field(0._r8)
+    else
+      call this%density%allocate_scalar_field(d_density)
+      d_density = this%density%d_dx(1)
+    end if
+    call temperature%clean_temp(); call salinity%clean_temp()
+    call d_temperature%clean_temp(); call d_salinity%clean_temp()
+    call d_density%set_temp()
+  end function prescribed_water_deriv
 
   subroutine prescribed_assign(lhs, rhs)
     !* Author: Chris MacMackin
@@ -136,5 +179,34 @@ contains
                   "than `prescribed_eos`.")
     end select
   end subroutine prescribed_assign
+
+
+  function prescribed_haline_contraction(this, temperature, salinity) result(coef)
+    !* Author: Chris MacMackin
+    !  Date: June 2017
+    !
+    ! Returns the haline contraction coefficient.
+    !
+    class(prescribed_eos), intent(in)    :: this
+    class(scalar_field), intent(in)  :: temperature
+    class(scalar_field), intent(in)  :: salinity
+    class(scalar_field), allocatable :: coef
+    allocate(uniform_scalar_field :: coef)
+    coef = uniform_scalar_field(this%beta_s)
+  end function prescribed_haline_contraction
+
+  function prescribed_thermal_contraction(this, temperature, salinity) result(coef)
+    !* Author: Chris MacMackin
+    !  Date: June 2017
+    !
+    ! Returns the thermal contraction coefficient.
+    !
+    class(prescribed_eos), intent(in)    :: this
+    class(scalar_field), intent(in)  :: temperature
+    class(scalar_field), intent(in)  :: salinity
+    class(scalar_field), allocatable :: coef
+    allocate(uniform_scalar_field :: coef)
+    coef = uniform_scalar_field(0.0_r8)
+  end function prescribed_thermal_contraction
 
 end module prescribed_eos_mod

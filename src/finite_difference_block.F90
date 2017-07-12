@@ -478,7 +478,7 @@ contains
         call logger%fatal('fin_diff_block%solve_for','Offset field has '// &
                           'different resolution than finite difference block.')
         error stop
-      else if (offset%vector_dimensions() /= rhs%vector_dimensions()) then
+      else if (offset%vector_dimensions() < rhs%vector_dimensions()) then
         call logger%fatal('fin_diff_block%solve_for','Offset field has '// &
                           'different number of vector components than '// &
                           'field being solved for.')
