@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#  entrainment.py
+#  dimensionless_num.py
 #  This file is part of ISOFT.
 #  
 #  Copyright 2017 Chris MacMackin <cmacmackin@gmail.com>
@@ -21,32 +21,13 @@
 #  MA 02110-1301, USA.
 #  
 
-'''Contains classes for calculating the entrainment rate of the plume
-using different parameterisations.
+'''Contains routines for calculating various useful dimensionless
+numbers.
+
 '''
 
 import numpy as np
-import calculus
 
-class Jenkins1991Entrainment(object):
-    '''A class representing the entrainment formulation used by Jenkins et
-    al. (1991).
-
-    coefficient
-        The coefficient used in the entrainment calculation
-    size
-        The number of Chebyshev modes in the field
-    lower
-        The lower boundary of the field domain
-    upper
-        The upper boundary of the field domain
-    '''
-
-    def __init__(this, coefficient, size, lower=0.0, upper=1.0):
-        this.coef = coefficient
-        this.diff = calculus.Differentiator(size, lower, upper)
-
-    def __call__(this, U, D, b):
-        return this.coef * np.linalg.norm(U, axis=-1) * np.abs(this.diff(b))
-        
+def froude(coef, U, drho, D):
+    return coef * np.linalg.norm(U, axis=-1)/np.sqrt(drho*D)
 

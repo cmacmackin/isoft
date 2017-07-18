@@ -105,6 +105,9 @@ contains
       !! for each location.
     call this%temperature%allocate_scalar_field(property)
     property = this%temperature
+    call property%set_temp() ! Shouldn't need to call this, but for
+                             ! some rason being set as non-temporary
+                             ! when assignment subroutine returns.
   end function uniform_temperature
 
   function uniform_salinity(this, depth, t) result(property)
@@ -124,6 +127,9 @@ contains
       !! for each location.
     call this%salinity%allocate_scalar_field(property)
     property = this%salinity
+    call property%set_temp() ! Shouldn't need to call this, but for
+                             ! some rason being set as non-temporary
+                             ! when assignment subroutine returns.
   end function uniform_salinity
 
 end module uniform_ambient_mod

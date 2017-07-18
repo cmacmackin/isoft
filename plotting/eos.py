@@ -21,32 +21,25 @@
 #  MA 02110-1301, USA.
 #  
 
-'''Contains classes for calculating the entrainment rate of the plume
-using different parameterisations.
+'''Contains classes for calculating density of water.
 '''
 
 import numpy as np
 import calculus
 
-class Jenkins1991Entrainment(object):
-    '''A class representing the entrainment formulation used by Jenkins et
-    al. (1991).
+class LinearEos(object):
+    '''A class representing a linearised equation of state. It uses the
+    equation:
 
-    coefficient
-        The coefficient used in the entrainment calculation
-    size
-        The number of Chebyshev modes in the field
-    lower
-        The lower boundary of the field domain
-    upper
-        The upper boundary of the field domain
+    density = ref_density*[1 - beta_T*(T-T_ref) + beta_S*(S-S_ref)
     '''
 
-    def __init__(this, coefficient, size, lower=0.0, upper=1.0):
-        this.coef = coefficient
-        this.diff = calculus.Differentiator(size, lower, upper)
+    def __init__(this, ref_density, beta_T, beta_S, T_ref, S_ref):
+        this.rd = ref_density
+        this.bT = beta_T
+        this.bS = beta_S
+        this.Tr = T_ref
+        this.Sr = S_ref
 
-    def __call__(this, U, D, b):
-        return this.coef * np.linalg.norm(U, axis=-1) * np.abs(this.diff(b))
-        
-
+    def __call__(this, T, S):
+        return this.rd*(1 - this.bT*(T - this.Tr) + this.bS*(S - this.Sr))

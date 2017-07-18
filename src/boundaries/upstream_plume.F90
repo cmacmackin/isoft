@@ -36,10 +36,14 @@ module upstream_plume_mod
   ! upstream, past the boundary layer.
   !
   use iso_fortran_env, only: r8 => real64
+  use logger_mod, only: logger => master_logger
+  use penf, only: str
   use factual_mod, only: scalar_field, vector_field, uniform_scalar_field, &
                          uniform_vector_field
+  use uniform_gradient_field_mod, only: uniform_gradient_field
   use plume_boundary_mod, only: plume_boundary
   use boundary_types_mod, only: free_boundary, dirichlet, neumann
+  use rksuite_90
   implicit none
   private
 
@@ -76,6 +80,8 @@ module upstream_plume_mod
     real(r8) :: boundary_time
       !! The time at which the boundaries were most recently
       !! calculated
+    real(r8), dimension(:), allocatable :: thresholds
+      !! Thresholds to use when calculating error in the integration.
   contains
     procedure :: thickness_bound_info => upstream_thickness_info
       !! Indicates the type and depth of the thickness boundary at
@@ -101,6 +107,9 @@ module upstream_plume_mod
     procedure :: salinity_bound => upstream_salinity_bound
       !! Produces a field containing the boundary conditions for plume
       !! salinity at the specified location.
+    procedure :: calculate => upstream_calculate
+      !! Calculates the upstreamed boundary conditions for the given
+      !! time and ice thickness.
   end type upstream_plume_boundary
 
   abstract interface
@@ -110,7 +119,7 @@ module upstream_plume_mod
         !! The time at which the boundary values are being calculated
       real(r8), intent(out)               :: D
         !! Plume thickness boundary condition
-      real(r8), dimension(:), intent(out) :: U
+      real(r8), dimension(:), allocatable, intent(out) :: U
         !! Plume velocity boundary condition
       real(r8), intent(out)               :: T
         !! Plume temperature boundary condition
@@ -148,7 +157,8 @@ module upstream_plume_mod
 
 contains
 
-  pure function constructor(bound_calculator, distance) result(this)
+  pure function constructor(bound_calculator, distance, thresholds) &
+                                                       result(this)
     !* Author: Chris MacMackin
     !  Date: July 2017
     !
@@ -156,15 +166,20 @@ contains
     ! from actual boundary values to calculate the staet of the plume
     ! a little upstream. This can be used to avoid boundary layers.
     !
-    procedure(bound_vals)         :: bound_calculator
+    procedure(bound_vals)                        :: bound_calculator
       !! Calculates the "actual" inflow boundary conditions, used to
       !! initiate the integration to find the values to use in the
       !! simulation.
-    real(r8), intent(in)          :: distance
+    real(r8), intent(in)                         :: distance
       !! The distance upstream which the plume should be integrated.
+    real(r8), dimension(:), optional, intent(in) :: thresholds
+      !! The thresholds to use when evaluating the error of the
+      !! integration. This is done according to the formula
+      !! `abs(e) / max(magnitude_y, THRESHOLDS) <= TOLERANCE`.
     type(upstream_plume_boundary) :: this
     this%get_boundaries => bound_calculator
     this%distance = distance
+    if (present(thresholds)) this%thresholds = thresholds
   end function constructor
 
   subroutine upstream_thickness_info(this, location, bound_type, bound_depth)
@@ -254,6 +269,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function upstream_thickness_bound
 
   function upstream_velocity_bound(this, location) result(bound)
@@ -280,6 +298,9 @@ contains
     case default
       bound = uniform_vector_field([0._r8, 0._r8])
     end select
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function upstream_velocity_bound
 
   function upstream_temperature_bound(this, location) result(bound)
@@ -306,6 +327,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function upstream_temperature_bound
 
   function upstream_salinity_bound(this, location) result(bound)
@@ -332,13 +356,17 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function upstream_salinity_bound
 
   subroutine upstream_calculate(this, t, func, b)
     !* Author: Chris MacMackin
     !  Date: July 2017
     !
-    ! Calculates the boundary values to use at the current time.
+    ! Calculates the boundary values to use at the current time with
+    ! the current ice thickness.
     !
     class(upstream_plume_boundary), intent(inout) :: this
     real(r8), intent(in)                          :: t
@@ -348,8 +376,16 @@ contains
       !! components of the ODEs describing the plume.
     class(scalar_field), intent(in)               :: b
       !! The depth of the ice shelf base.
+
+    integer :: n
     real(r8) :: D_0, U_0, S_0, T_0, DU_0, DUS_0, DUT_0
-    real(r8), dimension(2) :: Uvec_0, DUvecU_0
+    real(r8), dimension(:), allocatable :: Uvec_0, DUvecU_0
+    class(scalar_field), pointer :: b_x
+    real(r8), dimension(:), allocatable :: y0, ygot, yderiv_got
+    real(r8) :: xgot
+    integer :: flag
+    type(rk_comm_real_1d) :: comm
+
     call b%guard_temp()
     call this%get_boundaries(t, D_0, Uvec_0, T_0, S_0)
     U_0 = Uvec_0(1)
@@ -357,13 +393,58 @@ contains
     DUvecU_0 = DU_0*Uvec_0
     DUS_0 = DU_0*S_0
     DUT_0 = DU_0*T_0
-    call b%clean_temp()
+    y0 = [DU_0, DUvecU_0, DUS_0, DUT_0]
+    n = size(y0)
+    allocate(ygot(n), yderiv_got(n))
+    if (.not. allocated(this%thresholds)) then
+      allocate(this%thresholds(n))
+      this%thresholds = 1._r8
+    end if
+    b_x => b%d_dx(1)
+    call b_x%guard_temp()
 
-    ! NOTES:
-    !
-    ! - Make sure to set both actual values and derivatives for b, S, T
-    ! - Check for either one or two velocity directions
-    !
+    call setup(comm, 0._r8, y0, this%distance, 1e-6_r8, this%thresholds, &
+               method='h', h_start=2e-2_r8*this%distance)
+    call range_integrate(comm, integrand, this%distance, xgot, ygot, &
+                         yderiv_got, flag)
+    if (flag /= 1) then
+      call logger%error('upstream_plume_boundary%calculate',            &
+                        'Could only integrate plume to x = '//str(xgot))
+    end if
+!    print*,ygot
+    this%thickness = ygot(1)**2/ygot(2)
+    this%velocity = ygot(2:n-2)/ygot(1)
+    this%temperature = ygot(n-1)/ygot(1)
+    this%salinity = ygot(n)/ygot(1)
+    print*,this%thickness,this%velocity,this%temperature,this%salinity
+    if (this%thickness < 0._r8) error stop
+    call b%clean_temp(); call b_x%clean_temp()
+
+  contains
+
+    function integrand(x, y) result(f)
+      real(r8), intent(in)               :: x
+        !! The independent variable
+      real(r8), dimension(:), intent(in) :: y
+        !! The dependent variable
+      real(r8), dimension(size(y))       :: f
+        !! The derivatives
+
+      type(uniform_scalar_field)   :: D, T, S, DU_x, DUT_x, DUS_x
+      type(uniform_vector_field)   :: Uvec, DUU_x
+      type(uniform_gradient_field) :: b_loc
+      D = uniform_scalar_field(y(1)**2/y(2))
+      Uvec = uniform_vector_field(y(2:n-2)/y(1))
+      T = uniform_scalar_field(y(n-1)/y(1))
+      S = uniform_scalar_field(y(n)/y(1))
+      b_loc = uniform_gradient_field(b%interpolate([x]), [b_x%interpolate([x])])
+      call func(D, Uvec, T, S, b_loc, DU_x, DUU_x, DUT_x, DUS_x)
+      f(1) = DU_x%get_value()
+      f(2:n-2) = DUU_x%get_value()
+      f(n-1) = DUT_x%get_value()
+      f(n) = DUS_x%get_value()
+    end function integrand
+    
   end subroutine upstream_calculate
 
 end module upstream_plume_mod

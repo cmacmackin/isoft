@@ -42,6 +42,7 @@ module plume_mod
   use entrainment_mod, only: abstract_entrainment
   use melt_relationship_mod, only: abstract_melt_relationship
   use plume_boundary_mod, only: plume_boundary
+  use upstream_plume_mod, only: upstream_plume_boundary
   use boundary_types_mod, only: free_boundary, dirichlet, neumann
   use ambient_mod, only: ambient_conditions
   use equation_of_state_mod, only: equation_of_state
@@ -916,13 +917,19 @@ contains
     b => -ice_thickness/this%r_val
     call b%guard_temp()
     this%time = time
+    select type(bound => this%boundaries)
+    class is(upstream_plume_boundary)
+      call bound%calculate(this%time, non_diff_terms, b)
+    class default
+      call bound%set_time(this%time)
+    end select
 
     solution = this%state_vector()
 #ifdef DEBUG
     call logger%debug('plume%solve','Calling QLM ODE solver')
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
-                           1.e-9_r8*size(solution), precond=preconditioner, &
+                           1.e-12_r8*size(solution), precond=preconditioner, &
                            iter_max=100, krylov_dim=100, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
@@ -1135,13 +1142,12 @@ contains
       class(scalar_field), intent(out) :: DUS_x
         !! The derivative of the product DUS
      
-      integer :: i, dims
+      integer :: dims
       class(scalar_field), pointer :: m, rho, e, S_a, U, V, &
                                       T_a, rho_a, rho_x, Unorm
       class(scalar_field), allocatable, dimension(:) :: tmp
       call D%guard_temp(); call Uvec%guard_temp(); call T%guard_temp()
       call S%guard_temp(); call b%guard_temp()
-
       e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
       S_a => this%ambient_conds%ambient_salinity(b,this%time)
       T_a => this%ambient_conds%ambient_temperature(b,this%time)
@@ -1168,25 +1174,32 @@ contains
       else
         DUS_x = e*S_a
       end if
-      
-      Unorm => Uvec%norm()
-      rho_x => this%eos%water_density_derivative(T, T%d_dx(1), S, S%d_dx(1), 1)
-      call Unorm%guard_temp()
-      call rho_x%guard_temp()
-      dims = Uvec%raw_size()/Uvec%elements()
-      allocate(tmp(dims), mold=D)
-      tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
-               + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U)/ &
-               (1._r8 - this%delta*(rho_a - rho)/U**2)
-      if (dims > 1) then
-        tmp(2) = -this%mu*Unorm*V
-      end if
-      DUU_x = tmp
 
+      select type(Uvec)
+      class is(uniform_vector_field)
+        Unorm => Uvec%norm()
+        rho_x => this%eos%water_density_derivative(T, (DUT_x - DU_x*T)/(D*U), &
+                                                   S, (DUS_x - DU_x*S)/(D*U), 1)
+        call Unorm%guard_temp(); call rho_x%guard_temp()
+        dims = Uvec%raw_size()/Uvec%elements()
+        allocate(tmp(dims), mold=D)
+        tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
+        !print*,tmp(1)%raw()
+        tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
+                 + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U)/ &
+                 (1._r8 - this%delta*D*(rho_a - rho)/U**2)
+        if (dims > 1) then
+          tmp(2) = -this%mu*Unorm*V
+        end if
+        DUU_x = tmp
+        call Unorm%clean_temp(); call rho_x%clean_temp()
+      class default
+        DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+      end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
-      call U%clean_temp(); call V%clean_temp(); call Unorm%clean_temp()
-      call rho_x%clean_temp()
+      call U%clean_temp(); call V%clean_temp()
       call D%clean_temp(); call Uvec%clean_temp(); call T%clean_temp()
       call S%clean_temp(); call b%clean_temp()
     end subroutine non_diff_terms
@@ -1205,7 +1218,6 @@ contains
       class(scalar_field), pointer :: U, U_x
 
       call this%update(v(:,1))
-      call this%boundaries%set_time(this%time)
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &

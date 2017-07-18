@@ -65,7 +65,9 @@ module uniform_gradient_field_mod
       !! \({\rm field} = {\rm field}\)
   end type uniform_gradient_field
 
-  
+  interface uniform_gradient_field
+    module procedure constructor
+ end interface uniform_gradient_field
 
 contains
 
@@ -100,11 +102,17 @@ contains
     integer, intent(in) :: dir !! Direction in which to differentiate
     integer, optional, intent(in) :: order !! Order of the derivative, default = 1
     class(scalar_field), pointer :: res
+    integer :: ord
     call this%guard_temp()
     call this%allocate_scalar_field(res)
+    if (present(order)) then
+      ord = order
+    else
+      ord = 1
+    end if
     select type(res)
     class is(uniform_scalar_field)
-      if (order == 1) then
+      if (ord == 1) then
         if (dir > 0 .and. dir <= size(this%grad)) then
           res = uniform_scalar_field(this%grad(dir))
         else
@@ -117,6 +125,9 @@ contains
       error stop ('Non-uniform_gradient_field type allocated by '//&
                   '`allocate_scalar_field` routine.')
     end select
+    call res%set_temp() ! Shouldn't need to call this, but for some
+                        ! rason being set as non-temporary when
+                        ! assignment subroutine returns.
     call this%clean_temp()
   end function uniform_gradient_d_dx
 
@@ -152,7 +163,16 @@ contains
     select type(rhs)
     class is(uniform_gradient_field)
       this%uniform_scalar_field = rhs%uniform_scalar_field
-      this%grad = rhs%grad
+      if (allocated(rhs%grad)) then
+        this%grad = rhs%grad
+      else if (allocated(this%grad)) then
+        deallocate(this%grad)
+      end if
+      call this%unset_temp()
+    class is(uniform_scalar_field)
+      this%uniform_scalar_field = rhs
+      if (allocated(this%grad)) deallocate(this%grad)
+      call this%unset_temp()
     class default
       error stop ('Assigning incompatible type to uniform_gradient_field')
     end select

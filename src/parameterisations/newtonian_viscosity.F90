@@ -85,6 +85,9 @@ contains
     call velocity%guard_temp()
     call dummy%allocate_scalar_field(viscosity)
     viscosity = uniform_scalar_field(this%viscosity_value)
+    call viscosity%set_temp() ! Shouldn't need to call this, but for some
+                              ! reason being set as non-temporary when
+                              ! assignment subroutine returns.
     call velocity%clean_temp()
   end function newtonian_ice_viscosity
 

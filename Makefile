@@ -58,7 +58,7 @@ else
   #FCFLAGS  := -O0 -g -pg -fcheck=all -DDEBUG -cpp -J$(MDIR) -ffpe-trap=overflow,invalid,zero
   #LDFLAGS  := -O0 -g -pg
   #COVFLAGS := -fprofile-arcs -ftest-coverage 
-  FCFLAGS  := -O3 -cpp -J$(MDIR)
+  FCFLAGS  := -O3 -cpp -J$(MDIR) -g
   LDFLAGS  := -O3
   COVFLAGS := 
 endif
@@ -73,7 +73,7 @@ LDFLAGS += $(LIBS)
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
-EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|array_pointer_mod|h5lt|hdf5|f95_lapack|logger_mod|penf$$
+EXTERNAL_MODS := ^iso_(fortran_env|c_binding)|ieee_(exceptions|arithmetic|features)|openacc|omp_lib(_kinds)?|mpi|pfunit_mod|factual_mod|chebyshev_mod|array_pointer_mod|h5lt|hdf5|f95_lapack|logger_mod|penf|utils_mod$$
 
 # Extensions of Fortran files, case insensitive
 F_EXT := f for fpp f90 f95 f03 f08 f15

@@ -208,6 +208,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function simple_thickness_bound
 
   function simple_velocity_bound(this, location) result(bound)
@@ -234,6 +237,9 @@ contains
     case default
       bound = uniform_vector_field([0._r8, 0._r8])
     end select
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function simple_velocity_bound
 
   function simple_temperature_bound(this, location) result(bound)
@@ -260,6 +266,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function simple_temperature_bound
 
   function simple_salinity_bound(this, location) result(bound)
@@ -286,6 +295,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function simple_salinity_bound
 
 end module simple_plume_boundary_mod

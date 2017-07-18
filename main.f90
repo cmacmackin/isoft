@@ -54,7 +54,8 @@ program isoft
   use linear_eos_mod, only: linear_eos
   use plume_boundary_mod, only: plume_boundary
   use simple_plume_boundary_mod, only: simple_plume_boundary
-  use dallaston2015_seasonal_mod, only: dallaston2015_seasonal_boundary
+  use upstream_plume_mod, only: upstream_plume_boundary
+  !use dallaston2015_seasonal_mod, only: dallaston2015_seasonal_boundary
   use specfun_mod, only: ei
 
   implicit none
@@ -97,7 +98,7 @@ program isoft
 
   ! Equation of state parameters
   real(r8) :: ref_density, ref_temperature, ref_salinity, &
-              beta_s, beta_t
+              beta_s, beta_t, dens_init, dens_tmp, dens_fact
 
   ! Plume boundary parameters
   real(r8) :: discharge, offset
@@ -133,16 +134,16 @@ program isoft
   call cpu_time(cpu_start)
 
   ! Initialise variables to defaults
-  grid_points = 201
+  grid_points = 101
   domain(1,:) = [0._r8, 6._r8]
   domain(2,:) = [-1._r8, 1._r8]
   end_time = 10.0_r8
-  restart_file = "isoft-0020.h5"
+  restart_file = "isoft-0000.h5"
   end_on_steady = .true.
   restart_from_file = .false.
   restart_at_0 = .false.
 
-  output_interval = 0.5_r8
+  output_interval = 0.05_r8
   hdf_base_name = "isoft"
   logfile = "isoft.log"
   stdout_lim = info
@@ -151,7 +152,7 @@ program isoft
   output_start = 0
 
   chi = 4._r8
-  lambda = 1e2_r8
+  lambda = 1e5_r8
   zeta = 1e-11_r8 ! Not actually used
   ice_temperature = -7._r8
   courant = 50.0_r8
@@ -163,14 +164,13 @@ program isoft
 
   ent_coefficient = 1._r8
 
-  delta = 03.6e-2_r8
-  nu = 3.69e-3_r8
-  mu = 0!.799_r8
+  delta = 3.6e-2_r8
+  nu = 3.69e-6_r8
+  mu = 0.799_r8
   r_val = 1.12_r8
-  nu_init = 2e2_r8
-  initialise_iteratively = .true.
-  initial_steps = 2
-  !nu = 369
+  nu_init = 2e3_r8
+  initialise_iteratively = .false.
+  initial_steps = 5
 
   alpha1 = 0.0182_r8
   alpha2 = 0.0238_r8
@@ -178,18 +178,19 @@ program isoft
   ambient_salinity = 1._r8
   ambient_temperature = 1._r8
 
-  ref_density = 3.05e2_r8!/9.8
+  dens_init = 3.05e-1_r8
+  ref_density = 3.05e-1_r8!/30
   ref_temperature = 1._r8
   ref_salinity = 1._r8
   beta_s = 0.0271_r8
   beta_t = 0._r8
 
-  discharge = 1e-3_r8
-  offset = 0.01_r8
-  plume_thickness_lower = offset
-  plume_temperature_lower = 0._r8
-  plume_salinity_lower = 0._r8
-  plume_velocity_lower = [discharge/offset, 0._r8]
+  discharge = 1e-6_r8
+  offset = 0.001
+  plume_thickness_lower = 0.048361028
+  plume_temperature_lower = 0.9693878121
+  plume_salinity_lower = 0.98698622
+  plume_velocity_lower = [0.0016417554_r8, 0._r8]
   alpha = discharge**(1._r8/3._r8)/nu
 
   ! Set up IO
@@ -221,10 +222,13 @@ program isoft
   allocate(eos,                                                          &
            source=linear_eos(ref_density, ref_temperature, ref_salinity, &
            beta_t, beta_s))
+!  allocate(water_bound, &
+!           source=simple_plume_boundary(plume_thickness_lower, &
+!           plume_velocity_lower, plume_temperature_lower, &
+!           plume_salinity_lower))
   allocate(water_bound, &
-           source=simple_plume_boundary(plume_thickness_lower, &
-           plume_velocity_lower, plume_temperature_lower, &
-           plume_salinity_lower))
+           source=upstream_plume_boundary(bound_vals, &
+           0.05_r8, [1.0_r8, 0.001_r8, 1._r8, 1._r8]))
 !  allocate(water_bound, &
 !           source=dallaston2015_seasonal_boundary(plume_thickness_lower, &
 !           13.823_r8, 0.9_r8, 1.0_r8, plume_temperature_lower))
@@ -236,6 +240,9 @@ program isoft
   if (initialise_iteratively .and. .not. restart_from_file) then
     ! Start by solving for plume at high diffusivity and reduce to
     ! desired value.
+    deallocate(water%eos)
+    allocate(water%eos, source=linear_eos(dens_init, ref_temperature, ref_salinity, &
+                                          beta_t, beta_s))
     nu_tmp = nu_init
     nu_fact = (nu/nu_init)**(1._r8/real(initial_steps, r8))
     do i = 1, initial_steps
@@ -266,8 +273,45 @@ program isoft
                         'with diffusivity '//str(nu))
       error stop
     end if    
+
+    dens_tmp = dens_init
+    dens_fact = (ref_density/dens_init)**(1._r8/real(2*initial_steps, r8))
+    do i = 1, 2*initial_steps
+      deallocate(water%eos)
+      allocate(water%eos, source=linear_eos(dens_tmp, ref_temperature, ref_salinity, &
+                                            beta_t, beta_s))
+      print*, 'Rho_s = ', dens_tmp
+      call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
+                       shelf%ice_temperature(), time, success)
+
+    call h5fcreate_f('nu'//trim(str(i))//'.h5', H5F_ACC_TRUNC_F, file_id, hdf_err)
+    call water%write_data(file_id, 'basal_surface', hdf_err)
+    call shelf%write_data(file_id, 'glacier', hdf_err)
+    call h5fclose_f(file_id, hdf_err)
+
+      if (.not. success) then
+        call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
+                          'with reference density '//str(dens_tmp))
+        error stop
+      end if
+      dens_tmp = dens_fact*dens_tmp
+    end do
+    deallocate(water%eos)
+    allocate(water%eos, source=linear_eos(dens_tmp, ref_temperature, ref_salinity, &
+                                          beta_t, beta_s))
+    print*, 'Rho_s = ', dens_tmp
+    call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
+                     shelf%ice_temperature(), time, success)
+
+    if (.not. success) then
+      call logger%fatal('isoft', 'Failed to succesfully solve for plume '// &
+                        'with reference density '//str(dens_tmp))
+      error stop
+    end if    
   end if
 
+  call water%solve(shelf%ice_thickness(), shelf%ice_density(), &
+                   shelf%ice_temperature(), time, success)
   call move_alloc(shelf, ice)
   call move_alloc(water, sub_ice)
   call system%initialise(ice, sub_ice)
@@ -314,7 +358,9 @@ contains
     !! Initial ice thickness.
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: h
-    h = ice_thickness_lower*(1._r8 - 0.5*x(1)/(1.1_r8*domain(1,2)))
+    real(r8), parameter :: big_x = 7._r8
+    h = ice_thickness_lower*((1._r8 - x(1)/big_x)/sqrt(1._r8 + big_x - &
+                              big_x*(1._r8 - x(1)/big_x)**2))
   end function h
 
   pure function u_ice(x)
@@ -332,7 +378,7 @@ contains
     !! Initial guess for plume thickness
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: D
-    D = offset + 1_r8*(h([0._r8]) - h(x))/r_val
+    D = plume_thickness_lower + (h([0._r8]) - h(x))/r_val
   end function D
 
   pure function U_plume(x)
@@ -351,15 +397,34 @@ contains
     !! Initial guess of the plume salinity
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: S
-    S = plume_salinity_lower - 0.2*x(1)*(x(1) - 2*domain(1,2))
+    S = plume_salinity_lower! - 0.2*x(1)*(x(1) - 2*domain(1,2))
   end function S
 
   pure function T(x)
     !! Initial guess of the plume temperature
     real(r8), dimension(:), intent(in) :: x
     real(r8)                           :: T
-    T = plume_temperature_lower - 0.1*x(1)*(x(1) - 2*domain(1,2))
+    T = plume_temperature_lower! - 0.1*x(1)*(x(1) - 2*domain(1,2))
   end function T
 
+  pure subroutine bound_vals(time, D, U, T, S)
+    !! Calculates the inflow properties for the plume. In this routine
+    !! they are non-oscillating.
+    real(r8), intent(in)                :: time
+      !! The time at which the boundary values are being calculated
+    real(r8), intent(out)               :: D
+      !! Plume thickness boundary condition
+    real(r8), dimension(:), allocatable, intent(out) :: U
+      !! Plume velocity boundary condition
+    real(r8), intent(out)               :: T
+      !! Plume temperature boundary condition
+    real(r8), intent(out)               :: S
+      !! Plume salinity boundary condition
+    D = offset
+    allocate(U(1))
+    U = discharge/offset
+    S = 0._r8
+    T = 0._r8
+  end subroutine bound_vals
   
 end program isoft

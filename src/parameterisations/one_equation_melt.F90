@@ -124,6 +124,9 @@ contains
     call plume_thickness%guard_temp()
     if (.not. allocated(this%forcing_values)) then
       allocate(this%forcing_values, mold=temperature)
+    else if (.not. same_type_as(this%forcing_values, temperature)) then
+      deallocate(this%forcing_values)
+      allocate(this%forcing_values, mold=temperature) 
     end if
     this%forcing_values = this%coef1*temperature*velocity%norm()
     call velocity%clean_temp(); call pressure%clean_temp()
@@ -139,6 +142,9 @@ contains
     if (.not. allocated(this%forcing_values)) error stop ('Melt values not calculated')
     call this%forcing_values%allocate_scalar_field(heat)
     heat = this%forcing_values
+    call heat%set_temp() ! Shouldn't need to call this, but for some
+                         ! rason being set as non-temporary when
+                         ! assignment subroutine returns.
   end function one_equation_heat
 
   function one_equation_salt(this) result(salt)
@@ -153,8 +159,7 @@ contains
     class(scalar_field), pointer         :: melt
       !! The melt rate from the ice into the plume water.
     if (.not. allocated(this%forcing_values)) error stop ('Melt values not calculated')
-    call this%forcing_values%allocate_scalar_field(melt)
-    melt = this%coef2 * this%forcing_values
+    melt => this%coef2 * this%forcing_values
   end function one_equation_melt_rate
 
   pure function one_equation_has_heat(this) result(has_heat)

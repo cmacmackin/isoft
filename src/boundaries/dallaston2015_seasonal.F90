@@ -230,6 +230,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function seasonal_thickness_bound
 
   function seasonal_velocity_bound(this, location) result(bound)
@@ -256,6 +259,9 @@ contains
     case default
       bound = uniform_vector_field([0._r8, 0._r8])
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function seasonal_velocity_bound
 
   function seasonal_temperature_bound(this, location) result(bound)
@@ -282,6 +288,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function seasonal_temperature_bound
 
   function seasonal_salinity_bound(this, location) result(bound)
@@ -308,6 +317,9 @@ contains
     case default
       bound = uniform_scalar_field(0._r8)
     end select    
+    call bound%set_temp() ! Shouldn't need to call this, but for some
+                          ! reason being set as non-temporary when
+                          ! assignment subroutine returns.
   end function seasonal_salinity_bound
 
   subroutine seasonal_set_time(this, time)

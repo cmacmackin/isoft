@@ -47,6 +47,12 @@ class Dallaston2015Melt(object):
     def __call__(this, U, p, T, S, D):
         return np.linalg.norm(U, axis=-1)*(1 - this.epsilon_m/this.beta*T)
 
+    def thermal_forcing(this, U, p, T, S, D):
+        return this(U, p, T, S, D)*(this.beta + 1)
+
+    def saline_forcing(this, U, p, T, S, D):
+        return 0
+
 
 class OneEquationMelt(object):
     '''A class representing a melt formulation similar to that used by
@@ -61,11 +67,14 @@ class OneEquationMelt(object):
     '''
 
     def __init__(this, coef1, coef2):
-        this.coef1 = -coef1
-        this.coef2 = -coef2
+        this.coef1 = coef1
+        this.coef2 = coef2
 
     def __call__(this, U, p, T, S, D):
         return this.coef1*this.coef2*np.linalg.norm(U, axis=-1)*T
 
     def thermal_forcing(this, U, p, T, S, D):
         return this.coef1*np.linalg.norm(U, axis=-1)*T
+
+    def saline_forcing(this, U, p, T, S, D):
+        return np.zeros(U.size)
