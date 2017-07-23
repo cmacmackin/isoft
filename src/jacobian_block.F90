@@ -298,9 +298,9 @@ contains
         error stop ('Invalid increment has been added.')
       end select
     else
-      allocate(tmp, mold=rhs)
-      tmp = rhs%d_dx(this%extra_derivative)
+      call rhs%allocate_scalar_field(tmp)
       call tmp%guard_temp()
+      tmp = rhs%d_dx(this%extra_derivative)
       select case(this%has_increment)
       case(0)
         product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
