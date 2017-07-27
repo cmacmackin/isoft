@@ -265,6 +265,8 @@ contains
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
         stagnant_iters = stagnant_iters + 1
+      else
+        stagnant_iters = 0
       end if
       if (stagnant_iters > 3) then
         flag = 1
@@ -281,6 +283,7 @@ contains
 
       rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
+      gmres_eta = gmres_eta * 10._r8**(-2*stagnant_iters)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
                        iter_max=gitmax, krylov_dim=kdim)
@@ -293,7 +296,7 @@ contains
       old_resid = resid_norm
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
 
-      if (gmres_flag /= 0) print*, 'Warning, GMRES returned with flag', gmres_flag
+!      if (gmres_flag /= 0) print*, 'Warning, GMRES returned with flag', gmres_flag
       if (gmres_flag /= 0 .and. resid_norm > old_resid) then
         if (present(info)) then
           info(1) = i + tnlhs + tnrpre

@@ -718,25 +718,25 @@ contains
       return
     end if
 
-    call h5ltget_attribute_double_f(file_id, group_name, hdf_delta, &
-                                    param, error)
-    this%delta = param(1)
-    call h5ltget_attribute_double_f(file_id, group_name, hdf_nu, &
-                                    param, error)
-    this%nu = param(1)
-    call h5ltget_attribute_double_f(file_id, group_name, hdf_mu, &
-                                    param, error)
-    this%mu = param(1)
-    call h5ltget_attribute_double_f(file_id, group_name, hdf_r, &
-                                    param, error)
-    this%r_val = param(1)
-    if (error /= 0) then
-      call logger%warning('plume%read_data','Error code '//     &
-                          trim(str(error))//' returned when '//  &
-                          'reading attributes from HDF group '// &
-                          group_name)
-      ret_err = error
-    end if
+   !call h5ltget_attribute_double_f(file_id, group_name, hdf_delta, &
+   !                                param, error)
+   !this%delta = param(1)
+   !call h5ltget_attribute_double_f(file_id, group_name, hdf_nu, &
+   !                                param, error)
+   !this%nu = param(1)
+   !call h5ltget_attribute_double_f(file_id, group_name, hdf_mu, &
+   !                                param, error)
+   !this%mu = param(1)
+   !call h5ltget_attribute_double_f(file_id, group_name, hdf_r, &
+   !                                param, error)
+   !this%r_val = param(1)
+   !if (error /= 0) then
+   !  call logger%warning('plume%read_data','Error code '//     &
+   !                      trim(str(error))//' returned when '//  &
+   !                      'reading attributes from HDF group '// &
+   !                      group_name)
+   !  ret_err = error
+   !end if
 
     call this%thickness%read_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
@@ -930,7 +930,7 @@ contains
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
                            1.e-12_r8*size(solution), precond=preconditioner, &
-                           iter_max=100, krylov_dim=100, gmres_iter_max=5000)
+                           iter_max=100, krylov_dim=150, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
     call logger%debug('plume%solve','QLM solver required '//         &

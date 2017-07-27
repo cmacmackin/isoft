@@ -549,6 +549,7 @@ contains
                        - deriv(1) * cached_dx_c(1)
       diagonal(n) = cont(n) * cached_dx2_ud(n) &
                        + deriv(n) * cached_dx_c(n)
+      !print*,diagonal(10)
       select case(this%has_increment)
       case(0)
         continue
@@ -664,8 +665,12 @@ contains
                   flag)
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//trim(str(flag))
-      CALL backtrace
+      !print*,this%sub_diagonal
+      !print*,this%diagonal
+      !print*,this%super_diagonal
+      !CALL backtrace
       call logger%error('jacobian_block%solve_for',msg)
+!      stop
     else
       msg = 'Tridiagonal matrix solver returned with estimated condition '// &
             'number '//trim(str(condition_num))

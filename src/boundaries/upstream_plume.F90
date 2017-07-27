@@ -415,7 +415,8 @@ contains
     this%velocity = ygot(2:n-2)/ygot(1)
     this%temperature = ygot(n-1)/ygot(1)
     this%salinity = ygot(n)/ygot(1)
-!    print*,this%thickness, this%velocity, this%temperature, this%salinity
+    !print*,'t = ', t
+    !print*,this%thickness, this%velocity, this%temperature, this%salinity
     if (this%thickness < 0._r8) error stop
     call collect_garbage(comm)
     call b%clean_temp(); call b_x%clean_temp()

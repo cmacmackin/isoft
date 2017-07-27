@@ -91,6 +91,8 @@ module ice_shelf_mod
     class(glacier_boundary), allocatable   :: boundaries
       !! An object specifying the boundary conditions for the ice
       !! shelf.
+    real(r8)                  :: max_dt
+      !! The maximu  allowable time step
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state.
     integer                   :: thickness_size
@@ -148,7 +150,7 @@ contains
   
   subroutine shelf_initialise(this, domain, resolution, thickness, velocity, &
                               temperature, viscosity_law, boundaries,  &
-                              lambda, chi, zeta, courant)
+                              lambda, chi, zeta, courant, max_dt)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -199,6 +201,9 @@ contains
       !! difficulties for the nonlinear solver, while too small a
       !! value can be numerically unstable. Typically, smaller values
       !! are needed for lower resolution.
+    real(r8), intent(in), optional       :: max_dt
+      !! The maximum allowable time step. This defaults to \(1\times
+      !! 10^{99}\) (effectively no maximum).
 
     integer, dimension(:), allocatable :: lower, upper
 
@@ -251,6 +256,12 @@ contains
       this%courant = courant
     else
       this%courant = 1e2_r8
+    end if
+
+    if (present(max_dt)) then
+      this%max_dt = max_dt
+    else
+      this%max_dt = 1e99_r8
     end if
 
     lower = this%boundaries%thickness_lower_bound()
@@ -773,7 +784,7 @@ contains
     u => this%velocity%component(1)
     dx => this%velocity%grid_spacing()
     dx1 => dx%component(1)
-    dt = minval(abs(this%courant*dx1/u))
+    dt = min(minval(abs(this%courant*dx1/u)), this%max_dt)
     call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
                         trim(str(dt))//' using Courant number of '//       &
                         trim(str(this%courant)))
