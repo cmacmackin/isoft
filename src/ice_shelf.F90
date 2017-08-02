@@ -784,7 +784,9 @@ contains
     u => this%velocity%component(1)
     dx => this%velocity%grid_spacing()
     dx1 => dx%component(1)
+    call dx1%guard_temp()
     dt = min(minval(abs(this%courant*dx1/u)), this%max_dt)
+    call dx1%clean_temp()
     call logger%trivia('ice_shelf%time_step','Calculated time step of '// &
                         trim(str(dt))//' using Courant number of '//       &
                         trim(str(this%courant)))
@@ -1037,6 +1039,7 @@ contains
       this%chi = rhs%chi
       this%zeta = rhs%zeta
       this%courant = rhs%courant
+      this%max_dt = rhs%max_dt
       allocate(this%viscosity_law, source=rhs%viscosity_law)
       allocate(this%boundaries, source=rhs%boundaries)
       this%time = rhs%time
