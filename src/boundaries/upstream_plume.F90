@@ -404,13 +404,14 @@ contains
     call b_x%guard_temp()
 
     call setup(comm, 0._r8, y0, this%distance, 1e-6_r8, this%thresholds, &
-               method='h', h_start=2e-2_r8*this%distance)
+               method='h', h_start=2e-3_r8*this%distance)
     call range_integrate(comm, integrand, this%distance, xgot, ygot, &
                          yderiv_got, flag)
     if (flag /= 1) then
       call logger%error('upstream_plume_boundary%calculate',            &
                         'Could only integrate plume to x = '//str(xgot))
     end if
+    this%thresholds = ygot
     this%thickness = ygot(1)**2/ygot(2)
     this%velocity = ygot(2:n-2)/ygot(1)
     this%temperature = ygot(n-1)/ygot(1)
