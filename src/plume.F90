@@ -107,14 +107,16 @@ module plume_mod
     class(plume_boundary), allocatable :: boundaries
       !! An object specifying the boundary conditions for the plume.
     real(r8)                  :: delta
-      !! The dimensionless ratio $\delta \equiv \frac{D_0}{h_0}$
+      !! The dimensionless ratio \(\delta \equiv \frac{D_0}{h_0}\)
     real(r8), public                  :: nu
-      !! The dimensionless ratio $\nu \equiv \frac{\kappa_0}{x_0U_o}$
+      !! The dimensionless ratio \(\nu \equiv \frac{\kappa_0}{x_0U_o}\)
     real(r8)                  :: mu
-      !! The dimensionless ratio $\mu \equiv \frac{\C_dx_0}{D_0}$
+      !! The dimensionless ratio \(\mu \equiv \frac{\C_dx_0}{D_0}\)
     real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
+    real(r8)                  :: phi
+      !! The inverse Rossby number, \(\Phi \equif \frac{fx_0}{U_0}\)
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
     integer                   :: thickness_size
@@ -214,7 +216,7 @@ contains
   subroutine plume_initialise(this, domain, resolution, thickness, velocity,    &
                               temperature, salinity, entrainment_formulation,   &
                               melt_formulation, ambient_conds, eos, boundaries, &
-                              delta, nu, mu, r_val)
+                              delta, nu, mu, r_val, phi)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -290,6 +292,9 @@ contains
     real(r8), optional, intent(in)       :: r_val
       !! The dimensionless ratio of the water density to the ice shelf
       !! density, \( r = \rho_0/\rho_i. \) Defaults to 1.12.
+    real(r8), optional, intent(in)       :: phi
+      !! The inverse Rossby number, \(\Phi \equif
+      !! \frac{fx_0}{U_0}\). Defaults to 0.
 
     integer :: btype_l, btype_u, bdepth_l, bdepth_u
 
@@ -348,6 +353,11 @@ contains
       this%r_val = r_val
     else
       this%r_val = 1.12_r8
+    end if
+    if (present(phi)) then
+      this%phi = phi
+    else
+      this%phi = 0.0_r8
     end if
     this%time = 0.0_r8
 
@@ -1186,16 +1196,22 @@ contains
         tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
         !print*,tmp(1)%raw()
         tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
-                 + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U)/ &
-                 (1._r8 - this%delta*D*(rho_a - rho)/U**2)
+                 + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U      &
+                 + this%phi*D*V) / (1._r8 - this%delta*D*(rho_a - rho)/U**2)
         if (dims > 1) then
-          tmp(2) = -this%mu*Unorm*V
+          tmp(2) = -this%mu*Unorm*V - this%phi*D*U
         end if
         DUU_x = tmp
         call Unorm%clean_temp(); call rho_x%clean_temp()
       class default
-        DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
-                + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+        if (this%phi /= 0._r8) then
+          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                  + D*(rho_a - rho)*(.grad.(b - this%delta*D))                   &
+                  - [0._r8, 0._r8, this%phi] .cross. (D*Uvec)
+        else
+          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                  + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+        end if
       end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
