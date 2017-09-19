@@ -256,11 +256,11 @@ contains
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     init_resid = resid_norm
     old_resid = resid_norm * 1e3_r8
+    print*, '-------------------------------------------------------'
    ! print*, L(solution) - f_prev
 
     do while(resid_norm > eta)
-!      print*, '-------------------------------------------------------'
-!      print*, resid_norm, tnli
+      print*, resid_norm, tnli
       !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then

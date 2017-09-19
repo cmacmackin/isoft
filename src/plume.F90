@@ -68,6 +68,7 @@ module plume_mod
   character(len=2),  parameter, public :: hdf_nu = 'nu'
   character(len=2),  parameter, public :: hdf_mu = 'mu'
   character(len=5),  parameter, public :: hdf_r = 'r_val'
+  character(len=3),  parameter, public :: hdf_phi = 'phi'
 
   type, extends(basal_surface), public :: plume
     !* Author: Christopher MacMackin
@@ -115,7 +116,7 @@ module plume_mod
     real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
-    real(r8)                  :: phi
+    real(r8), public                  :: phi
       !! The inverse Rossby number, \(\Phi \equif \frac{fx_0}{U_0}\)
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
@@ -296,10 +297,11 @@ contains
       !! The inverse Rossby number, \(\Phi \equif
       !! \frac{fx_0}{U_0}\). Defaults to 0.
 
-    integer :: btype_l, btype_u, bdepth_l, bdepth_u
+    integer :: i, btype_l, btype_u, bdepth_l, bdepth_u
 
+    i = size(velocity([0._r8]))
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
-    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2),i-1)
     this%temperature = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
     this%salinity = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
     this%thickness_size = this%thickness%raw_size()
@@ -740,6 +742,9 @@ contains
    !call h5ltget_attribute_double_f(file_id, group_name, hdf_r, &
    !                                param, error)
    !this%r_val = param(1)
+   !call h5ltget_attribute_double_f(file_id, group_name, hdf_phi, &
+   !                                param, error)
+   !this%phi = param(1)
    !if (error /= 0) then
    !  call logger%warning('plume%read_data','Error code '//     &
    !                      trim(str(error))//' returned when '//  &
@@ -841,6 +846,8 @@ contains
                                     [this%mu], 1_size_t, error)
     call h5ltset_attribute_double_f(file_id, group_name, hdf_r, &
                                     [this%r_val], 1_size_t, error)
+    call h5ltset_attribute_double_f(file_id, group_name, hdf_phi, &
+                                    [this%phi], 1_size_t, error)
     if (error /= 0) then
       call logger%warning('plume%write_data','Error code '//    &
                           trim(str(error))//' returned when '// &
@@ -1019,7 +1026,7 @@ contains
       ! Velocity
       call this%boundaries%velocity_bound_info(-1, btype_l, bdepth_l)
       call this%boundaries%velocity_bound_info(1, btype_u, bdepth_u)
-      vector_tmp = this%velocity%d_dx(1)
+      vector_tmp = this%velocity%d_dx(1) - this%velocity_dx
       if (btype_l == dirichlet) then
         call vector_tmp%set_boundary(-1, bdepth_l, &
                                      this%velocity%get_boundary(-1, bdepth_l))
@@ -1056,7 +1063,7 @@ contains
       ! Temperature
       call this%boundaries%temperature_bound_info(-1, btype_l, bdepth_l)
       call this%boundaries%temperature_bound_info(1, btype_u, bdepth_u)
-      scalar_tmp = this%temperature%d_dx(1)
+      scalar_tmp = this%temperature%d_dx(1) - this%temperature_dx
       if (btype_l == dirichlet) then
         call scalar_tmp%set_boundary(-1, bdepth_l, &
                                      this%temperature%get_boundary(-1, bdepth_l))
@@ -1093,7 +1100,7 @@ contains
       ! Salinity
       call this%boundaries%salinity_bound_info(-1, btype_l, bdepth_l)
       call this%boundaries%salinity_bound_info(1, btype_u, bdepth_u)
-      scalar_tmp = this%salinity%d_dx(1)
+      scalar_tmp = this%salinity%d_dx(1) - this%salinity_dx
       if (btype_l == dirichlet) then
         call scalar_tmp%set_boundary(-1, bdepth_l, &
                                      this%salinity%get_boundary(-1, bdepth_l))
@@ -1204,14 +1211,8 @@ contains
         DUU_x = tmp
         call Unorm%clean_temp(); call rho_x%clean_temp()
       class default
-        if (this%phi /= 0._r8) then
-          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
-                  + D*(rho_a - rho)*(.grad.(b - this%delta*D))                   &
-                  - [0._r8, 0._r8, this%phi] .cross. (D*Uvec)
-        else
-          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
-                  + D*(rho_a - rho)*(.grad.(b - this%delta*D))
-        end if
+        DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                + D*(rho_a - rho)*(.grad.(b - this%delta*D))
       end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
@@ -1232,6 +1233,7 @@ contains
       type(cheb1d_scalar_field) :: scalar_tmp, D_x, D_nd, S_nd, T_nd
       type(cheb1d_vector_field) :: vector_tmp, U_nd
       class(scalar_field), pointer :: U, U_x
+      class(vector_field), pointer :: coriolis
 
       call this%update(v(:,1))
 
@@ -1283,7 +1285,11 @@ contains
         ! Velocity
         call bounds%velocity_bound_info(-1, btype_l, bdepth_l)
         call bounds%velocity_bound_info(1, btype_u, bdepth_u)
-        vector_tmp = Uvec_x
+        if (this%phi /= 0._r8) then
+          vector_tmp = [0._r8, 0._r8, this%phi/this%nu] .cross. Uvec
+        else
+          vector_tmp = 0._r8*Uvec_x
+        end if
         if (btype_l == dirichlet) then
           call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
         end if
@@ -1318,7 +1324,7 @@ contains
         ! Temperature
         call bounds%temperature_bound_info(-1, btype_l, bdepth_l)
         call bounds%temperature_bound_info(1, btype_u, bdepth_u)
-        scalar_tmp = T_x
+        scalar_tmp = uniform_scalar_field(0._r8)
         if (btype_l == dirichlet) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
         end if
@@ -1351,7 +1357,7 @@ contains
         ! Salinity
         call bounds%salinity_bound_info(-1, btype_l, bdepth_l)
         call bounds%salinity_bound_info(1, btype_u, bdepth_u)
-        scalar_tmp = S_x
+        scalar_tmp = uniform_scalar_field(0._r8)
         if (btype_l == dirichlet) then
           call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
         end if
@@ -1454,8 +1460,8 @@ contains
       ! Store diagonal offset in unused field
       v_plume%thickness = U/(-nu)
       v_plume%temperature_dx = &
-           this%temperature_dx_precond%solve_for(v_plume%temperature_dx)!, &
-!                                                v_plume%thickness)
+           this%temperature_dx_precond%solve_for(v_plume%temperature_dx, &
+                                                v_plume%thickness)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
@@ -1466,17 +1472,17 @@ contains
       preconditioner(st:en) = v_plume%salinity%raw()
   
       v_plume%salinity_dx = &
-           this%salinity_dx_precond%solve_for(v_plume%salinity_dx)!, &
-!                                                v_plume%thickness)
+           this%salinity_dx_precond%solve_for(v_plume%salinity_dx, &
+                                                v_plume%thickness)
       st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
 
       ! Precondition the U_x term using the values of S and T,
       ! allowing buoyance to be included.
-      !v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
-      !v_plume%velocity = (.grad. this%thickness)*this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu)
-      !v_plume%velocity = this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu) * v_plume%velocity
+!      v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
+!      v_plume%velocity = (.grad. this%thickness)*this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu)
+!      v_plume%velocity = this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu) * v_plume%velocity
       v_plume%velocity_dx = &
            this%velocity_dx_precond%solve_for(v_plume%velocity_dx)!, v_plume%velocity)
       preconditioner(ust:uen) = v_plume%velocity_dx%raw()
