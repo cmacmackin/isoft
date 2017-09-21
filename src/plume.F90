@@ -1391,7 +1391,7 @@ contains
       end associate
     end function f
 
-    function preconditioner(v, state, L_op, f_op, Lcur, fcur)
+    function preconditioner(v, state, L_op, f_op, fcur, rhs)
       !! The preconditioner, which approximates an inverse of `L`.
       real(r8), dimension(:), intent(in)   :: v
         !! The vector to be preconditioned.
@@ -1403,19 +1403,21 @@ contains
         !! The linear, left-hand-side of the ODE being solved.
       procedure(f)                         :: f_op
         !! The nonlinear, right-hand-side of the ODE being solved.
-      real(r8), dimension(:), intent(in)   :: Lcur
-        !! The result of `L(u(:,1))`
       real(r8), dimension(:), intent(in)   :: fcur
         !! The result of `f(u)`
+      real(r8), dimension(:), intent(in)   :: rhs
+        !! The right hand side of the linear system being
+        !! preconditioned.
       real(r8), dimension(size(v)) :: preconditioner
         !! The result of applying the preconditioner.
 
-      integer :: st, en, ust, uen
+      integer :: st, en, ust, uen, pst, pen
       real(r8) :: nu
       type(plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
       class(scalar_field), pointer :: U, U_x
+      type(uniform_scalar_field) :: zero
 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)
@@ -1451,32 +1453,47 @@ contains
       en = st + this%velocity_size - 1
       ust = st
       uen = en
-  
-      v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature)
+
+      ! Precondition T_x terms before T
       st = en + 1
       en = st + this%temperature_size - 1
-      preconditioner(st:en) = v_plume%temperature%raw()
+      pst = st
+      pen = en
   
-      ! Store diagonal offset in unused field
-      v_plume%thickness = U/(-nu)
+      v_plume%thickness = U/(-nu)  ! Store diagonal offset in unused field
       v_plume%temperature_dx = &
-           this%temperature_dx_precond%solve_for(v_plume%temperature_dx, &
-                                                v_plume%thickness)
+           this%temperature_dx_precond%solve_for(v_plume%temperature_dx)!, &
+!                                                v_plume%thickness)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
   
-      v_plume%salinity = this%salinity_precond%solve_for(v_plume%salinity)
+      zero = uniform_scalar_field(0._r8)
+      call v_plume%temperature_dx%set_boundary(-1, 1, zero)
+!      print*,'************************************************'
+!      print*,this%temperature_dx%raw()
+!      print*,'================================================'
+!      print*,v_plume%temperature%raw()
+      v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature + v_plume%temperature_dx)
+ !     print*,v_plume%temperature%raw()
+      preconditioner(pst:pen) = v_plume%temperature%raw()
+
+      ! Precondition S_x terms before S
       st = en + 1
       en = st + this%salinity_size - 1
-      preconditioner(st:en) = v_plume%salinity%raw()
+      pst = st
+      pen = en
   
       v_plume%salinity_dx = &
-           this%salinity_dx_precond%solve_for(v_plume%salinity_dx, &
-                                                v_plume%thickness)
+           this%salinity_dx_precond%solve_for(v_plume%salinity_dx)!, &
+!                                                v_plume%thickness)
       st = en + 1
       en = st + this%salinity_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
+
+      call v_plume%salinity_dx%set_boundary(-1, 1, zero)
+      v_plume%salinity = this%salinity_precond%solve_for(v_plume%salinity + v_plume%salinity_dx)
+      preconditioner(pst:pen) = v_plume%salinity%raw()
 
       ! Precondition the U_x term using the values of S and T,
       ! allowing buoyance to be included.
@@ -1488,6 +1505,7 @@ contains
       preconditioner(ust:uen) = v_plume%velocity_dx%raw()
 
       call U%clean_temp(); call U_x%clean_temp()
+!      stop
     end function preconditioner
   end subroutine plume_solve
 
