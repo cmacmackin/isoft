@@ -115,7 +115,7 @@ module plume_mod
     real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
-    real(r8)                  :: phi
+    real(r8), public                  :: phi
       !! The inverse Rossby number, \(\Phi \equif \frac{fx_0}{U_0}\)
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
@@ -296,10 +296,11 @@ contains
       !! The inverse Rossby number, \(\Phi \equif
       !! \frac{fx_0}{U_0}\). Defaults to 0.
 
-    integer :: btype_l, btype_u, bdepth_l, bdepth_u
+    integer :: i, btype_l, btype_u, bdepth_l, bdepth_u
 
+    i = size(velocity([0._r8]))
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
-    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2))
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2),i-1)
     this%temperature = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
     this%salinity = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
     this%thickness_size = this%thickness%raw_size()
@@ -1156,6 +1157,7 @@ contains
       class(scalar_field), pointer :: m, rho, e, S_a, U, V, &
                                       T_a, rho_a, rho_x, Unorm
       class(scalar_field), allocatable, dimension(:) :: tmp
+      class(vector_field), pointer :: coriolis
       call D%guard_temp(); call Uvec%guard_temp(); call T%guard_temp()
       call S%guard_temp(); call b%guard_temp()
       e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
@@ -1205,9 +1207,12 @@ contains
         call Unorm%clean_temp(); call rho_x%clean_temp()
       class default
         if (this%phi /= 0._r8) then
+          coriolis => [0._r8, 0._r8, this%phi] .cross. Uvec
+          call coriolis%guard_temp()
           DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
                   + D*(rho_a - rho)*(.grad.(b - this%delta*D))                   &
-                  - [0._r8, 0._r8, this%phi] .cross. (D*Uvec)
+                  - D*coriolis
+          call coriolis%clean_temp()
         else
           DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
                   + D*(rho_a - rho)*(.grad.(b - this%delta*D))
