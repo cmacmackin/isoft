@@ -50,7 +50,7 @@ module plume_mod
   use dallaston2015_melt_mod, only: dallaston2015_melt
   use uniform_ambient_mod, only: uniform_ambient_conditions
   use simple_plume_boundary_mod, only: simple_plume_boundary
-  use finite_difference_block_mod, only: fin_diff_block
+  use pseudospectral_block_mod, only: pseudospec_block
   use linear_eos_mod, only: linear_eos
   use hdf5
   use h5lt
@@ -128,32 +128,15 @@ module plume_mod
       !! The number of data values in the temperature field
     integer                   :: salinity_size
       !! the number of data values in the salinity field
-    type(fin_diff_block), pointer :: precond_free_free => null()
-      !! Preconditioner where upper and lower boundaries are both
-      !! free.
-    type(fin_diff_block), pointer :: precond_free_fixed => null()
-      !! Preconditioner where lower boundary is free and upper
-      !! boundary is fixed (Dirichlet).
-    type(fin_diff_block), pointer :: precond_fixed_free => null()
-      !! Preconditioner where lower boundary is fixed (Dirichlet) and
-      !! upper boundary is free.
-    type(fin_diff_block), pointer :: precond_fixed_fixed => null()
-      !! Preconditioner where upper and lower boundaries are both
-      !! fixed (Dirichlet).
-    type(fin_diff_block), pointer :: thickness_precond => null()
-      !! Preconditioner for plume thickness
-    type(fin_diff_block), pointer :: velocity_precond => null()
-      !! Preconditioner for plume velocity
-    type(fin_diff_block), pointer :: velocity_dx_precond => null()
-      !! Preconditioner for plume velocity derivative
-    type(fin_diff_block), pointer :: temperature_precond => null()
-      !! Preconditioner for plume temperature
-    type(fin_diff_block), pointer :: temperature_dx_precond => null()
-      !! Preconditioner for plume temperature derivative
-    type(fin_diff_block), pointer :: salinity_precond => null()
-      !! Preconditioner for plume salinity
-    type(fin_diff_block), pointer :: salinity_dx_precond => null()
-      !! Preconditioner for plume salinity derivative
+    logical, dimension(7)     :: lower_bounds = .false.
+      !! Which variables have boundary conditions at the grounding
+      !! line.
+    logical, dimension(7)     :: upper_bounds = .false.
+      !! Which variables have boundary conditions at the calving
+      !! front.
+    type(pseudospec_block)    :: precond
+      !! A pseudospectral differentiation block which can be used for
+      !! preconditioning.
   contains
     procedure :: initialise => plume_initialise
     procedure :: basal_melt => plume_melt
@@ -165,7 +148,6 @@ module plume_mod
     procedure :: read_data => plume_read_data
     procedure :: write_data => plume_write_data
     procedure :: solve => plume_solve
-    final :: plume_finalise
   end type plume
 
 
@@ -363,7 +345,10 @@ contains
     end if
     this%time = 0.0_r8
 
-    ! Initialise preconditioners
+    ! Initialise preconditioner
+    this%precond = pseudospec_block(this%thickness)
+
+    ! Store information on boundary conditions
     call this%boundaries%thickness_bound_info(-1, btype_l, bdepth_l)
     call this%boundaries%thickness_bound_info(1, btype_u, bdepth_u)
 #ifdef DEBUG
@@ -378,35 +363,22 @@ contains
 #endif
     select case(btype_l)
     case(free_boundary)
-      select case(btype_u)
-      case(free_boundary)
-        call allocate_precond(this%precond_free_free)
-        this%thickness_precond => this%precond_free_free
-      case(dirichlet)
-        call allocate_precond(this%precond_free_fixed, [1], [dirichlet])
-        this%thickness_precond => this%precond_free_fixed
-      case default
-        error stop ('Only free, and Dirichlet boundary conditions '// &
-                    'supported for plume thickness.')
-      end select
     case(dirichlet)
-      select case(btype_u)
-      case(free_boundary)
-        call allocate_precond(this%precond_fixed_free, resolution(1:1), &
-                              [dirichlet])
-        this%thickness_precond => this%precond_fixed_free
-      case(dirichlet)
-        call allocate_precond(this%precond_fixed_fixed, [1,resolution(1)], &
-                              [dirichlet,dirichlet])
-        this%thickness_precond => this%precond_fixed_fixed
-      case default
-        error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
-                    'supported for plume.')
-      end select
+      this%lower_bounds(1) = .true.
+    case default
+      error stop ('Only free, and Dirichlet boundary conditions '// &
+                  'supported for plume thickness.')
+    end select
+
+    select case(btype_u)
+    case(free_boundary)
+    case(dirichlet)
+      this%upper_bounds(1) = .true.
     case default
       error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
                   'supported for plume.')
     end select
+
 
     call this%boundaries%velocity_bound_info(-1, btype_l, bdepth_l)
     call this%boundaries%velocity_bound_info(1, btype_u, bdepth_u)
@@ -420,8 +392,7 @@ contains
                   'which is not supported by plume.')
     end if
 #endif
-    call set_preconditioners(btype_l, btype_u, this%velocity_precond, &
-                             this%velocity_dx_precond)
+    call set_preconditioners(btype_l, btype_u, 2)
 
     call this%boundaries%temperature_bound_info(-1, btype_l, bdepth_l)
     call this%boundaries%temperature_bound_info(1, btype_u, bdepth_u)
@@ -435,8 +406,7 @@ contains
                   'which is not supported by plume.')
     end if
 #endif
-    call set_preconditioners(btype_l, btype_u, this%temperature_precond, &
-                             this%temperature_dx_precond)
+    call set_preconditioners(btype_l, btype_u, 4)
 
     call this%boundaries%salinity_bound_info(-1, btype_l, bdepth_l)
     call this%boundaries%salinity_bound_info(1, btype_u, bdepth_u)
@@ -450,8 +420,7 @@ contains
                   'which is not supported by plume.')
     end if
 #endif
-    call set_preconditioners(btype_l, btype_u, this%salinity_precond, &
-                             this%salinity_dx_precond)
+    call set_preconditioners(btype_l, btype_u, 6)
     
 #ifdef DEBUG
     call logger%debug('plume','Initialised new ice shelf object.')
@@ -459,93 +428,32 @@ contains
 
   contains
 
-    subroutine set_preconditioners(ltype, utype, pre, d_pre)
-      integer, intent(in) :: ltype, utype
-      type(fin_diff_block), pointer, intent(out)   :: pre, d_pre
+    subroutine set_preconditioners(ltype, utype, comp_id)
+      integer, intent(in) :: ltype, utype, comp_id
 
       select case(ltype)
       case(free_boundary)
-        select case(utype)
-        case(free_boundary)
-          call allocate_precond(this%precond_free_free)
-          pre => this%precond_free_free
-          d_pre => this%precond_free_free
-        case(dirichlet)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_free_fixed, [1], [dirichlet])
-          pre => this%precond_free_fixed
-          d_pre => this%precond_free_free
-        case(neumann)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_free_fixed, [1], [dirichlet])
-          pre => this%precond_free_free
-          d_pre => this%precond_free_fixed
-        case default
-          error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
-                      'supported for plume.')
-        end select
       case(dirichlet)
-        select case(utype)
-        case(free_boundary)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_fixed_free, resolution(1:1), &
-                                [dirichlet])
-          pre => this%precond_fixed_free
-          d_pre => this%precond_free_free
-        case(dirichlet)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_fixed_fixed, [1,resolution(1)], &
-                                [dirichlet,dirichlet])
-          pre => this%precond_fixed_fixed
-          d_pre => this%precond_free_free
-        case(neumann)
-          call allocate_precond(this%precond_fixed_free, resolution(1:1), &
-                                [dirichlet])
-          call allocate_precond(this%precond_free_fixed, [1], [dirichlet])
-          pre => this%precond_fixed_free
-          d_pre => this%precond_free_fixed
-        case default
-          error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
-                      'supported for plume.')
-        end select
+        this%lower_bounds(comp_id) = .true.
       case(neumann)
-        select case(utype)
-        case(free_boundary)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_fixed_free, resolution(1:1), &
-                                [dirichlet])
-          pre => this%precond_free_free
-          d_pre => this%precond_fixed_free
-        case(dirichlet)
-          call allocate_precond(this%precond_fixed_free, resolution(1:1), &
-                                [dirichlet])
-          call allocate_precond(this%precond_free_fixed, [1], [dirichlet])
-          pre => this%precond_free_fixed
-          d_pre => this%precond_fixed_free
-        case(neumann)
-          call allocate_precond(this%precond_free_free)
-          call allocate_precond(this%precond_fixed_fixed, [1,resolution(1)], &
-                                [dirichlet,dirichlet])
-          pre => this%precond_free_free
-          d_pre => this%precond_fixed_fixed
-        case default
-          error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
-                      'supported for plume.')
-        end select
+        this%lower_bounds(comp_id + 1) = .true.
+      case default
+        error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
+                    'supported for plume.')
+      end select
+
+      select case(utype)
+      case(free_boundary)
+      case(dirichlet)
+        this%upper_bounds(comp_id) = .true.
+      case(neumann)
+        this%upper_bounds(comp_id + 1) = .true.
       case default
         error stop ('Only free, Dirichlet, and Neumann boundary conditions '// &
                     'supported for plume.')
       end select
     end subroutine set_preconditioners
     
-    subroutine allocate_precond(precond, bound_locs, bound_types)
-      type(fin_diff_block), pointer, intent(inout) :: precond
-      integer, dimension(:), optional, intent(in)  :: bound_locs, bound_types
-      if (.not. associated(precond)) then
-        allocate(precond)
-        precond = fin_diff_block(this%thickness, bound_locs, bound_types)
-      end if
-    end subroutine allocate_precond
   end subroutine plume_initialise
 
 
@@ -994,141 +902,87 @@ contains
       call this%update(v)
       
       ! Thickness
+      scalar_tmp = this%thickness%d_dx(1)
       call this%boundaries%thickness_bound_info(-1, btype_l, bdepth_l)
       call this%boundaries%thickness_bound_info(1, btype_u, bdepth_u)
-      scalar_tmp = this%thickness%d_dx(1)
-      select case(btype_l)
-      case(dirichlet)
-        call scalar_tmp%set_boundary(-1, bdepth_l,  &
-                                     this%thickness%get_boundary(-1, bdepth_l))
-      case(free_boundary)
-        continue
-      case default
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
-                         'or free thickness boundaries.')
-        error stop
-      end select
-      select case(btype_u)
-      case(dirichlet)
-        call scalar_tmp%set_boundary(1, bdepth_u, &
-                                     this%thickness%get_boundary(1, bdepth_u))
-      case(free_boundary)
-        continue
-      case default
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
-                          'or free thickness boundaries.')
-        error stop
-      end select
+      if (this%lower_bounds(1)) then
+        call scalar_tmp%set_boundary(-1, 1, this%thickness%get_boundary(-1, 1))
+      end if
+      if (this%upper_bounds(1)) then
+        call scalar_tmp%set_boundary(1, 1, this%thickness%get_boundary(1, 1))
+      end if
       st = 1
       en = st + this%thickness_size - 1
       L(st:en) = scalar_tmp%raw()
       
       ! Velocity
-      call this%boundaries%velocity_bound_info(-1, btype_l, bdepth_l)
-      call this%boundaries%velocity_bound_info(1, btype_u, bdepth_u)
       vector_tmp = this%velocity%d_dx(1) - this%velocity_dx
-      if (btype_l == dirichlet) then
-        call vector_tmp%set_boundary(-1, bdepth_l, &
-                                     this%velocity%get_boundary(-1, bdepth_l))
+      if (this%lower_bounds(2)) then
+        call vector_tmp%set_boundary(-1, 1, this%velocity%get_boundary(-1, 1))
       end if
-      if (btype_u == dirichlet) then
-        call vector_tmp%set_boundary(1, bdepth_u, &
-                                     this%velocity%get_boundary(1, bdepth_u))
+      if (this%upper_bounds(2)) then
+        call vector_tmp%set_boundary(1, 1, this%velocity%get_boundary(1, 1))
       end if
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
 
       vector_tmp = this%velocity_dx%d_dx(1)
-      if (btype_l == neumann) then
-        call vector_tmp%set_boundary(-1, bdepth_l, &
-                                     this%velocity_dx%get_boundary(-1, bdepth_l))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free velocity boundaries.')
-        error stop
+      if (this%lower_bounds(3)) then
+        call vector_tmp%set_boundary(-1, 1, this%velocity_dx%get_boundary(-1, 1))
       end if
-      if (btype_u == neumann) then
-        call vector_tmp%set_boundary(1, bdepth_u, &
-                                     this%velocity_dx%get_boundary(1, bdepth_u))
-      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free velocity boundaries.')
-        error stop
+      if (this%upper_bounds(3)) then
+        call vector_tmp%set_boundary(1, 1, this%velocity_dx%get_boundary(1, 1))
       end if
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
 
       ! Temperature
-      call this%boundaries%temperature_bound_info(-1, btype_l, bdepth_l)
-      call this%boundaries%temperature_bound_info(1, btype_u, bdepth_u)
       scalar_tmp = this%temperature%d_dx(1) - this%temperature_dx
-      if (btype_l == dirichlet) then
-        call scalar_tmp%set_boundary(-1, bdepth_l, &
-                                     this%temperature%get_boundary(-1, bdepth_l))
+      if (this%lower_bounds(4)) then
+        call scalar_tmp%set_boundary(-1, 1, this%temperature%get_boundary(-1, 1))
       end if
-      if (btype_u == dirichlet) then
-        call scalar_tmp%set_boundary(1, bdepth_u, &
-                                     this%temperature%get_boundary(1, bdepth_u))
+      if (this%upper_bounds(4)) then
+        call scalar_tmp%set_boundary(1, 1, this%temperature%get_boundary(1, 1))
       end if
       st = en + 1
       en = st + this%temperature_size - 1
       L(st:en) = scalar_tmp%raw()
 
       scalar_tmp = this%temperature_dx%d_dx(1)
-      if (btype_l == neumann) then
-        call scalar_tmp%set_boundary(-1, bdepth_l, &
-                                     this%temperature_dx%get_boundary(-1, bdepth_l))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free temperature boundaries.')
-        error stop
+      if (this%lower_bounds(5)) then
+        call scalar_tmp%set_boundary(-1, 1, this%temperature_dx%get_boundary(-1, 1))
       end if
-      if (btype_u == neumann) then
-        call scalar_tmp%set_boundary(1, bdepth_u, &
-                                     this%temperature_dx%get_boundary(1, bdepth_u))
-      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free temperature boundaries.')
-        error stop
+      if (this%upper_bounds(5)) then
+        call scalar_tmp%set_boundary(1, 1, this%temperature_dx%get_boundary(1, 1))
       end if
       st = en + 1
       en = st + this%temperature_size - 1
       L(st:en) = scalar_tmp%raw()
 
       ! Salinity
-      call this%boundaries%salinity_bound_info(-1, btype_l, bdepth_l)
-      call this%boundaries%salinity_bound_info(1, btype_u, bdepth_u)
       scalar_tmp = this%salinity%d_dx(1) - this%salinity_dx
-      if (btype_l == dirichlet) then
-        call scalar_tmp%set_boundary(-1, bdepth_l, &
-                                     this%salinity%get_boundary(-1, bdepth_l))
+      if (this%lower_bounds(6)) then
+        call scalar_tmp%set_boundary(-1, 1, this%salinity%get_boundary(-1, 1))
       end if
-      if (btype_u == dirichlet) then
-        call scalar_tmp%set_boundary(1, bdepth_u, &
-                                     this%salinity%get_boundary(1, bdepth_u))
+      if (this%upper_bounds(6)) then
+        call scalar_tmp%set_boundary(1, 1, this%salinity%get_boundary(1, 1))
       end if
+!      print*,'----------------------- L ---------------------------'
+!      print*,this%salinity_dx%raw()
+!      print*,this%salinity%raw()
+!      print*,scalar_tmp%raw()
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
 
       scalar_tmp = this%salinity_dx%d_dx(1)
-      if (btype_l == neumann) then
-        call scalar_tmp%set_boundary(-1, bdepth_l, &
-                                     this%salinity_dx%get_boundary(-1, bdepth_l))
-      else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free salinity boundaries.')
-        error stop
+      if (this%lower_bounds(7)) then
+        call scalar_tmp%set_boundary(-1, 1, this%salinity_dx%get_boundary(-1, 1))
       end if
-      if (btype_u == neumann) then
-        call scalar_tmp%set_boundary(1, bdepth_u, &
-                                     this%salinity_dx%get_boundary(1, bdepth_u))
-      else if (btype_u /= dirichlet .and. btype_u /= free_boundary) then
-        call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                          'Neumann or free salinity boundaries.')
-        error stop
+      if (this%upper_bounds(7)) then
+        call scalar_tmp%set_boundary(1, 1, this%salinity_dx%get_boundary(1, 1))
       end if
       st = en + 1
       en = st + this%salinity_size - 1
@@ -1254,47 +1108,29 @@ contains
         call U%guard_temp(); call U_x%guard_temp()
 
         ! Thickness
-        call bounds%thickness_bound_info(-1, btype_l, bdepth_l)
-        call bounds%thickness_bound_info(1, btype_u, bdepth_u)
         scalar_tmp = (D_nd - D*U_x)/U
         D_x = scalar_tmp
-        select case(btype_l)
-        case(dirichlet)
-          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%thickness_bound(-1))
-        case(free_boundary)
-          continue
-        case default
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
-                            'or free thickness boundaries.')
-          error stop
-        end select
-        select case(btype_u)
-        case(dirichlet)
-          call scalar_tmp%set_boundary(1, bdepth_u, bounds%thickness_bound(1))
-        case(free_boundary)
-          continue
-        case default
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet '// &
-                            'or free thickness boundaries.')
-          error stop
-        end select
+        if (this%lower_bounds(1)) then
+          call scalar_tmp%set_boundary(-1, 1, bounds%thickness_bound(-1))
+        end if
+        if (this%upper_bounds(1)) then
+          call scalar_tmp%set_boundary(1, 1, bounds%thickness_bound(1))
+        end if
         st = 1
         en = st + this%thickness_size - 1
         f(st:en) = scalar_tmp%raw()
       
         ! Velocity
-        call bounds%velocity_bound_info(-1, btype_l, bdepth_l)
-        call bounds%velocity_bound_info(1, btype_u, bdepth_u)
         if (this%phi /= 0._r8) then
           vector_tmp = [0._r8, 0._r8, this%phi/this%nu] .cross. Uvec
         else
           vector_tmp = 0._r8*Uvec_x
         end if
-        if (btype_l == dirichlet) then
-          call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
+        if (this%lower_bounds(2)) then
+          call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
         end if
-        if (btype_u == dirichlet) then
-          call vector_tmp%set_boundary(1, bdepth_u, bounds%velocity_bound(1))
+        if (this%upper_bounds(2)) then
+          call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(1))
         end if
         st = en + 1
         en = st + this%velocity_size - 1
@@ -1303,85 +1139,57 @@ contains
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
         vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - &
                       U_nd - nu*D_x*Uvec_x)/(nu*D)
-        if (btype_l == neumann) then
-          call vector_tmp%set_boundary(-1, bdepth_l, bounds%velocity_bound(-1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free velocity boundaries.')
-          error stop
+        if (this%lower_bounds(3)) then
+          call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
         end if
-        if (btype_u == neumann) then
-          call vector_tmp%set_boundary(1, bdepth_u, bounds%velocity_bound(1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free velocity boundaries.')
-          error stop
+        if (this%upper_bounds(3)) then
+          call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(1))
         end if
         st = en + 1
         en = st + this%velocity_size - 1
         f(st:en) = vector_tmp%raw()
 
         ! Temperature
-        call bounds%temperature_bound_info(-1, btype_l, bdepth_l)
-        call bounds%temperature_bound_info(1, btype_u, bdepth_u)
         scalar_tmp = uniform_scalar_field(0._r8)
-        if (btype_l == dirichlet) then
-          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
+        if (this%lower_bounds(4)) then
+          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
         end if
-        if (btype_u == dirichlet) then
-          call scalar_tmp%set_boundary(1, bdepth_u, bounds%temperature_bound(1))
+        if (this%upper_bounds(4)) then
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%temperature_size - 1
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
-        if (btype_l == neumann) then
-          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%temperature_bound(-1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free temperature boundaries.')
-          error stop
+        if (this%lower_bounds(5)) then
+          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
         end if
-        if (btype_u == neumann) then
-          call scalar_tmp%set_boundary(1, bdepth_u, bounds%temperature_bound(1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free temperature boundaries.')
-          error stop
+        if (this%upper_bounds(5)) then
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
         ! Salinity
-        call bounds%salinity_bound_info(-1, btype_l, bdepth_l)
-        call bounds%salinity_bound_info(1, btype_u, bdepth_u)
         scalar_tmp = uniform_scalar_field(0._r8)
-        if (btype_l == dirichlet) then
-          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
+        if (this%lower_bounds(6)) then
+          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
         end if
-        if (btype_u == dirichlet) then
-          call scalar_tmp%set_boundary(1, bdepth_u, bounds%salinity_bound(1))
+        if (this%upper_bounds(6)) then
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
-        if (btype_l == neumann) then
-          call scalar_tmp%set_boundary(-1, bdepth_l, bounds%salinity_bound(-1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free salinity boundaries.')
-          error stop
+        if (this%lower_bounds(7)) then
+          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
         end if
-        if (btype_u == neumann) then
-          call scalar_tmp%set_boundary(1, bdepth_u, bounds%salinity_bound(1))
-        else if (btype_l /= dirichlet .and. btype_l /= free_boundary) then
-          call logger%fatal('plume%solve','Plume can only handle Dirichlet, '// &
-                            'Neumann or free salinity boundaries.')
-          error stop
+        if (this%upper_bounds(7)) then
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
@@ -1412,13 +1220,13 @@ contains
         !! The result of applying the preconditioner.
 
       integer :: st, en, ust, uen, pst, pen
+      integer :: bloc
+      
       real(r8) :: nu
       type(plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
-      class(scalar_field), pointer :: U, U_x
-      type(uniform_scalar_field) :: zero
-
+ 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)
       v_plume%velocity_size = this%velocity_size
@@ -1432,21 +1240,14 @@ contains
       call v_plume%salinity_dx%assign_meta_data(this%salinity_dx)
       call v_plume%update(v)
 
-      call this%update(state(:,1))
-      U => this%velocity%component(1)
-      U_x => this%velocity_dx%component(1)
-      call U%guard_temp(); call U_x%guard_temp()
       nu = this%nu
 
-      v_plume%thickness = this%thickness_precond%solve_for(v_plume%thickness)!, U_x/U)
+      bloc = get_bound_loc(1)  
+      v_plume%thickness = this%precond%solve_for(v_plume%thickness, bloc, &
+           v_plume%thickness%get_boundary(bloc, 1))
       st = 1
       en = st + this%thickness_size - 1
       preconditioner(st:en) = v_plume%thickness%raw()
-  
-      v_plume%velocity = this%velocity_precond%solve_for(v_plume%velocity)
-      st = en + 1
-      en = st + this%velocity_size - 1
-      preconditioner(st:en) = v_plume%velocity%raw()
   
       ! Precondition the U_x term after have preconditioned values for S and T
       st = en + 1
@@ -1454,28 +1255,36 @@ contains
       ust = st
       uen = en
 
+      bloc = get_bound_loc(3)
+      v_plume%velocity_dx = &
+           this%precond%solve_for(v_plume%velocity_dx, bloc, v_plume%velocity%get_boundary(bloc, 1))
+      st = en + 1
+      en = st + this%velocity_size - 1
+      preconditioner(st:en) = v_plume%velocity_dx%raw()
+
+      bloc = get_bound_loc(2)
+      vector_tmp = v_plume%velocity + v_plume%velocity_dx
+      v_plume%velocity = this%precond%solve_for(vector_tmp, bloc, &
+           v_plume%velocity%get_boundary(bloc, 1))
+      preconditioner(ust:uen) = v_plume%velocity%raw()
+
       ! Precondition T_x terms before T
       st = en + 1
       en = st + this%temperature_size - 1
       pst = st
       pen = en
   
-      v_plume%thickness = U/(-nu)  ! Store diagonal offset in unused field
-      v_plume%temperature_dx = &
-           this%temperature_dx_precond%solve_for(v_plume%temperature_dx)!, &
-!                                                v_plume%thickness)
+      bloc = get_bound_loc(5)
+      v_plume%temperature_dx = this%precond%solve_for(v_plume%temperature_dx, bloc, &
+           v_plume%temperature%get_boundary(bloc, 1))
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
   
-      zero = uniform_scalar_field(0._r8)
-      call v_plume%temperature_dx%set_boundary(-1, 1, zero)
-!      print*,'************************************************'
-!      print*,this%temperature_dx%raw()
-!      print*,'================================================'
-!      print*,v_plume%temperature%raw()
-      v_plume%temperature = this%temperature_precond%solve_for(v_plume%temperature + v_plume%temperature_dx)
- !     print*,v_plume%temperature%raw()
+!      v_plume%temperature = this%precond%solve_for(v_plume%temperature + v_plume%temperature_dx)
+      bloc = get_bound_loc(4)
+      v_plume%temperature = this%precond%solve_for(v_plume%temperature + v_plume%temperature_dx, bloc, &
+           v_plume%temperature%get_boundary(bloc, 1))
       preconditioner(pst:pen) = v_plume%temperature%raw()
 
       ! Precondition S_x terms before S
@@ -1484,46 +1293,45 @@ contains
       pst = st
       pen = en
   
-      v_plume%salinity_dx = &
-           this%salinity_dx_precond%solve_for(v_plume%salinity_dx)!, &
-!                                                v_plume%thickness)
+      print*,'---------------------- P^-1 -------------------------'
+!      print*,v_plume%salinity_dx%raw()
+      bloc = get_bound_loc(7)
+      v_plume%salinity_dx = this%precond%solve_for(v_plume%salinity_dx, bloc, &
+           v_plume%salinity%get_boundary(bloc, 1))
       st = en + 1
-      en = st + this%salinity_size - 1
+      en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
 
-      call v_plume%salinity_dx%set_boundary(-1, 1, zero)
-      v_plume%salinity = this%salinity_precond%solve_for(v_plume%salinity + v_plume%salinity_dx)
+      scalar_tmp = v_plume%salinity + v_plume%salinity_dx
+!      print*,v_plume%salinity%raw()
+!      print*,v_plume%salinity_dx%raw()
+!      print*,'Precondition salinity'
+!      v_plume%salinity = this%precond%solve_for(v_plume%salinity + v_plume%salinity_dx)
+!      print*,scalar_tmp%raw()
+      print*,v_plume%salinity%raw()
+!      stop
+      bloc = get_bound_loc(6)
+!scalar_tmp = v_plume%salinity+v_plume%salinity_dx
+      v_plume%salinity = this%precond%solve_for(v_plume%salinity+v_plume%salinity_dx, bloc, &
+           v_plume%salinity%get_boundary(bloc, 1))
+!      print*,scalar_tmp%raw()
+      print*,v_plume%salinity%raw()
+      scalar_tmp = v_plume%salinity%d_dx(1) - scalar_tmp
+      print*,scalar_tmp%raw()
       preconditioner(pst:pen) = v_plume%salinity%raw()
 
-      ! Precondition the U_x term using the values of S and T,
-      ! allowing buoyance to be included.
-!      v_plume%velocity = -uniform_vector_field([2._r8,1._r8])/nu * U
-!      v_plume%velocity = (.grad. this%thickness)*this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu)
-!      v_plume%velocity = this%eos%haline_contraction(this%temperature, this%salinity)/(this%r_val*nu) * v_plume%velocity
-      v_plume%velocity_dx = &
-           this%velocity_dx_precond%solve_for(v_plume%velocity_dx)!, v_plume%velocity)
-      preconditioner(ust:uen) = v_plume%velocity_dx%raw()
-
-      call U%clean_temp(); call U_x%clean_temp()
-!      stop
     end function preconditioner
+
+    integer function get_bound_loc(component_id)
+      integer :: component_id
+      if (this%lower_bounds(component_id)) then
+        get_bound_loc = -1
+      else if (this%upper_bounds(component_id)) then
+        get_bound_loc = 1
+      else
+        get_bound_loc = 0
+      end if
+    end function get_bound_loc
   end subroutine plume_solve
-
-
-  elemental subroutine plume_finalise(this)
-    type(plume), intent(inout) :: this
-    if (associated(this%precond_free_free)) then
-      deallocate(this%precond_free_free)
-    end if
-    if (associated(this%precond_fixed_free)) then
-      deallocate(this%precond_fixed_free)
-    end if
-    if (associated(this%precond_free_fixed)) then
-      deallocate(this%precond_free_fixed)
-    end if
-    if (associated(this%precond_fixed_fixed)) then
-      deallocate(this%precond_fixed_fixed)
-    end if
-  end subroutine plume_finalise
 
 end module plume_mod

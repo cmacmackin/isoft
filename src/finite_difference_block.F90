@@ -114,18 +114,12 @@ contains
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
-    ! Build a block in a Fin_diff matrix, with the form
-    ! $$\frac{\partial F}{\partial x_i} + F\Delta_i,$$ where \(F\) is
-    ! a scalar field and \(\Delta_i\) is the differentiation operator
-    ! in the \(i\)-direction. Additionally, a further differentiation
-    ! operator may be added to the right hand side of this matrix
-    ! block.  Optional arguments allow for handling of boundary
-    ! conditions. See the end of the documentation of the
-    ! [[fin_diff_block(type)]] type for a description of how boundary
-    ! conditions are treated.
+    ! Build a tridiagonal matrix block for finite differences. See the
+    ! end of the documentation of the [[fin_diff_block(type)]] type
+    ! for a description of how boundary conditions are treated.
     !
     class(abstract_field), intent(in)           :: template
-      !! A scalar field with the same grid as any fields bassed as
+      !! A scalar field with the same grid as any fields passed as
       !! arguments to the [[fin_diff_block(type):solve_for]] method.
     integer, dimension(:), optional, intent(in) :: boundary_locs
       !! The locations in the raw representation of `rhs` for which
@@ -176,7 +170,7 @@ contains
     ! Construct an array containing the distance between grid
     ! points, if necessary
     if (.not. use_cached) then
-      if (allocated(cached_field_type)) then   
+      if (allocated(cached_field_type)) then
         deallocate(cached_field_type)
         deallocate(cached_dx_c)
       end if
