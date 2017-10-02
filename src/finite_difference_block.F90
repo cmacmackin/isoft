@@ -429,7 +429,7 @@ contains
     class(fin_diff_block), intent(inout)      :: this
     class(cheb1d_vector_field), intent(in)    :: rhs
       !! The right hand side of the linear(ised) system.
-    class(vector_field), optional, intent(in) :: offset
+    class(cheb1d_vector_field), optional, intent(in) :: offset
       !! An offset to add to the differential operator
     class(vector_field), pointer              :: solution
 

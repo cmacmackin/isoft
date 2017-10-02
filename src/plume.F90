@@ -1293,7 +1293,7 @@ contains
       pst = st
       pen = en
   
-      print*,'---------------------- P^-1 -------------------------'
+!      print*,'---------------------- P^-1 -------------------------'
 !      print*,v_plume%salinity_dx%raw()
       bloc = get_bound_loc(7)
       v_plume%salinity_dx = this%precond%solve_for(v_plume%salinity_dx, bloc, &
@@ -1308,16 +1308,16 @@ contains
 !      print*,'Precondition salinity'
 !      v_plume%salinity = this%precond%solve_for(v_plume%salinity + v_plume%salinity_dx)
 !      print*,scalar_tmp%raw()
-      print*,v_plume%salinity%raw()
+!      print*,v_plume%salinity%raw()
 !      stop
       bloc = get_bound_loc(6)
 !scalar_tmp = v_plume%salinity+v_plume%salinity_dx
       v_plume%salinity = this%precond%solve_for(v_plume%salinity+v_plume%salinity_dx, bloc, &
            v_plume%salinity%get_boundary(bloc, 1))
 !      print*,scalar_tmp%raw()
-      print*,v_plume%salinity%raw()
+!      print*,v_plume%salinity%raw()
       scalar_tmp = v_plume%salinity%d_dx(1) - scalar_tmp
-      print*,scalar_tmp%raw()
+!      print*,scalar_tmp%raw()
       preconditioner(pst:pen) = v_plume%salinity%raw()
 
     end function preconditioner

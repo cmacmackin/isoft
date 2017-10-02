@@ -288,7 +288,7 @@ contains
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
                        iter_max=gitmax, krylov_dim=kdim)
-      stop
+!      stop
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
