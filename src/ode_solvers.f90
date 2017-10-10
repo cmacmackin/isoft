@@ -257,11 +257,10 @@ contains
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     init_resid = resid_norm
     old_resid = resid_norm * 1e3_r8
-    print*, '-------------------------------------------------------'
    ! print*, L(solution) - f_prev
 
     do while(resid_norm > eta)
-      print*, resid_norm, tnli
+      !print*, resid_norm, tnli
       !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -288,7 +287,6 @@ contains
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
                        iter_max=gitmax, krylov_dim=kdim)
-!      stop
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli

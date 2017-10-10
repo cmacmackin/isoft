@@ -199,9 +199,13 @@ contains
   @Test
   subroutine test_integrate(this)
     class(test_cryo), intent(inout) :: this
+    integer :: hdf_err
+  call h5open_f(hdf_err)
     call this%cryo%integrate(1._r8)
     call this%cryo%integrate(-1._r8)
     call this%cryo%integrate(3._r8)
+  call h5close_f(hdf_err)
+
     ! Consider adding some tests...
   end subroutine test_integrate
 

@@ -56,6 +56,8 @@ module plume_mod
   use h5lt
   use logger_mod, only: logger => master_logger
   use penf, only: str
+
+  use chebyshev_mod
   implicit none
   private
 
@@ -863,7 +865,7 @@ contains
                       'and '//trim(str(info(1)+info(2)))//           &
                       ' function calls.')
 #endif
-
+!    print*,'QLM flag: ', flag
     select case(flag)
     case(0)
       call logger%trivia('plume%solver','Solved plume at time '//trim(str(time)))
@@ -969,10 +971,6 @@ contains
       if (this%upper_bounds(6)) then
         call scalar_tmp%set_boundary(1, 1, this%salinity%get_boundary(1, 1))
       end if
-!      print*,'----------------------- L ---------------------------'
-!      print*,this%salinity_dx%raw()
-!      print*,this%salinity%raw()
-!      print*,scalar_tmp%raw()
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
@@ -1256,8 +1254,8 @@ contains
       uen = en
 
       bloc = get_bound_loc(3)
-      v_plume%velocity_dx = &
-           this%precond%solve_for(v_plume%velocity_dx, bloc, v_plume%velocity%get_boundary(bloc, 1))
+      v_plume%velocity_dx = this%precond%solve_for(v_plume%velocity_dx, bloc, &
+           v_plume%velocity_dx%get_boundary(bloc, 1))
       st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity_dx%raw()
@@ -1276,15 +1274,14 @@ contains
   
       bloc = get_bound_loc(5)
       v_plume%temperature_dx = this%precond%solve_for(v_plume%temperature_dx, bloc, &
-           v_plume%temperature%get_boundary(bloc, 1))
+           v_plume%temperature_dx%get_boundary(bloc, 1))
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
   
-!      v_plume%temperature = this%precond%solve_for(v_plume%temperature + v_plume%temperature_dx)
       bloc = get_bound_loc(4)
-      v_plume%temperature = this%precond%solve_for(v_plume%temperature + v_plume%temperature_dx, bloc, &
-           v_plume%temperature%get_boundary(bloc, 1))
+      v_plume%temperature = this%precond%solve_for(v_plume%temperature + &
+           v_plume%temperature_dx, bloc, v_plume%temperature%get_boundary(bloc, 1))
       preconditioner(pst:pen) = v_plume%temperature%raw()
 
       ! Precondition S_x terms before S
@@ -1293,33 +1290,17 @@ contains
       pst = st
       pen = en
   
-!      print*,'---------------------- P^-1 -------------------------'
-!      print*,v_plume%salinity_dx%raw()
       bloc = get_bound_loc(7)
       v_plume%salinity_dx = this%precond%solve_for(v_plume%salinity_dx, bloc, &
-           v_plume%salinity%get_boundary(bloc, 1))
+           v_plume%salinity_dx%get_boundary(bloc, 1))
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
 
-      scalar_tmp = v_plume%salinity + v_plume%salinity_dx
-!      print*,v_plume%salinity%raw()
-!      print*,v_plume%salinity_dx%raw()
-!      print*,'Precondition salinity'
-!      v_plume%salinity = this%precond%solve_for(v_plume%salinity + v_plume%salinity_dx)
-!      print*,scalar_tmp%raw()
-!      print*,v_plume%salinity%raw()
-!      stop
       bloc = get_bound_loc(6)
-!scalar_tmp = v_plume%salinity+v_plume%salinity_dx
       v_plume%salinity = this%precond%solve_for(v_plume%salinity+v_plume%salinity_dx, bloc, &
            v_plume%salinity%get_boundary(bloc, 1))
-!      print*,scalar_tmp%raw()
-!      print*,v_plume%salinity%raw()
-      scalar_tmp = v_plume%salinity%d_dx(1) - scalar_tmp
-!      print*,scalar_tmp%raw()
       preconditioner(pst:pen) = v_plume%salinity%raw()
-
     end function preconditioner
 
     integer function get_bound_loc(component_id)
