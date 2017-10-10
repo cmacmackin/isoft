@@ -66,7 +66,7 @@ module ode_solvers_mod
       real(r8), dimension(size(u)) :: diff_intr
     end function diff_intr
     
-    function pre_intr(v, u, L, f, Lcur, fcur)
+    function pre_intr(v, u, L, f, fcur, rhs)
       !! An interface for a preconditioner to be used with the
       !! quasilinearisation ODE solver.
       import :: r8
@@ -81,10 +81,11 @@ module ode_solvers_mod
         !! The linear, left-hand-side of the ODE being solved.
       procedure(f_intr)                    :: f
         !! The nonlinear, right-hand-side of the ODE being solved.
-      real(r8), dimension(:), intent(in)   :: Lcur
-        !! The result of `L(u(:,1))`
       real(r8), dimension(:), intent(in)   :: fcur
         !! The result of `f(u)`
+      real(r8), dimension(:), intent(in)   :: rhs
+        !! The right hand side of the linear system being
+        !! preconditioned.
       real(r8), dimension(size(v)) :: pre_intr
         !! The result of applying the preconditioner.
     end function pre_intr
@@ -259,8 +260,7 @@ contains
    ! print*, L(solution) - f_prev
 
     do while(resid_norm > eta)
-!      print*, '-------------------------------------------------------'
-!      print*, resid_norm, tnli
+      !print*, resid_norm, tnli
       !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -383,7 +383,7 @@ contains
         !! Indicates whether operation was completed succesfully
       real(r8), dimension(size(xcur))       :: preconditioner
         !! Result of the operation
-      preconditioner = precond(v, u_prev, L, f, L(u_prev(:,1)), f_prev)
+      preconditioner = precond(v, reshape(xcur, [size(xcur), 1]), L, f, f_prev, rhs)
       success = .true.
     end function preconditioner
 

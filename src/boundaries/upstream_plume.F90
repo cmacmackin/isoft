@@ -411,13 +411,13 @@ contains
       call logger%error('upstream_plume_boundary%calculate',            &
                         'Could only integrate plume to x = '//str(xgot))
     end if
-    this%thresholds = ygot
+    this%thresholds = ygot + 1e-10
     this%thickness = ygot(1)**2/ygot(2)
     this%velocity = ygot(2:n-2)/ygot(1)
     this%temperature = ygot(n-1)/ygot(1)
     this%salinity = ygot(n)/ygot(1)
     !print*,'t = ', t
-    !print*,this%thickness, this%velocity, this%temperature, this%salinity
+    print*,this%thickness, this%velocity, this%temperature, this%salinity
     if (this%thickness < 0._r8) error stop
     call collect_garbage(comm)
     call b%clean_temp(); call b_x%clean_temp()
