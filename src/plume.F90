@@ -520,7 +520,7 @@ contains
   end function plume_water_density
 
 
-  subroutine plume_update(this, state_vector)
+  subroutine plume_update(this, state_vector, ice_thickness)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -528,10 +528,13 @@ contains
     ! vector is a real array containing the value of each of the plume's
     ! properties at each of the locations on the grid used in discretization.
     !
-    class(plume), intent(inout)        :: this
-    real(r8), dimension(:), intent(in) :: state_vector
+    class(plume), intent(inout)               :: this
+    real(r8), dimension(:), intent(in)        :: state_vector
       !! A real array containing the data describing the state of the
       !! plume.
+    class(scalar_field), optional, intent(in) :: ice_thickness
+      !! The ice thickness which, if present, will be used to update
+      !! the calculation of the melt rate.
     integer :: i
     !TODO: Add some assertion-like checks that the state vector is the right size
     call this%thickness%set_from_raw(state_vector(1:this%thickness_size))
@@ -547,6 +550,14 @@ contains
     call this%salinity%set_from_raw(state_vector(i:i + this%salinity_size - 1))
     i = i + this%salinity_size
     call this%salinity_dx%set_from_raw(state_vector(i:i + this%salinity_size - 1))
+    if (present(ice_thickness)) then
+      call this%melt_formulation%solve_for_melt(this%velocity, &
+                                               -ice_thickness/this%r_val, &
+                                               this%temperature, &
+                                               this%salinity, &
+                                               this%thickness, &
+                                               this%time)      
+    end if
 #ifdef DEBUG
     call logger%debug('plume%update','Updated state of plume.')
 #endif
@@ -841,12 +852,11 @@ contains
     call ice_thickness%guard_temp()
     b => -ice_thickness/this%r_val
     call b%guard_temp()
-    this%time = time
     select type(bound => this%boundaries)
     class is(upstream_plume_boundary)
-      call bound%calculate(this%time, non_diff_terms, b)
+      call bound%calculate(time, non_diff_terms, b)
     class default
-      call bound%set_time(this%time)
+      call bound%set_time(time)
     end select
 
     solution = this%state_vector()
@@ -855,7 +865,7 @@ contains
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
                            1.e-12_r8*size(solution), precond=preconditioner, &
-                           iter_max=100, krylov_dim=150, gmres_iter_max=5000)
+                           iter_max=100, krylov_dim=85, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
     call logger%debug('plume%solve','QLM solver required '//         &
@@ -868,6 +878,7 @@ contains
     case(0)
       call logger%trivia('plume%solver','Solved plume at time '//trim(str(time)))
       success = .true.
+      this%time = time
     case(1)
       call logger%warning('plume%solver','Plume solver stagnated with '// &
                        'residual of '//trim(str(residual)))
@@ -898,6 +909,7 @@ contains
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
+      type(cheb1d_vector_field) :: coriolis
 
       call this%update(v)
       
@@ -927,7 +939,12 @@ contains
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
 
-      vector_tmp = this%velocity_dx%d_dx(1)
+      if (this%phi /= 0._r8) then
+        coriolis = [0._r8, 0._r8, this%phi/this%nu] .cross. this%velocity
+        vector_tmp = this%velocity_dx%d_dx(1) + coriolis
+      else
+        vector_tmp = this%velocity_dx%d_dx(1)
+      end if
       if (this%lower_bounds(3)) then
         call vector_tmp%set_boundary(-1, 1, this%velocity_dx%get_boundary(-1, 1))
       end if
@@ -983,6 +1000,8 @@ contains
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
+!      print*,'----------------------------L-----------------------------------'
+!      print*,L
     end function L
 
     subroutine non_diff_terms(D, Uvec, T, S, b, DU_x, DUU_x, DUT_x, DUS_x)
@@ -1013,11 +1032,13 @@ contains
       class(scalar_field), pointer :: m, rho, e, S_a, U, V, &
                                       T_a, rho_a, rho_x, Unorm
       class(scalar_field), allocatable, dimension(:) :: tmp
+      type(cheb1d_vector_field) :: coriolis
+
       call D%guard_temp(); call Uvec%guard_temp(); call T%guard_temp()
       call S%guard_temp(); call b%guard_temp()
-      e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, this%time)
-      S_a => this%ambient_conds%ambient_salinity(b,this%time)
-      T_a => this%ambient_conds%ambient_temperature(b,this%time)
+      e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, time)
+      S_a => this%ambient_conds%ambient_salinity(b,time)
+      T_a => this%ambient_conds%ambient_temperature(b,time)
       rho => this%eos%water_density(T, S)
       U => Uvec%component(1)
       V => Uvec%component(2)
@@ -1061,8 +1082,14 @@ contains
         DUU_x = tmp
         call Unorm%clean_temp(); call rho_x%clean_temp()
       class default
-        DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
-                + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+!        if (this%phi /= 0._r8) then
+!          coriolis = [0._r8, 0._r8, this%phi] .cross. Uvec
+!          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+!                  + D*(rho_a - rho)*(.grad.(b - this%delta*D)) - D*coriolis
+!        else
+          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                  + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+!        end if
       end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
@@ -1117,11 +1144,7 @@ contains
         f(st:en) = scalar_tmp%raw()
       
         ! Velocity
-        if (this%phi /= 0._r8) then
-          vector_tmp = [0._r8, 0._r8, this%phi/this%nu] .cross. Uvec
-        else
-          vector_tmp = 0._r8*Uvec_x
-        end if
+        vector_tmp = 0._r8 * Uvec
         if (this%lower_bounds(2)) then
           call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
         end if
@@ -1223,6 +1246,8 @@ contains
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
       class(scalar_field), pointer :: U, U_x
+!      print*,'---------------------------P^-1---------------------------------'
+!      print*,v
 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)

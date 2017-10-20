@@ -250,8 +250,6 @@ contains
     i = 0
     stagnant_iters = 0
 
-!iplvl = 4
-!
     u_prev = get_derivs(solution)
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
@@ -287,9 +285,11 @@ contains
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
                        iter_max=gitmax, krylov_dim=kdim)
+
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
+!      if(gmres_flag > 0) print*, 'Warning, GMRES returned with flag', gmres_flag, tnli
 
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)

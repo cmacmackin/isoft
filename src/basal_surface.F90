@@ -104,13 +104,17 @@ module basal_surface_mod
         !! The state vector of the basal surface
     end function get_r81d
 
-    subroutine setter(this, state_vector)
+    subroutine setter(this, state_vector, ice_thickness)
       import :: basal_surface
+      import :: scalar_field
       import :: r8
       class(basal_surface), intent(inout) :: this
       real(r8), dimension(:), intent(in)  :: state_vector
         !! A real array containing the data describing the state of the
         !! basal surface.
+      class(scalar_field), optional, intent(in) :: ice_thickness
+        !! The ice thickness which, if present, will be used to update
+        !! the calculation of the melt rate and/or drag parameter.
     end subroutine setter
 
     subroutine time_setter(this, time)

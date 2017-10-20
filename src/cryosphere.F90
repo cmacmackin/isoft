@@ -206,10 +206,10 @@ contains
     real(r8), intent(in)             :: time
       !! The time to which to integrate the cryosphere
     class(glacier), dimension(:), allocatable :: old_glaciers
-    logical :: success
+    logical :: success, past_fail
     real(r8) :: t, old_t, dt
     real(r8), allocatable, dimension(:) :: sub_state
-
+past_fail = .false.
     if (time <= this%time) then
       call logger%warning('cryosphere%integrate','Request made to '// &
                           'integrate cryosphere to earlier time '//  &
@@ -239,12 +239,23 @@ contains
     allocate(old_glaciers(1), mold=this%ice)
 
     old_t = this%time
-    t = min(this%time + this%time_step(), time, 0.5_r8*(this%time + time))
+    dt = this%time_step()
+    if (dt < 0.5_r8*(time - this%time)) then
+      t = old_t + dt
+    else if (t + dt > time) then
+      t = time
+    else
+      t = 0.5_r8*(time + old_t)
+    end if
     do while (t <= time)
       old_glaciers(1) = this%ice
       call this%ice%integrate(old_glaciers, this%sub_ice%basal_melt(), &
                               this%sub_ice%basal_drag_parameter(),     &
                               this%sub_ice%water_density(), t, success)
+        if (past_fail) then
+           call this%write_data('isoft_post_failure.h5')
+           past_fail = .false.
+        end if
       if (.not. success) then
         this%ice = old_glaciers(1)
         if (this%dt_factor > this%min_dt_factor) then
@@ -284,13 +295,23 @@ contains
         call logger%trivia('cryosphere%integrate','Successfully integrated '// &
                            'cryosphere to time '//trim(str(t)))
       else
+          call this%write_data('isoft_failed_state.h5')
         this%ice = old_glaciers(1)
-        call this%sub_ice%update(sub_state)
+        call this%sub_ice%update(sub_state, this%ice%ice_thickness())
         if (this%dt_factor > this%min_dt_factor) then
           call logger%warning('cryosphere%integrate','Failure in plume '// &
                               'solver. Reducing time step and trying again.')
           call this%reduce_time_step()
-          t = min(old_t + this%time_step(), time) ! Not quite right...
+          dt = this%time_step()
+          if (dt < 0.5_r8*(time - old_t)) then
+            t = old_t + dt
+          else if (old_t + dt > time) then
+            t = time
+          else
+            t = 0.5_r8*(time + old_t)
+          end if
+          call this%write_data('isoft_pre_failure.h5')
+          past_fail = .true.
           cycle
         else
           call logger%fatal('cryosphere%integrate','Failed to solve plume '//   &
@@ -312,7 +333,7 @@ contains
       else
         t = 0.5_r8*(time + t)
       end if
-      this%time = t
+      this%time = old_t
     end do
 
     this%time = time

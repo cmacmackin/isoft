@@ -122,7 +122,7 @@ contains
   end function ground_water_density
 
 
-  subroutine ground_update(this, state_vector)
+  subroutine ground_update(this, state_vector, ice_thickness)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -134,6 +134,9 @@ contains
     real(r8), dimension(:), intent(in) :: state_vector
       !! A real array containing the data describing the state of the
       !! ground.
+    class(scalar_field), optional, intent(in) :: ice_thickness
+      !! The ice thickness which, if present, will be used to update
+      !! the calculation of the melt rate and/or drag parameter.
   end subroutine ground_update
 
 
