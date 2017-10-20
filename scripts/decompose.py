@@ -8,7 +8,7 @@ from plotting.calculus import Differentiator
 from plotting.dimensionless_nums import froude
 import numpy as np
 import matplotlib.pyplot as plt
-
+import sys
 
 #c1 = ShelfPlumeCryosphere('nu+1.h5')
 #c31 = ShelfPlumeCryosphere('nu+5.h5')
@@ -25,12 +25,16 @@ import matplotlib.pyplot as plt
 #plt.show()
 #quit()
 
-cryo = ShelfPlumeCryosphere('isoft-0200.h5')
+if len(sys.argv) > 1:
+    cryo = ShelfPlumeCryosphere(sys.argv[1])
+else:
+    cryo = ShelfPlumeCryosphere('isoft-0000.h5')
+
 x = cryo.grid
 diff = Differentiator(x.size, x[-1], x[0])
 m = OneEquationMelt(0.0182, 0.0238)
 e = Jenkins1991Entrainment(1.0, x.size, x[-1], x[0])
-eos = LinearEos(3.05e-1, 0, 0.0271, 1., 1.)
+eos = LinearEos(3.05e-1, 7.74e-5, 0.0271, 1., 1.)
 D = cryo.D
 Uvec = cryo.Uvec
 U = cryo.U
@@ -41,12 +45,11 @@ ent = e(Uvec, D, b)
 mu = cryo.mu
 nu = cryo.nu
 delta = cryo.delta
-T_a = 1.0 
+T_a = 1.0
 S_a = 1.0
 rho = eos(T, S)
 rho_a = eos(T_a, S_a)
 
-Udal = (0.00271*3.05e-1*D[-1]*U[-1])**(1./3.)*np.ones(x.size)
 plt.plot(x, D, label='D')
 plt.plot(x, U*1000, label='U*10^3')
 plt.plot(x, T, label='T')
@@ -56,6 +59,8 @@ plt.plot(x, diff(cryo.b), label='b_x')
 #plt.plot(x, np.sqrt(D*(rho_a-rho)), label='sqrt(B)')
 #plt.plot(x, Udal, label='U, Dal')
 plt.legend()
+if len(sys.argv) > 2:
+    plt.savefig(sys.argv[2])
 plt.show()
 
 plt.plot(x, diff(D*U), label=r'$(DU)_x$')
