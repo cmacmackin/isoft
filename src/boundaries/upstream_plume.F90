@@ -411,7 +411,7 @@ contains
       call logger%error('upstream_plume_boundary%calculate',            &
                         'Could only integrate plume to x = '//str(xgot))
     end if
-    this%thresholds = ygot + 1e-10
+    this%thresholds = abs(ygot) + 1e-10
     this%thickness = ygot(1)**2/ygot(2)
     this%velocity = ygot(2:n-2)/ygot(1)
     this%temperature = ygot(n-1)/ygot(1)

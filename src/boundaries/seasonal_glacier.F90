@@ -65,6 +65,8 @@ module seasonal_glacier_boundary_mod
     real(r8) :: chi = 1.0_r8
       !! The dimensionless ratio
       !! $\chi \equiv \frac{\rho_igh_0x_x}{2\eta_0u_0}$
+    logical :: square = .false.
+      !! If true, produce a square wave, otherwise produce a sinusoid
   contains
     procedure :: thickness_lower_bound => seasonal_lower_bound
       !! Returns a 1D array which should be passed as the
@@ -111,8 +113,8 @@ module seasonal_glacier_boundary_mod
 
 contains
 
-  pure function constructor(thickness, frequency, amplitude, mean, chi) &
-                                                           result(this)
+  pure function constructor(thickness, frequency, amplitude, mean, chi, &
+                            square) result(this)
     !* Author: Chris MacMackin
     !  Date: October 2017
     !
@@ -135,12 +137,16 @@ contains
     real(r8), intent(in), optional :: chi
       !! The dimensionless ratio \(\chi \equiv
       !! \frac{\rho_igh_0x_x}{2\eta_0u_0}\), defaults to 1.0
+    logical, intent(in), optional  :: square
+      !! If present and true, produce a square wave. Otherwise produce
+      !! a sinusoid.
     type(seasonal_glacier_boundary) :: this
     if (present(thickness)) this%thickness = thickness
     if (present(frequency)) this%frequency = frequency
     if (present(amplitude)) this%amplitude = amplitude
     if (present(mean)) this%mean = mean
     if (present(chi)) this%chi = chi
+    if (present(square)) this%square = square
   end function constructor
 
   pure function seasonal_lower_bound(this) result(bound_array)
@@ -218,7 +224,7 @@ contains
       !! are stored in the order: lower thickness boundary, upper
       !! thickness boundary, lower velocity boundary, and upper
       !! velocity boundary.
-    real(r8) :: vel
+    real(r8) :: vel, tm
     class(scalar_field), pointer :: thickness_bound,      &
                                     velocity_bound_upper, &
                                     velocity_deriv
@@ -227,7 +233,11 @@ contains
     call thickness%allocate_scalar_field(thickness_bound)
     thickness_bound = thickness%get_boundary(-1,1) - this%thickness
     call velocity%allocate_vector_field(velocity_bound_lower)
-    vel = this%mean + this%amplitude*sin(this%frequency*t)
+    if (this%square) then
+      vel = this%mean + sign(this%amplitude, sin(this%frequency*t))
+    else
+      vel = this%mean + this%amplitude*sin(this%frequency*t)
+    end if
     velocity_bound_lower = velocity%get_boundary(-1,1) - [vel]
     call velocity%allocate_scalar_field(velocity_deriv)
     velocity_deriv = velocity%component_d_dx(1,1)
