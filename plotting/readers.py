@@ -138,6 +138,10 @@ class Plume(object):
     def r(self):
         return self.data.attrs['r_val'][0]
 
+    @property
+    def phi(self):
+        return self.data.attrs['phi'][0]
+
 
 class ShelfPlumeCryosphere(object):
     '''An abstract class which represents a Cryosphere object containing
@@ -251,3 +255,7 @@ class ShelfPlumeCryosphere(object):
     @property
     def r(self):
         return self.plume.r
+
+    @property
+    def phi(self):
+        return self.plume.phi

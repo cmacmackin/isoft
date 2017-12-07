@@ -51,7 +51,7 @@ class Dallaston2015Melt(object):
         return this(U, p, T, S, D)*(this.beta + 1)
 
     def saline_forcing(this, U, p, T, S, D):
-        return 0
+        return np.zeros(T.size)
 
 
 class OneEquationMelt(object):
@@ -77,4 +77,4 @@ class OneEquationMelt(object):
         return this.coef1*np.linalg.norm(U, axis=-1)*T
 
     def saline_forcing(this, U, p, T, S, D):
-        return np.zeros(U.size)
+        return np.zeros(T.size)
