@@ -96,6 +96,8 @@ module cryosphere_mod
     procedure :: state_vector
     procedure :: integrate
     procedure :: read_data
+    procedure :: read_ice
+    procedure :: read_sub_ice
     procedure :: write_data
     procedure :: get_time
   end type cryosphere
@@ -416,6 +418,158 @@ past_fail = .false.
                        'HDF file '//infile)
     end if
   end subroutine read_data
+
+
+  subroutine read_ice(this,infile,set_time)
+    !* Author: Christopher MacMackin
+    !  Date: December 2017
+    !
+    ! Reads the data describing the ice component of the cryosphere
+    ! from an HDF5 file on the disc. Data on anything below the ice is
+    ! ignored. `h5open_f` must have been called once prior to using
+    ! this method. After the method has been used, `h5close_f` must be
+    ! called once before the end of the program.
+    !
+    class(cryosphere), intent(inout) :: this
+    character(len=*), intent(in)     :: infile
+      !! The file from which to read the data describing the state of the 
+      !! cryosphere
+    logical, optional, intent(in)    :: set_time
+      !! If present and `.true.` then set the simulation time of the
+      !! cryosphere to be the same as that in the HDF file. Otherwise,
+      !! leave it unchanged.
+    logical :: set_t
+    integer(hid_t) :: file_id, error_code
+    character(len=50) :: string
+    real(r8), dimension(1) :: sim_time
+
+    if (present(set_time)) then
+      set_t = set_time
+    else
+      set_t = .false.
+    end if
+
+    call h5fopen_f(infile, H5F_ACC_RDONLY_F, file_id, error_code)
+    if (error_code /= 0) then
+      call logger%fatal('cryosphere%read_ice','Error code '//    &
+                        trim(str(error_code))//' returned when '// &
+                        'opening HDF5 file '//infile)
+      error stop
+    end if
+
+    ! Read any whole-system data...
+    call h5ltget_attribute_string_f(file_id,'/',hdf_version,string,error_code)
+    if (trim(string) /= version()) then
+      call logger%warning('cryosphere%read_ice','Reading HDF data produced '// &
+                          'by different ISOFT version: '//version())
+    end if
+    call h5ltget_attribute_double_f(file_id,'/',hdf_simulation_time,sim_time, &
+                                    error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_ice','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'reading attributes from HDF5 file '//infile)
+    end if
+    
+    ! Call for subobjects
+    call this%ice%read_data(file_id, hdf_glacier, error_code)
+       
+    ! Close the file
+    call h5fclose_f(file_id, error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_ice','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'closing HDF5 file '//infile)
+    end if
+
+    ! Set the time, if necessary
+    if (set_t) then
+      this%time = sim_time(1)
+      call this%ice%set_time(this%time)
+      call logger%info('cryosphere%read_ice','Read cryosphere data '// &
+                       'from HDF file '//infile//', with simulation '// &
+                       'time '//trim(str(this%time)))
+    else
+      call logger%info('cryosphere%read_ice','Read cryosphere data from '// &
+                       'HDF file '//infile)
+    end if
+  end subroutine read_ice
+
+
+  subroutine read_sub_ice(this,infile,set_time)
+    !* Author: Christopher MacMackin
+    !  Date: April 2017
+    !
+    ! Reads the data describing the part of the cryosphere beneath the
+    ! ice from an HDF5 file on the disc. Data on the ice itself is
+    ! ignored. `h5open_f` must have been called once prior to using
+    ! this method. After the method has been used, `h5close_f` must be
+    ! called once before the end of the program.
+    !
+    class(cryosphere), intent(inout) :: this
+    character(len=*), intent(in)     :: infile
+      !! The file from which to read the data describing the state of the 
+      !! cryosphere
+    logical, optional, intent(in)    :: set_time
+      !! If present and `.true.` then set the simulation time of the
+      !! cryosphere to be the same as that in the HDF file. Otherwise,
+      !! leave it unchanged.
+    logical :: set_t
+    integer(hid_t) :: file_id, error_code
+    character(len=50) :: string
+    real(r8), dimension(1) :: sim_time
+
+    if (present(set_time)) then
+      set_t = set_time
+    else
+      set_t = .false.
+    end if
+
+    call h5fopen_f(infile, H5F_ACC_RDONLY_F, file_id, error_code)
+    if (error_code /= 0) then
+      call logger%fatal('cryosphere%read_sub_ice','Error code '//    &
+                        trim(str(error_code))//' returned when '// &
+                        'opening HDF5 file '//infile)
+      error stop
+    end if
+
+    ! Read any whole-system data...
+    call h5ltget_attribute_string_f(file_id,'/',hdf_version,string,error_code)
+    if (trim(string) /= version()) then
+      call logger%warning('cryosphere%read_sub_ice','Reading HDF data produced '// &
+                          'by different ISOFT version: '//version())
+    end if
+    call h5ltget_attribute_double_f(file_id,'/',hdf_simulation_time,sim_time, &
+                                    error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_sub_ice','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'reading attributes from HDF5 file '//infile)
+    end if
+    
+    ! Call for subobjects
+    call this%sub_ice%read_data(file_id, hdf_basal, error_code)
+
+    ! Close the file
+    call h5fclose_f(file_id, error_code)
+    if (error_code /= 0) then
+      call logger%warning('cryosphere%read_sub_ice','Error code '//    &
+                          trim(str(error_code))//' returned when '// &
+                          'closing HDF5 file '//infile)
+    end if
+
+    ! Set the time, if necessary
+    if (set_t) then
+      this%time = sim_time(1)
+      call this%ice%set_time(this%time)
+      call logger%info('cryosphere%read_sub_ice','Read cryosphere data '// &
+                       'from HDF file '//infile//', with simulation '// &
+                       'time '//trim(str(this%time)))
+    else
+      call logger%info('cryosphere%read_sub_ice','Read cryosphere data from '// &
+                       'HDF file '//infile)
+    end if
+  end subroutine read_sub_ice
 
     
   subroutine write_data(this,outfile)
