@@ -31,15 +31,19 @@ module coriolis_block_mod
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod!, only: abstract_field, scalar_field, vector_field
-  use chebyshev_mod, only: collocation_points, integrate_1d
+  use f95_lapack, only: la_gesvx
   use pseudospectral_block_mod, only: pseudospec_block
   use penf, only: str
   use logger_mod, only: logger => master_logger
   implicit none
   private
 
-  integer, parameter :: no_extra_derivative = -1
+  character(len=1), parameter :: trans = 'N'
+    !! The LAPACK parameter indicating not to operate on the transpose
+    !! of the matrix when solving for boundary conditions.
   
+  type(uniform_scalar_field) :: zero
+
   type, public :: coriolis_block
     !* Author: Chris MacMackin
     !  Date: January 2017
@@ -101,30 +105,53 @@ module coriolis_block_mod
     ! This type inherits 
     !
     private
-    class(scalar_field), allocatable :: xvals_field
-      !! Coordinates at which to find the solution (same as xvals in
-      !! [[pseudospec_block]], except stored as a field)
     real(r8), dimension(4)   :: D_r
       !! Real component of the diagonal matrix, \(\bm{D}\), with only
       !! diagonal values stored
     real(r8), dimension(4)   :: D_i
       !! Imaginary component of the diagonal matrix, \(\bm{D}\), with
       !! only diagonal values stored
+    type(cheb1d_scalar_field), dimension(4,4) :: emDxVinv_r
+      !! Real component of \(e^{-\bm{D}x}\bm{V}^{-1}\)
+    type(cheb1d_scalar_field), dimension(4,4) :: emDxVinv_i
+      !! Imaginary component of \(e^{-\bm{D}x}\bm{V}^{-1}\)
+    type(cheb1d_scalar_field), dimension(4) :: eDx_r
+      !! Real component of \(e^{\bm{D}x}\), with only diagonal values
+      !! stored
+    type(cheb1d_scalar_field), dimension(4) :: eDx_i
+      !! Imaginary component of \(e^{\bm{D}x}\), with only diagonal
+      !! values stored
     real(r8), dimension(4,4) :: V_r
       !! Real component of the change of basis matrix, \(\bm{V}\)
     real(r8), dimension(4,4) :: V_i
       !! Imaginary component of the change of basis matrix, \(\bm{V}\)
-    real(r8), dimension(4,4) :: Vinv_r
-      !! Real component of the inverse change of basis matrix,
-      !! \(\bm{V}^{-1}\)
-    real(r8), dimension(4,4) :: Vinv_i
-      !! Imaginary component of the inverse change of basis matrix,
-      !! \(\bm{V}^{-1}\)
     type(pseudospec_block)   :: integrator
       !! A pseudospectral differentiation block which can be used to
-      !! perform integration.
+      !! perform integration
+    integer                  :: vel_bound_loc
+      !! Location code for the velocity's boundary condition
+    integer                  :: dvel_bound_loc
+      !! Location code for the velocity derivative's boundary
+      !! condition
+    real(r8), dimension(4)   :: xbounds
+      !! Boundary location for each component of the solution vector
+    complex(r8), dimension(4,4) :: bound_matrix
+      !! Matrix for the system to solve in order to satisfy the
+      !! boundary conditions
+    complex(r8), dimension(4,4) :: factored_matrix
+      !! Factored matrix for the system to solve in order to satisfy
+      !! the boundary conditions
+    integer, dimension(4)    :: pivots
+      !! The pivots used in the factorisation of the matrix used to
+      !! satisfy boundary conditions
+    real(r8), dimension(4)   :: r_scales
+      !! Row scale factors from equilibrating the bound_matrix
+    real(r8), dimension(4)   :: c_scales
+      !! Column scale factors from equilibrating the bound_matrix
+    character(len=1)         :: equed
   contains
     private
+    procedure :: solve_for
   end type coriolis_block
 
   interface coriolis_block
@@ -133,7 +160,7 @@ module coriolis_block_mod
 
 contains
 
-  function constructor(template) result(this)
+  function constructor(phi, nu, velbound, dvelbound, template) result(this)
     !* Author: Chris MacMackin
     !  Date: January 2018
     !
@@ -142,13 +169,250 @@ contains
     ! equations. The result can only be used with fields having the
     ! same grid as the template.
     !
-    class(abstract_field), intent(in)     :: template
+    real(r8), intent(in)              :: phi
+      !! The dimensionless coriolis parameter
+    real(r8), intent(in)              :: nu
+      !! The dimensionless eddy diffusivity
+    integer, intent(in)               :: velbound
+      !! Location code for the velocity's boundary condition. 1
+      !! indicates upper boundary, -1 indicates lower boundary.
+    integer, intent(in)               :: dvelbound
+      !! Location code for the velocity's boundary condition. 1
+      !! indicates upper boundary, -1 indicates lower boundary.
+    class(abstract_field), intent(in) :: template
       !! A scalar field with the same grid as any fields passed as
       !! arguments to the [[pseudospec_block(type):solve_for]] method.
-    type(coriolis_block)                :: this
+    type(coriolis_block)              :: this
+
+    type(cheb1d_scalar_field) :: xvals
+    integer :: i, j, info
+    real(r8) :: alpha, beta, rcond
+    real(r8), dimension(:,:), allocatable :: domain
+    complex(r8), dimension(4) :: dummy_in
+    complex(r8), dimension(4) :: dummy_out
+    character(len=:), allocatable :: msg
+
+    call template%guard_temp()
+
+    zero = uniform_scalar_field(0._r8)
+
     this%integrator = pseudospec_block(template)
-    ! Do more stuff...
+    domain = template%domain()
+    this%vel_bound_loc = velbound
+    this%dvel_bound_loc = dvelbound
+    if (velbound == 1) then
+      this%xbounds(1:2) = domain(1,2)
+    else if (velbound == -1) then
+      this%xbounds(1:2) = domain(1,1)
+    else
+      call logger%fatal('coriolis_block', &
+                        'Only boundary location codes 1 or -1 are accepted.')
+      error stop
+    end if
+    if (dvelbound == 1) then
+      this%xbounds(3:4) = domain(1,2)
+    else if (dvelbound == -1) then
+      this%xbounds(3:4) = domain(1,1)
+    else
+      call logger%fatal('coriolis_block', &
+                        'Only boundary location codes 1 or -1 are accepted.')
+      error stop
+    end if
+    xvals = cheb1d_scalar_field(template%elements(), linear, domain(1,1), &
+                                domain(1,2))
+    ! Compute the diagonal elements of \(\bm{B}\)
+    alpha = sqrt(2*phi/nu)
+    beta = sqrt(0.5_r8*phi/nu)
+    this%D_r = [-beta, -beta, beta, beta]
+    this%D_i = [-beta, beta, -beta, beta]
+    ! Use the associations as temporary work arrays, prior to
+    ! computing their actual values
+    associate (emDx_r => this%eDx_r, emDx_i => this%eDx_i, & 
+               Vinv_r => this%V_r, Vinv_i => this%V_i)
+      ! Compute \(e^{-\bm{D}x}\)
+      emDx_r = [(exp(-this%D_r(i)*xvals)*cos(-this%D_i(i)*xvals), i=1,4)]
+      emDx_i = [(exp(-this%D_r(i)*xvals)*sin(-this%D_i(i)*xvals), i=1,4)]
+      ! Compute \(\bm{V}^{-1}\)
+      Vinv_r = reshape([ 0.25_r8*beta,  0.25_r8*beta, -0.25_r8*beta, -0.25_r8*beta,  &
+                        -0.25_r8*beta, -0.25_r8*beta,  0.25_r8*beta,  0.25_r8*beta,  &
+                                    0,             0,             0,             0,  &
+                                    1,             1,             1,             1], &
+                       [4,4])
+      Vinv_i = reshape([-0.25_r8*beta, 0.25_r8*beta, -0.25_r8*beta, 0.25_r8*beta,  &
+                        -0.25_r8*beta, 0.25_r8*beta, -0.25_r8*beta, 0.25_r8*beta,  &
+                                    1,            -1,           -1,            1,  &
+                                    0,             0,            0,            0], &
+                       [4,4])
+      ! Compute \(e^{-\bm{D}x}\bm{V}^{-1}\)
+      this%emDxVinv_r = reshape([((emDx_r(i)*Vinv_r(i,j) - emDx_i(i)*Vinv_i(i,j), &
+                                   i=1,4), j=1,4)], [4, 4])
+      this%emDxVinv_i = reshape([((emDx_r(i)*Vinv_i(i,j) + emDx_i(i)*Vinv_r(i,j), &
+                                   i=1,4), j=1,4)], [4, 4])
+    end associate
+    ! Compute \(e^{\bm{D}x}\)
+    this%eDx_r = [(exp(this%D_r(i)*xvals)*cos(this%D_i(i)*xvals), i=1,4)]
+    this%eDx_i = [(exp(this%D_r(i)*xvals)*sin(this%D_i(i)*xvals), i=1,4)]
+    ! Compute \(\bm{V}\)
+    this%V_r = reshape([ 1_r8/alpha, -1._r8/alpha, 0, 1,  &
+                         1_r8/alpha, -1._r8/alpha, 0, 1,  &
+                        -1_r8/alpha,  1._r8/alpha, 0, 1,  &
+                        -1_r8/alpha,  1._r8/alpha, 0, 1], &
+                       [4,4])
+    this%V_r = reshape([ 1_r8/alpha,  1._r8/alpha, -1, 0,  &
+                        -1_r8/alpha, -1._r8/alpha,  1, 0,  &
+                         1_r8/alpha,  1._r8/alpha,  1, 0,  &
+                        -1_r8/alpha, -1._r8/alpha, -1, 0], &
+                       [4,4])
+    ! Construct and factor matrix used for satisfying boundary conditions
+    dummy_in = [(1,0), (0,1), (0.5, 0.5), (-0.5, 0.5)]
+    this%bound_matrix = reshape([((cmplx(this%V_r(i,j), this%V_i(i,j), r8)* &
+                                   exp(cmplx(this%D_r(j), this%D_i(j), r8)* &
+                                   this%xbounds(i)), i=1,4), j=1,4)], [4,4])
+    call la_gesvx(this%bound_matrix, dummy_in, dummy_out, this%factored_matrix, &
+                  this%pivots, 'E', trans, this%equed, this%r_scales, this%c_scales, &
+                  rcond=rcond, info=info)
+    if (info /= 0) then
+      msg = 'Tridiagonal matrix solver returned with flag '//str(info)
+      call logger%error('coriolis_block',msg)
+    end if
+    msg = 'Boundary matrix factored with estimated condition '// &
+          'number '//str(1._r8/rcond)
+    call logger%trivia('coriolis_block',msg)
+#ifdef DEBUG
+    call logger%debug('coriolis_block', &
+                      'Successfully constructed Coriolis preconditioner block.')
+#endif
+
+    call template%clean_temp()
+
+  contains
+    pure function linear(x) result(scalar)
+      real(r8), dimension(:), intent(in) :: x 
+        !! The position at which this function is evaluated
+      real(r8) :: scalar
+      scalar = x(1)
+    end function linear
   end function constructor
 
+  subroutine solve_for(this, velocity, velocity_dx)
+    !* Author: Chris MacMackin
+    !  Date: January 2018
+    !
+    ! Inverts the linear portions of the plume momentum equation with
+    ! the provided data. This is done by solving the linear ODE
+    ! described in the documentation for the [[coriolis_block]]
+    ! type. The block object must first have been initialised using
+    ! the constructor.
+    !
+    ! @Warning Currently this is only implemented for a 1-D field.
+    !
+    class(coriolis_block), intent(inout) :: this
+    class(vector_field), intent(inout)   :: velocity
+      !! On input, the velocity value being preconditioned. On output,
+      !! the preconditioned velocity.
+    class(vector_field), intent(inout)   :: velocity_dx
+      !! On input, the velocity derivative being preconditioned. On
+      !! output, the preconditioned velocity derivative.
+
+    type(cheb1d_scalar_field), dimension(4) :: F, eDxC_r, eDxC_i, E_r, E_i
+    integer :: i
+    real(r8), dimension(1) :: rtmp, ctmp
+    real(r8), dimension(4) :: bound_vals
+    complex(r8), dimension(4) :: C_bounds, rhs, B
+    type(cheb1d_scalar_field) :: tmp
+
+    complex(r8), dimension(4), parameter :: dummy = [(1,0),      &
+                                                     (0,1),      &
+                                                     (0.5, 0.5), &
+                                                     (-0.5, 0.5)]
+    complex(r8), dimension(4) :: dummy_sol
+    integer :: info
+    real(r8) :: rcond
+
+    call velocity%guard_temp(); call velocity_dx%guard_temp()
+
+    ! Construct array of scalar matrices for easier manipulation
+    F(1) = velocity%component(1)
+    F(2) = velocity%component(2)
+    F(3) = velocity_dx%component(1)
+    F(4) = velocity_dx%component(2)
+    ! Get boundary values
+    tmp = F(1)%get_boundary(this%vel_bound_loc, 1)
+    rtmp = tmp%raw()
+    bound_vals(1) = rtmp(1)
+    tmp = F(2)%get_boundary(this%vel_bound_loc, 1)
+    rtmp = tmp%raw()
+    bound_vals(2) = rtmp(1)
+    tmp = F(3)%get_boundary(this%dvel_bound_loc, 1)
+    rtmp = tmp%raw()
+    bound_vals(3) = rtmp(1)
+    tmp = F(4)%get_boundary(this%dvel_bound_loc, 1)
+    rtmp = tmp%raw()
+    bound_vals(4) = rtmp(1)
+
+    ! Calculate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\), aliasing variables
+    ! which are not needed yet
+    associate (emDxVinvF_r => eDxC_r, emDxVinvF_i => eDxC_i, &
+               M_r => this%emDxVinv_r, M_i => this%emDxVinv_i)
+      emDxVinvF_r = [(M_r(i,1)*F(1) + M_r(i,2)*F(2) + M_r(i,3)*F(3) + &
+                      M_r(i,4)*F(4), i=1,4)]
+      emDxVinvF_i = [(M_i(i,1)*F(1) + M_i(i,2)*F(2) + M_i(i,3)*F(3) + &
+                      M_i(i,4)*F(4), i=1,4)]
+    end associate
+    ! Integrate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\) to get \(\bm{C}\)
+    associate (C_r => eDxC_r, C_i => eDxC_i)
+      C_r = [(this%integrator%solve_for(C_r(i), -1, zero), i=1,4)]
+      C_i = [(this%integrator%solve_for(C_i(i), -1, zero), i=1,4)]
+      eDxC_r = [(this%eDx_r(i)*C_r(i) - this%eDx_i(i)*C_i(i), i=1,4)]
+      eDxC_i = [(this%eDx_r(i)*C_i(i) + this%eDx_r(i)*C_i(i), i=1,4)]
+    end associate
+    ! Get the values of \(e^{\bm{C}x}\bm{C}\) at the appropriate boundaries
+    tmp = eDxC_r(1)%get_boundary(this%vel_bound_loc, 1)
+    rtmp = tmp%raw()
+    tmp = eDxC_i(1)%get_boundary(this%vel_bound_loc, 1)
+    ctmp = tmp%raw()
+    C_bounds(1) = cmplx(rtmp(1), ctmp(1), r8)
+    tmp = eDxC_r(2)%get_boundary(this%vel_bound_loc, 1)
+    rtmp = tmp%raw()
+    tmp = eDxC_i(2)%get_boundary(this%vel_bound_loc, 1)
+    ctmp = tmp%raw()
+    C_bounds(2) = cmplx(rtmp(1), ctmp(1), r8)
+    tmp = eDxC_r(3)%get_boundary(this%dvel_bound_loc, 1)
+    rtmp = tmp%raw()
+    tmp = eDxC_i(3)%get_boundary(this%dvel_bound_loc, 1)
+    ctmp = tmp%raw()
+    C_bounds(3) = cmplx(rtmp(1), ctmp(1), r8)
+    tmp = eDxC_r(4)%get_boundary(this%dvel_bound_loc, 1)
+    rtmp = tmp%raw()
+    tmp = eDxC_i(4)%get_boundary(this%dvel_bound_loc, 1)
+    ctmp = tmp%raw()
+    C_bounds(4) = cmplx(rtmp(1), ctmp(1), r8)
+    
+    ! Compute RHS for the linear system satisfying the boundary conditions
+    rhs = [(bound_vals(i) - dot_product(cmplx(this%V_r(i,:), this%V_i(i,:), r8), &
+                                        C_bounds), i=1,4)]
+    
+    ! Compute coefficients for inhomogeneous components of solution so
+    ! that boundary conditions are satisfied
+    ! WHY DOES THIS WORK IN THE CONSTRUCTOR BUT NOT HERE?
+    call la_gesvx(this%bound_matrix, rhs, B, this%factored_matrix, &
+                  this%pivots, 'F', trans, this%equed, this%r_scales, &
+                  this%c_scales, info=i)
+    call velocity%clean_temp(); call velocity_dx%clean_temp()
+
+    ! Calculate \(\bm{E} = e^{\bm{D}x}\bm{B} + e^{\bm{D}x}\bm{C}\)
+    E_r = [(this%eDx_r(i)*real(B(i)) - this%eDx_i(i)*aimag(B(i)) + &
+            eDxC_r(i), i=1,4)]
+    E_i = [(this%eDx_i(i)*real(B(i)) + this%eDx_r(i)*aimag(B(i)) + &
+            eDxC_i(i), i=1,4)]
+
+    ! Transform back to proper basis to get proper solution
+    F = [(this%V_r(i,1)*E_r(1) - this%V_i(i,1)*E_i(1) + &
+          this%V_r(i,2)*E_r(2) - this%V_i(i,2)*E_i(2) + &
+          this%V_r(i,3)*E_r(3) - this%V_i(i,3)*E_i(3) + &
+          this%V_r(i,4)*E_r(4) - this%V_i(i,4)*E_i(4), i=1,4)]
+    velocity = F(1:2)
+    velocity_dx = F(3:4)
+  end subroutine solve_for
 
 end module coriolis_block_mod
