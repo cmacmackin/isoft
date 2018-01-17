@@ -1,0 +1,85 @@
+!
+!  coriolis_block_test.pf
+!  This file is part of ISOFT.
+!  
+!  Copyright 2018 Chris MacMackin <cmacmackin@gmail.com>
+!  
+!  This program is free software; you can redistribute it and/or modify
+!  it under the terms of the GNU General Public License as published by
+!  the Free Software Foundation; either version 2 of the License, or
+!  (at your option) any later version.
+!  
+!  This program is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!  GNU General Public License for more details.
+!  
+!  You should have received a copy of the GNU General Public License
+!  along with this program; if not, write to the Free Software
+!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+!  MA 02110-1301, USA.
+!  
+
+module coriolis_block_test
+  use iso_fortran_env, only: r8 => real64
+  use pfunit_mod
+  use factual_mod, only: scalar_field, cheb1d_scalar_field, cheb1d_vector_field
+  use coriolis_block_mod, only: coriolis_block
+  implicit none
+
+  integer, parameter :: resolution = 50
+  
+  @TestCase
+  type, extends(testcase), public :: test_block
+    type(cheb1d_vector_field) :: vel, vel_dx, vel_out, vel_dx_out
+    real(r8) :: phi, nu
+  contains
+    procedure :: setup
+  end type test_block
+
+contains
+  
+  pure function g(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: g
+    allocate(g(2))
+    g(1) = 1._r8 - location(1)
+    g(2) = 1._r8 + location(1)
+  end function g
+  
+  pure function g_dx(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: g_dx
+    allocate(g_dx(2))
+    g_dx(1) = -1._r8
+    g_dx(2) = 1._r8
+  end function g_dx
+
+  subroutine setup(this)
+    class(test_block), intent(inout) :: this
+    this%phi = 2.e-5_r8
+    this%nu = 4.e-5_r8
+    this%vel = cheb1d_vector_field(resolution, g, 0._r8, 1._r8, 1)
+    this%vel_dx = cheb1d_vector_field(resolution, g_dx, 0._r8, 1._r8, 1)
+    this%vel_out = this%vel%d_dx(1) - this%vel_dx
+    call this%vel_out%set_boundary(-1, 1, this%vel%get_boundary(-1, 1))
+    this%vel_dx_out = [0._r8, 0._r8, this%phi/this%nu] .cross. this%vel
+    this%vel_dx_out = this%vel_dx%d_dx(1) - this%vel_dx_out
+    call this%vel_dx_out%set_boundary(-1, 1, this%vel_dx%get_boundary(-1, 1))    
+  end subroutine setup
+
+  @Test
+  subroutine test_coriolis_solve(this)
+    class(test_block), intent(inout) :: this
+    type(coriolis_block) :: block1
+    type(cheb1d_scalar_field) :: scal
+    @assertFalse(all(this%vel%raw()==this%vel_out%raw()),message='Fields to be preconditioned same as expected result.')
+    @assertFalse(all(this%vel_dx%raw()==this%vel_dx_out%raw()),message='Fields to be preconditioned same as expected result.')
+    scal = this%vel%component(1)
+    block1 = coriolis_block(this%phi, this%nu, -1, -1, scal)
+    call block1%solve_for(this%vel_out, this%vel_dx_out)
+    @assertEqual(this%vel%raw(),this%vel_out%raw(),tolerance=1e-9_r8,message='Coriolis block returns wrong sol.')
+    @assertEqual(this%vel_dx%raw(),this%vel_dx_out%raw(),tolerance=1e-9_r8,message='Coriolis block returns wrong sol.')
+  end subroutine test_coriolis_solve
+
+end module coriolis_block_test

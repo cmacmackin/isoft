@@ -58,10 +58,10 @@ module coriolis_block_mod
     ! \[ \frac{d}{dx} \bm{Y} = \bm{A}\bm{Y} + \bm{F} \]
     ! where \( \bm{Y} = [U, V, U', V']^{T} \),
     ! \[ \bm{A} = \begin{bmatrix}
-    ! 0         & 0        & 1 & 0 \\
-    ! 0         & 0        & 0 & 1 \\
-    ! 0         & \Phi/\nu & 0 & 0 \\
-    ! -\Phi/\nu & 0        & 0 & 0
+    ! 0        & 0         & 1 & 0 \\
+    ! 0        & 0         & 0 & 1 \\
+    ! 0        & -\Phi/\nu & 0 & 0 \\
+    ! \Phi/\nu & 0         & 0 & 0
     ! \end{bmatrix},
     ! \]
     ! and \( \bm{F} \) is the input value to which this block is 
@@ -74,10 +74,10 @@ module coriolis_block_mod
     ! of \(\bm{A}\) and \(\bm{D}\) is a diagonal matrix made up of
     ! the corresponding eigenvalues. These have the values
     ! \[ \bm{V} = \begin{bmatrix}
-    ! \tfrac{1+i}{\alpha}  & \tfrac{1-i}{\alpha}  & \tfrac{-1+i}{\alpha} & \tfrac{-1-i}{\alpha} \\
-    ! \tfrac{-1+i}{\alpha} & \tfrac{-1-i}{\alpha} & \tfrac{1+i}{\alpha}  & \tfrac{1-i}{\alpha}  \\
-    ! -i                   & i                    & i                    & -i                   \\
-    ! 1                    & 1                    & 1                    & 1
+    ! \tfrac{-1-i}{\alpha} & \tfrac{-1+i}{\alpha} & \tfrac{1-i}{\alpha} & \tfrac{1+i}{\alpha} \\
+    ! \tfrac{-1+i}{\alpha} & \tfrac{-1-i}{\alpha} & \tfrac{1+i}{\alpha} & \tfrac{1-i}{\alpha} \\
+    ! i                    & -i                   & -i                  & i                   \\
+    ! 1                    & 1                    & 1                   & 1
     ! \end{bmatrix},
     ! \]
     ! \[ \bm{D} = \beta\begin{bmatrix}
@@ -88,10 +88,10 @@ module coriolis_block_mod
     ! \end{bmatrix},
     ! \]
     ! \[ \bm{V}^{-1} = \frac{1}{4}\begin{bmatrix}
-    ! (1-i)\beta  & -(1+i)\beta & i  & 1 \\
-    ! (1+i)\beta  & -(1-i)\beta & -i & 1 \\
-    ! -(1+i)\beta & (1-i)\beta  & -i & 1 \\
-    ! -(1-i)\beta & (1+i)\beta  & i  & 1
+    ! (-1+i)\beta & -(1+i)\beta & -i & 1 \\
+    ! (-1-i)\beta & -(1-i)\beta & i  & 1 \\
+    ! (1+i)\beta  & (1-i)\beta  & i  & 1 \\
+    ! (1-i)\beta  & (1+i)\beta  & -i & 1
     ! \end{bmatrix},
     ! \]
     ! \[ \alpha = \sqrt{\frac{2\Phi}{\nu}}, \quad \beta = \sqrt{\frac{\Phi}{2\nu}}. \]
@@ -149,9 +149,12 @@ module coriolis_block_mod
     real(r8), dimension(4)   :: c_scales
       !! Column scale factors from equilibrating the bound_matrix
     character(len=1)         :: equed
+      !! The method used to equilibrate bound_matrix
   contains
     private
-    procedure :: solve_for
+    procedure, public :: solve_for
+    procedure         :: assign
+    generic, public   :: assignment(=) => assign
   end type coriolis_block
 
   interface coriolis_block
@@ -229,39 +232,41 @@ contains
     ! computing their actual values
     associate (emDx_r => this%eDx_r, emDx_i => this%eDx_i, & 
                Vinv_r => this%V_r, Vinv_i => this%V_i)
-      ! Compute \(e^{-\bm{D}x}\)
-      emDx_r = [(exp(-this%D_r(i)*xvals)*cos(-this%D_i(i)*xvals), i=1,4)]
-      emDx_i = [(exp(-this%D_r(i)*xvals)*sin(-this%D_i(i)*xvals), i=1,4)]
+      ! Compute \(e^{-\bm{D}x}\). Need to do this in two steps to avoid a compiler bug
+      emDx_i = [(exp(-this%D_r(i)*xvals), i=1,4)]
+      emDx_r = [(emDx_i(i)*cos(-this%D_i(i)*xvals), i=1,4)]
+      emDx_i = [(emDx_i(i)*sin(-this%D_i(i)*xvals), i=1,4)]
       ! Compute \(\bm{V}^{-1}\)
-      Vinv_r = reshape([ 0.25_r8*beta,  0.25_r8*beta, -0.25_r8*beta, -0.25_r8*beta,  &
-                        -0.25_r8*beta, -0.25_r8*beta,  0.25_r8*beta,  0.25_r8*beta,  &
-                                    0,             0,             0,             0,  &
-                                    1,             1,             1,             1], &
-                       [4,4])
-      Vinv_i = reshape([-0.25_r8*beta, 0.25_r8*beta, -0.25_r8*beta, 0.25_r8*beta,  &
-                        -0.25_r8*beta, 0.25_r8*beta, -0.25_r8*beta, 0.25_r8*beta,  &
-                                    1,            -1,           -1,            1,  &
-                                    0,             0,            0,            0], &
-                       [4,4])
+      Vinv_r = 0.25_r8*reshape([-beta, -beta,  beta,  beta,  &
+                                -beta, -beta,  beta,  beta,  &
+                                0._r8, 0._r8, 0._r8, 0._r8,  &
+                                1._r8, 1._r8, 1._r8, 1._r8], &
+                               [4,4])
+      Vinv_i = 0.25_r8*reshape([  beta, -beta,  beta,  -beta,  &
+                                 -beta,  beta, -beta,   beta,  &
+                                -1._r8, 1._r8, 1._r8, -1._r8,  &
+                                 0._r8, 0._r8, 0._r8,  0._r8], &
+                               [4,4])
       ! Compute \(e^{-\bm{D}x}\bm{V}^{-1}\)
       this%emDxVinv_r = reshape([((emDx_r(i)*Vinv_r(i,j) - emDx_i(i)*Vinv_i(i,j), &
                                    i=1,4), j=1,4)], [4, 4])
       this%emDxVinv_i = reshape([((emDx_r(i)*Vinv_i(i,j) + emDx_i(i)*Vinv_r(i,j), &
                                    i=1,4), j=1,4)], [4, 4])
     end associate
-    ! Compute \(e^{\bm{D}x}\)
-    this%eDx_r = [(exp(this%D_r(i)*xvals)*cos(this%D_i(i)*xvals), i=1,4)]
-    this%eDx_i = [(exp(this%D_r(i)*xvals)*sin(this%D_i(i)*xvals), i=1,4)]
+    ! Compute \(e^{\bm{D}x}\). Need to do this in two steps to avoid a compiler bug
+    this%eDx_i = [(exp(this%D_r(i)*xvals), i=1,4)]
+    this%eDx_r = [(this%eDx_i(i)*cos(this%D_i(i)*xvals), i=1,4)]
+    this%eDx_i = [(this%eDx_i(i)*sin(this%D_i(i)*xvals), i=1,4)]
     ! Compute \(\bm{V}\)
-    this%V_r = reshape([ 1_r8/alpha, -1._r8/alpha, 0, 1,  &
-                         1_r8/alpha, -1._r8/alpha, 0, 1,  &
-                        -1_r8/alpha,  1._r8/alpha, 0, 1,  &
-                        -1_r8/alpha,  1._r8/alpha, 0, 1], &
+    this%V_r = reshape([-1_r8/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
+                        -1_r8/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
+                         1_r8/alpha,  1._r8/alpha, 0._r8, 1._r8,  &
+                         1_r8/alpha,  1._r8/alpha, 0._r8, 1._r8], &
                        [4,4])
-    this%V_r = reshape([ 1_r8/alpha,  1._r8/alpha, -1, 0,  &
-                        -1_r8/alpha, -1._r8/alpha,  1, 0,  &
-                         1_r8/alpha,  1._r8/alpha,  1, 0,  &
-                        -1_r8/alpha, -1._r8/alpha, -1, 0], &
+    this%V_i = reshape([-1_r8/alpha,  1._r8/alpha,  1._r8, 0._r8,  &
+                         1_r8/alpha, -1._r8/alpha, -1._r8, 0._r8,  &
+                        -1_r8/alpha,  1._r8/alpha, -1._r8, 0._r8,  &
+                         1_r8/alpha, -1._r8/alpha,  1._r8, 0._r8], &
                        [4,4])
     ! Construct and factor matrix used for satisfying boundary conditions
     dummy_in = [(1,0), (0,1), (0.5, 0.5), (-0.5, 0.5)]
@@ -318,7 +323,8 @@ contains
     integer :: i
     real(r8), dimension(1) :: rtmp, ctmp
     real(r8), dimension(4) :: bound_vals
-    complex(r8), dimension(4) :: C_bounds, rhs, B
+    complex(r8), dimension(4) :: rhs, B, C_bounds
+!    complex(r8), dimension(4,2) :: C_bounds
     type(cheb1d_scalar_field) :: tmp
 
     complex(r8), dimension(4), parameter :: dummy = [(1,0),      &
@@ -353,53 +359,47 @@ contains
     ! Calculate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\), aliasing variables
     ! which are not needed yet
     associate (emDxVinvF_r => eDxC_r, emDxVinvF_i => eDxC_i, &
-               M_r => this%emDxVinv_r, M_i => this%emDxVinv_i)
+               M_r => this%emDxVinv_r, M_i => this%emDxVinv_i, &
+               C_r => E_r, C_i => E_i)
       emDxVinvF_r = [(M_r(i,1)*F(1) + M_r(i,2)*F(2) + M_r(i,3)*F(3) + &
                       M_r(i,4)*F(4), i=1,4)]
       emDxVinvF_i = [(M_i(i,1)*F(1) + M_i(i,2)*F(2) + M_i(i,3)*F(3) + &
                       M_i(i,4)*F(4), i=1,4)]
-    end associate
-    ! Integrate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\) to get \(\bm{C}\)
-    associate (C_r => eDxC_r, C_i => eDxC_i)
-      C_r = [(this%integrator%solve_for(C_r(i), -1, zero), i=1,4)]
-      C_i = [(this%integrator%solve_for(C_i(i), -1, zero), i=1,4)]
+      ! Integrate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\) to get \(\bm{C}\)
+      C_r = [(this%integrator%solve_for(emDxVinvF_r(i), -1, zero), i=1,4)]
+      C_i = [(this%integrator%solve_for(emDxVinvF_i(i), -1, zero), i=1,4)]
+      ! Get the values of \(e^{\bm{D}x}\bm{C}\) at the upper boundary
+      do i=1,4
+        tmp = C_r(i)%get_boundary(1, 1)
+        rtmp = tmp%raw()
+        tmp = C_i(i)%get_boundary(1, 1)
+        ctmp = tmp%raw()
+        C_bounds(i) = cmplx(rtmp(1), ctmp(1), r8)
+      end do
+      ! Calculate \(e^{\bm{D}x}\bm{C}\)
       eDxC_r = [(this%eDx_r(i)*C_r(i) - this%eDx_i(i)*C_i(i), i=1,4)]
-      eDxC_i = [(this%eDx_r(i)*C_i(i) + this%eDx_r(i)*C_i(i), i=1,4)]
+      eDxC_i = [(this%eDx_r(i)*C_i(i) + this%eDx_i(i)*C_r(i), i=1,4)]
     end associate
-    ! Get the values of \(e^{\bm{C}x}\bm{C}\) at the appropriate boundaries
-    tmp = eDxC_r(1)%get_boundary(this%vel_bound_loc, 1)
-    rtmp = tmp%raw()
-    tmp = eDxC_i(1)%get_boundary(this%vel_bound_loc, 1)
-    ctmp = tmp%raw()
-    C_bounds(1) = cmplx(rtmp(1), ctmp(1), r8)
-    tmp = eDxC_r(2)%get_boundary(this%vel_bound_loc, 1)
-    rtmp = tmp%raw()
-    tmp = eDxC_i(2)%get_boundary(this%vel_bound_loc, 1)
-    ctmp = tmp%raw()
-    C_bounds(2) = cmplx(rtmp(1), ctmp(1), r8)
-    tmp = eDxC_r(3)%get_boundary(this%dvel_bound_loc, 1)
-    rtmp = tmp%raw()
-    tmp = eDxC_i(3)%get_boundary(this%dvel_bound_loc, 1)
-    ctmp = tmp%raw()
-    C_bounds(3) = cmplx(rtmp(1), ctmp(1), r8)
-    tmp = eDxC_r(4)%get_boundary(this%dvel_bound_loc, 1)
-    rtmp = tmp%raw()
-    tmp = eDxC_i(4)%get_boundary(this%dvel_bound_loc, 1)
-    ctmp = tmp%raw()
-    C_bounds(4) = cmplx(rtmp(1), ctmp(1), r8)
     
     ! Compute RHS for the linear system satisfying the boundary conditions
-    rhs = [(bound_vals(i) - dot_product(cmplx(this%V_r(i,:), this%V_i(i,:), r8), &
-                                        C_bounds), i=1,4)]
-    
+    if (this%vel_bound_loc == -1) then
+      rhs(1:2) = bound_vals(1:2)
+    else
+      rhs(1:2) = bound_vals(1:2) - matmul(this%bound_matrix(1:2,:), &
+                                          C_bounds)
+    end if
+    if (this%dvel_bound_loc == -1) then
+      rhs(3:4) = bound_vals(3:4)
+    else
+      rhs(3:4) = bound_vals(3:4) - matmul(this%bound_matrix(3:4,:), &
+                                          C_bounds)
+    end if
+
     ! Compute coefficients for inhomogeneous components of solution so
     ! that boundary conditions are satisfied
-    ! WHY DOES THIS WORK IN THE CONSTRUCTOR BUT NOT HERE?
     call la_gesvx(this%bound_matrix, rhs, B, this%factored_matrix, &
                   this%pivots, 'F', trans, this%equed, this%r_scales, &
                   this%c_scales, info=i)
-    call velocity%clean_temp(); call velocity_dx%clean_temp()
-
     ! Calculate \(\bm{E} = e^{\bm{D}x}\bm{B} + e^{\bm{D}x}\bm{C}\)
     E_r = [(this%eDx_r(i)*real(B(i)) - this%eDx_i(i)*aimag(B(i)) + &
             eDxC_r(i), i=1,4)]
@@ -413,6 +413,36 @@ contains
           this%V_r(i,4)*E_r(4) - this%V_i(i,4)*E_i(4), i=1,4)]
     velocity = F(1:2)
     velocity_dx = F(3:4)
+    call velocity%clean_temp(); call velocity_dx%clean_temp()
   end subroutine solve_for
+
+  subroutine assign(this, rhs)
+    !* Author: Chris MacMackin
+    !  Date: January 2017
+    !
+    ! Safely assigns the value of one coriolis block to another.
+    !
+    class(coriolis_block), intent(inout) :: this
+    class(coriolis_block), intent(in)  :: rhs
+      !! The value being assigned
+    this%D_r = rhs%D_r
+    this%D_i = rhs%D_i
+    this%emDxVinv_r = rhs%emDxVinv_r
+    this%emDxVinv_i = rhs%emDxVinv_i
+    this%eDx_r = rhs%eDx_r
+    this%eDx_i = rhs%eDx_i
+    this%V_r = rhs%V_r
+    this%V_i = rhs%V_i
+    this%integrator = rhs%integrator
+    this%vel_bound_loc = rhs%vel_bound_loc
+    this%dvel_bound_loc = rhs%dvel_bound_loc
+    this%xbounds= rhs%xbounds
+    this%bound_matrix = rhs%bound_matrix
+    this%factored_matrix = rhs%factored_matrix
+    this%pivots = rhs%pivots
+    this%r_scales = rhs%r_scales
+    this%c_scales = rhs%c_scales
+    this%equed = rhs%equed
+  end subroutine assign
 
 end module coriolis_block_mod
