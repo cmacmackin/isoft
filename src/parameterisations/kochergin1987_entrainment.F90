@@ -1,8 +1,8 @@
 !
-!  jenkins1991_entrainment.f90
+!  kochergin1987_entrainment.f90
 !  This file is part of ISOFT.
 !  
-!  Copyright 2016 Chris MacMackin <cmacmackin@physics.ox.ac.uk>
+!  Copyright 2018 Chris MacMackin <cmacmackin@physics.ox.ac.uk>
 !  
 !  This program is free software; you can redistribute it and/or modify
 !  it under the terms of the GNU General Public License as published by
@@ -25,13 +25,13 @@
 #define elemental 
 #endif
 
-module jenkins1991_entrainment_mod
+module kochergin1987_entrainment_mod
   !* Author: Christopher MacMackin
   !  Date: October 2016
   !  License: GPLv3
   !
   ! Provides a concrete implementation of [[abstract_entrainment]]
-  ! in the form of the parameterisation used by Jenkins (1991).
+  ! in the form of the parameterisation described by Kochergin (1987).
   !
   use iso_fortran_env, only: r8 => real64
   use factual_mod!, only: scalar_field, vector_field, abs
@@ -39,62 +39,61 @@ module jenkins1991_entrainment_mod
   implicit none
   private
 
-  type, extends(abstract_entrainment), public :: jenkins1991_entrainment
+  type, extends(abstract_entrainment), public :: kochergin1987_entrainment
     !* Author: Christopher MacMackin
-    !  Date: October 2016
+    !  Date: Feburary 2018
     !
-    ! A parameterisation of entrainment (\(e\)) as described by Jenkins
-    ! (1991): $$e = E_0 |\vec{U}\sin(\theta) \simeq
-    ! E_0|\vec{U}||\nabla b|.$$ Here, \(E_0\) is a coefficient typically
-    ! taken to be 0.036 (the default value), \(\vec{U}\) is the velocity
-    ! of the plume, \(\theta\) is the angle of slope of the ice shelf
-    ! base, and \(b\) is the basal depth of the ice shelf.
+    ! A parameterisation of entrainment (\(e\)) as described by
+    ! Kochergin (1987): $$e =
+    ! \frac{c_L^2}{S_m}\sqrt{|\vec{U}|^2+\frac{g'D}{S_m}}.$$ Here,
+    ! \(c_L\) is an entrainment coefficient, \(\vec{U}\) is the
+    ! velocity of the plume, \(g'\) is the reduced gravity, and
+    ! \(S_m\) is the turbulent Schmidt number. The latter-most can be
+    ! expressed as $$ S_m = \frac{\Ri}{0.0725(\Ri + 0.186 -
+    ! \sqrt{\Ri^2 - 0.316\Ri + 0.0346})} $$, where \(\Ri =
+    ! g'D/|\vec{U}|^2\) is the Richardson number.
     !
     private
     real(r8) :: coefficient = 1.0_r8
-      !! The entrainment coefficient $E_0$
+      !! The entrainment coefficient \(c_L^2x_0/D_0\)
+    real(r8) :: delta = 0.036_r8
+      !! The ratio \(D_0/h_0\)
   contains
-    procedure :: entrainment_rate => jenkins1991_rate
+    procedure :: entrainment_rate => kochergin1987_rate
       !! Returns the entrainment rate for ambient water into the plume.
-  end type jenkins1991_entrainment
+  end type kochergin1987_entrainment
 
-  interface jenkins1991_entrainment
+  interface kochergin1987_entrainment
     module procedure constructor
-  end interface jenkins1991_entrainment
+  end interface kochergin1987_entrainment
 
 contains
 
-  pure function constructor(coefficient) result(this)
+  pure function constructor(coefficient, delta) result(this)
     real(r8), intent(in) :: coefficient
-      !! The entrainment coefficient, $E_0$ to be used
-    type(jenkins1991_entrainment) :: this
+      !! The entrainment coefficient \(c_L^2x_0/D_0\)
+    real(r8), intent(in) :: delta
+      !! The ratio \(D_0/h_0\)
+    type(kochergin1987_entrainment) :: this
       !! A new entrainment object
     this%coefficient = coefficient
+    this%delta = delta
   end function constructor
 
-  function jenkins1991_rate(this, velocity, thickness, depth, density_diff, time) &
+  function kochergin1987_rate(this, velocity, thickness, depth, density_diff, time) &
                                                 result(entrainment)
     !* Author: Christopher MacMackin
-    !  Date: October 2016
+    !  Date: Feburary 2018
     !
-    ! $$e = E_0 |\vec{U}\sin(\theta) \simeq E_0|\vec{U}||\nabla b|$$
-    ! Here, \(E_0\) is a coefficient typically taken to be 0.036 (the
-    ! default value), \(\vec{U}\) is the velocity of the plume, \(\theta\)
-    ! is the angle of slope of the ice shelf base, and \(b\) is the
-    ! basal depth of the ice shelf.
+    ! $$e = \frac{c_L^2}{S_m}\sqrt{|\vec{U}|^2+\frac{g'D}{S_m}}.$$
+    ! Here, \(c_L\) is an entrainment coefficient, \(\vec{U}\) is the
+    ! velocity of the plume, \(g'\) is the reduced gravity, and
+    ! \(S_m\) is the turbulent Schmidt number. The Schmidt number is a
+    ! function of the Richardson number \(\Ri = g'D/|\vec{U}|^2\):
+    ! $$ S_m = \frac{\Ri}{0.0725(\Ri + 0.186 -
+    ! \sqrt{\Ri^2 - 0.316\Ri + 0.0346})}. $$
     !
-    ! @Warning
-    ! The calculation must be performed as
-    ! ```fortran
-    ! this%coefficient * depth%d_dx(1) * velocity%norm()
-    ! ```
-    ! with the variables in a different order than how the equation is
-    ! usually formulated. If they are in the correct order then
-    ! `gfortran` expects the result to be a [[vector_field(type)]]. It
-    ! is not clear whether this is due to a bug in `gfortran` or in
-    ! `factual`.
-    !
-    class(jenkins1991_entrainment), intent(in) :: this
+    class(kochergin1987_entrainment), intent(in) :: this
     class(vector_field), intent(in)            :: velocity
       !! The velocity field of the plume into which fluid is being 
       !! entrained.
@@ -112,19 +111,21 @@ contains
       !! present then assumed to be same as previous value passed.
     class(scalar_field), pointer               :: entrainment
       !! The value of the entrainment
-    class(vector_field), pointer               :: tmp
-    call velocity%guard_temp(); call thickness%guard_temp()
+    class(scalar_field), pointer               :: Ri, Sm
+    call velocity%guard_temp(); call thickness%guard_temp() 
     call depth%guard_temp(); call density_diff%guard_temp()
     call depth%allocate_scalar_field(entrainment)
-    call depth%allocate_vector_field(tmp)
-    entrainment = velocity%norm()
-    call entrainment%unset_temp()
-    tmp = .grad. depth
-    entrainment = tmp%norm() ! Needed due to ICE when try to put all on one line. TODO: Create minimal example and submit bug report.
-    entrainment = this%coefficient * entrainment * velocity%norm()
+    call depth%allocate_scalar_field(Ri)
+    call depth%allocate_scalar_field(Sm)
+    call Ri%guard_temp(); call Sm%guard_temp()
+    entrainment = velocity%norm() ! Have to awkwardly split this operation to prevent ICE
+    Ri = this%delta*density_diff*thickness/(entrainment**2)
+    Sm = Ri/(0.0725_r8*(Ri + 0.186_r8 - sqrt(Ri**2 - 0.316_r8*Ri + 0.0346_r8)))
+    entrainment = this%coefficient*entrainment/Sm * sqrt(1._r8 + Ri/Sm)
     call velocity%clean_temp(); call thickness%clean_temp()
     call depth%clean_temp(); call density_diff%clean_temp()
+    call Ri%clean_temp(); call Sm%clean_temp()
     call entrainment%set_temp()
-  end function jenkins1991_rate
+  end function kochergin1987_rate
 
-end module jenkins1991_entrainment_mod
+end module kochergin1987_entrainment_mod

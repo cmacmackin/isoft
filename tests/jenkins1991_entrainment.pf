@@ -34,8 +34,8 @@ module jenkins1991_entrainment_test
 
   @TestCase
   type, extends(testcase), public :: test_entrain
-    type(jenkins1991_entrainment) :: melt1, melt2
-    type(cheb1d_scalar_field) :: thickness, depth
+    type(jenkins1991_entrainment) :: ent1, ent2
+    type(cheb1d_scalar_field) :: thickness, depth, dens_diff
     type(cheb1d_vector_field) :: velocity1, velocity2
     real(r8) :: time1, time2, coef1, coef2
     integer :: numpoints = resolution
@@ -106,18 +106,20 @@ contains
     this%time2 = -5.7_r8
     this%coef1 = 1.0_r8
     this%coef2 = -3.5_r8
-    this%melt1 = jenkins1991_entrainment(this%coef1)
-    this%melt2 = jenkins1991_entrainment(this%coef2)
+    this%ent1 = jenkins1991_entrainment(this%coef1)
+    this%ent2 = jenkins1991_entrainment(this%coef2)
   end subroutine setup
 
   @Test
   subroutine test_entrainment_values(this)
     class(test_entrain), intent(inout) :: this
     type(cheb1d_scalar_field) :: actual, expected
-    actual = this%melt1%entrainment_rate(this%velocity1,this%thickness,this%depth,this%time1)
+    actual = this%ent1%entrainment_rate(this%velocity1,this%thickness,this%depth, &
+                                        this%dens_diff,this%time1)
     expected = cheb1d_scalar_field(this%numpoints,ent1,0._r8,big_x)
     @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
-    actual = this%melt2%entrainment_rate(this%velocity2,this%depth,this%thickness,this%time2)
+    actual = this%ent2%entrainment_rate(this%velocity2,this%depth,this%thickness, &
+                                        this%dens_diff,this%time2)
     expected = cheb1d_scalar_field(this%numpoints,ent2,0._r8,big_x)
     @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
   contains

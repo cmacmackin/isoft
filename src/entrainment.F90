@@ -51,7 +51,7 @@ module entrainment_mod
   end type abstract_entrainment
 
   abstract interface
-    function get_entrainment(this, velocity, thickness, depth, time) &
+    function get_entrainment(this, velocity, thickness, depth, density_diff, time) &
                                                     result(property)
       import :: abstract_entrainment
       import :: vector_field
@@ -67,6 +67,9 @@ module entrainment_mod
       class(scalar_field), intent(in) :: depth
         !! The depth of the upper surface of the plume into which
         !! fluid is being entrained
+      class(scalar_field), intent(in) :: density_diff
+        !! The difference between the ambient density and the density of
+        !! the plume into which the ambient fluid is being entrained.
       real(r8), intent(in), optional  :: time
         !! The time at which the entrainment is being calculated. If not
         !! present then assumed to be same as previous value passed.
