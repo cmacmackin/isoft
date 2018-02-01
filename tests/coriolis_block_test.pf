@@ -57,15 +57,15 @@ contains
 
   subroutine setup(this)
     class(test_block), intent(inout) :: this
-    this%phi = 2.e-5_r8
-    this%nu = 4.e-5_r8
-    this%vel = cheb1d_vector_field(resolution, g, 0._r8, 1._r8, 1)
-    this%vel_dx = cheb1d_vector_field(resolution, g_dx, 0._r8, 1._r8, 1)
+    this%phi = -1.e-4_r8
+    this%nu = 3.69e-5_r8
+    this%vel = cheb1d_vector_field(resolution, g, 0.0000_r8, 6._r8, 1)
+    this%vel_dx = cheb1d_vector_field(resolution, g_dx, 0.0000_r8, 6._r8, 1)
     this%vel_out = this%vel%d_dx(1) - this%vel_dx
     call this%vel_out%set_boundary(-1, 1, this%vel%get_boundary(-1, 1))
     this%vel_dx_out = [0._r8, 0._r8, this%phi/this%nu] .cross. this%vel
     this%vel_dx_out = this%vel_dx%d_dx(1) - this%vel_dx_out
-    call this%vel_dx_out%set_boundary(-1, 1, this%vel_dx%get_boundary(-1, 1))    
+    call this%vel_dx_out%set_boundary(1, 1, this%vel_dx%get_boundary(1, 1))    
   end subroutine setup
 
   @Test
@@ -76,7 +76,7 @@ contains
     @assertFalse(all(this%vel%raw()==this%vel_out%raw()),message='Fields to be preconditioned same as expected result.')
     @assertFalse(all(this%vel_dx%raw()==this%vel_dx_out%raw()),message='Fields to be preconditioned same as expected result.')
     scal = this%vel%component(1)
-    block1 = coriolis_block(this%phi, this%nu, -1, -1, scal)
+    block1 = coriolis_block(this%phi, this%nu, -1, 1, scal)
     call block1%solve_for(this%vel_out, this%vel_dx_out)
     @assertEqual(this%vel%raw(),this%vel_out%raw(),tolerance=1e-9_r8,message='Coriolis block returns wrong sol.')
     @assertEqual(this%vel_dx%raw(),this%vel_dx_out%raw(),tolerance=1e-9_r8,message='Coriolis block returns wrong sol.')

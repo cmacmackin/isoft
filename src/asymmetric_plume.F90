@@ -51,6 +51,7 @@ module asymmetric_plume_mod
   use uniform_ambient_mod, only: uniform_ambient_conditions
   use simple_plume_boundary_mod, only: simple_plume_boundary
   use pseudospectral_block_mod, only: pseudospec_block
+  use coriolis_block_mod, only: coriolis_block
   use linear_eos_mod, only: linear_eos
   use hdf5
   use h5lt
@@ -137,6 +138,9 @@ module asymmetric_plume_mod
     type(pseudospec_block)    :: precond
       !! A pseudospectral differentiation block which can be used for
       !! preconditioning.
+    type(coriolis_block)      :: vel_precond
+      !! A representation of the operation on the plume velocity terms
+      !! which can be used for preconditioning.
   contains
     procedure :: initialise => asym_plume_initialise
     procedure :: basal_melt => asym_plume_melt
@@ -423,6 +427,24 @@ contains
     end if
 #endif
     call set_preconditioners(btype_l, btype_u, 6)
+
+    if (this%phi /= 0._r8) then
+      associate (velbound => btype_l, dvelbound => btype_u)
+        if (this%lower_bounds(2)) then
+          velbound = -1
+        else if (this%upper_bounds(2)) then
+          velbound = 1
+        end if
+        if (this%lower_bounds(3)) then
+          dvelbound = -1
+        else if (this%upper_bounds(3)) then
+          dvelbound = 1
+        end if
+
+        this%vel_precond = coriolis_block(this%phi, this%nu, velbound, &
+                                          dvelbound, this%thickness)
+      end associate
+    end if
     
 #ifdef DEBUG
     call logger%debug('asym_plume','Initialised new ice shelf object.')
@@ -933,7 +955,7 @@ contains
       L(st:en) = scalar_tmp%raw()
       
       ! Velocity
-!      print*,'----------------------------L-----------------------------------'
+      print*,'----------------------------L-----------------------------------'
       vector_tmp = this%velocity%d_dx(1) - this%velocity_dx
       if (this%lower_bounds(2)) then
         call vector_tmp%set_boundary(-1, 1, this%velocity%get_boundary(-1, 1))
@@ -944,7 +966,7 @@ contains
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
- !     print*,vector_tmp%raw()
+      print*,vector_tmp%raw()
 
       if (this%phi /= 0._r8) then
         coriolis = [0._r8, 0._r8, this%phi/this%nu] .cross. this%velocity
@@ -961,7 +983,7 @@ contains
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
- !     print*,vector_tmp%raw()
+      print*,vector_tmp%raw()
 
       ! Temperature
       scalar_tmp = this%temperature%d_dx(1) - this%temperature_dx
@@ -1008,8 +1030,6 @@ contains
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
-!      print*,'----------------------------L-----------------------------------'
-!      print*,L
     end function L
 
     subroutine non_diff_terms(D, Uvec, T, S, b, DU_x, DUU_x, DUT_x, DUS_x)
@@ -1105,7 +1125,7 @@ contains
          tmp(1) = D*(rho_a - rho)*(b%d_dx(1) - this%delta*D%d_dx(1)) &
                 + 0.5_r8*this%delta*D**2*rho%d_dx(1)
          if (dims > 1) then
-           tmp(2) = 0._r8*this%delta/dy*D**2*(rho - rho_a)
+           tmp(2) = 0.5_r8*this%delta/dy*D**2*(rho - rho_a)
          end if
          DUU_x = tmp
          DUU_x = DUU_x - this%mu*Uvec*Uvec%norm() - D/dy*V*Uvec
@@ -1265,9 +1285,9 @@ contains
       real(r8) :: nu
       type(asym_plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
-      type(cheb1d_vector_field) :: vector_tmp, U_precond, U_x_precond
+      type(cheb1d_vector_field) :: vector_tmp
       class(scalar_field), pointer :: U, U_x
-!      print*,'---------------------------P^-1---------------------------------'
+      print*,'---------------------------P^-1---------------------------------'
 !      print*,v
 
       v_plume%thickness_size = this%thickness_size
@@ -1284,7 +1304,6 @@ contains
       call v_plume%update(v)
 
       nu = this%nu
-
       bloc = get_bound_loc(1)  
       v_plume%thickness = this%precond%solve_for(v_plume%thickness, bloc, &
            v_plume%thickness%get_boundary(bloc, 1))
@@ -1292,60 +1311,26 @@ contains
       en = st + this%thickness_size - 1
       preconditioner(st:en) = v_plume%thickness%raw()
   
-      ! Precondition the U_x term after have preconditioned values for S and T
-      st = en + 1
-      en = st + this%velocity_size - 1
-      ust = st
-      uen = en
-      st = en + 1
-      en = st + this%velocity_size - 1
-
-      bloc = get_bound_loc(3)
-      U_x_precond = this%precond%solve_for(v_plume%velocity_dx, bloc, &
-           v_plume%velocity_dx%get_boundary(bloc, 1))
-
-      bloc = get_bound_loc(2)
-      vector_tmp = v_plume%velocity + U_x_precond
-      U_precond = this%precond%solve_for(vector_tmp, bloc, &
-           v_plume%velocity%get_boundary(bloc, 1))
-
-
-!      print*,v_plume%velocity%raw()
-!      print*,v_plume%velocity_dx%raw()
+      print*,v_plume%velocity%raw()
+      print*,v_plume%velocity_dx%raw()
       if (this%phi /= 0._r8) then
-        bloc = get_bound_loc(2)
-        U_precond = this%precond%solve_for(v_plume%velocity, bloc, &
-             v_plume%velocity%get_boundary(bloc, 1))
-        
+        call this%vel_precond%solve_for(v_plume%velocity, v_plume%velocity_dx)
+      else
         bloc = get_bound_loc(3)
-        vector_tmp = [0._r8, 0._r8, this%phi/this%nu] .cross. U_precond
-        vector_tmp = v_plume%velocity_dx - vector_tmp
-        U_x_precond = this%precond%solve_for(vector_tmp, bloc, &
+        v_plume%velocity_dx = this%precond%solve_for(v_plume%velocity_dx, bloc, &
              v_plume%velocity_dx%get_boundary(bloc, 1))
-print*,'-----------------------------------------------------------------------------'
-          print*,U_precond%raw()
-          print*,U_x_precond%raw()
-print*,'-----------------------------------------------------------------------------'
-        do i = 1, 15
-           print*,this%phi/this%nu
-          bloc = get_bound_loc(2)
-          vector_tmp = v_plume%velocity + U_x_precond
-          U_precond = this%precond%solve_for(vector_tmp, bloc, &
-               v_plume%velocity%get_boundary(bloc, 1))
-
-          bloc = get_bound_loc(3)
-          vector_tmp = [0._r8, 0._r8, this%phi/this%nu] .cross. U_precond
-          vector_tmp = v_plume%velocity_dx - vector_tmp
-          U_x_precond = this%precond%solve_for(vector_tmp, bloc, &
-               v_plume%velocity_dx%get_boundary(bloc, 1))
-
-          print*,U_precond%raw()
-          print*,U_x_precond%raw()
-print*,'-----------------------------------------------------------------------------'
-        end do
+  
+        bloc = get_bound_loc(2)
+        vector_tmp = v_plume%velocity + v_plume%velocity_dx
+        v_plume%velocity = this%precond%solve_for(vector_tmp, bloc, &
+             v_plume%velocity%get_boundary(bloc, 1))
       end if
-      preconditioner(st:en) = U_x_precond%raw()
-      preconditioner(ust:uen) = U_precond%raw()
+      st = en + 1
+      en = st + this%velocity_size - 1
+      preconditioner(st:en) = v_plume%velocity%raw()
+      st = en + 1
+      en = st + this%velocity_size - 1
+      preconditioner(st:en) = v_plume%velocity_dx%raw()        
 
       ! Precondition T_x terms before T
       st = en + 1

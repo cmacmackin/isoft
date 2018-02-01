@@ -133,11 +133,17 @@ module coriolis_block_mod
     integer                  :: dvel_bound_loc
       !! Location code for the velocity derivative's boundary
       !! condition
+    integer                  :: integrate_bound
+      !! Location from which to perform the integration
     real(r8), dimension(4)   :: xbounds
       !! Boundary location for each component of the solution vector
     complex(r8), dimension(4,4) :: bound_matrix
       !! Matrix for the system to solve in order to satisfy the
       !! boundary conditions
+    complex(r8), dimension(4,4) :: bound_matrix_scaled
+      !! Matrix for the system to solve in order to satisfy the
+      !! boundary conditions, which has been scaled by LAPACK95 
+      !! to improve conditioning.
     complex(r8), dimension(4,4) :: factored_matrix
       !! Factored matrix for the system to solve in order to satisfy
       !! the boundary conditions
@@ -189,16 +195,14 @@ contains
 
     type(cheb1d_scalar_field) :: xvals
     integer :: i, j, info
-    real(r8) :: alpha, beta, rcond
+    real(r8) :: alpha, beta, rcond, s
     real(r8), dimension(:,:), allocatable :: domain
     complex(r8), dimension(4) :: dummy_in
     complex(r8), dimension(4) :: dummy_out
     character(len=:), allocatable :: msg
-
     call template%guard_temp()
 
     zero = uniform_scalar_field(0._r8)
-
     this%integrator = pseudospec_block(template)
     domain = template%domain()
     this%vel_bound_loc = velbound
@@ -221,11 +225,17 @@ contains
                         'Only boundary location codes 1 or -1 are accepted.')
       error stop
     end if
+    if (velbound == 1 .and. dvelbound == 1) then
+      this%integrate_bound = 1
+    else
+      this%integrate_bound = -1
+    end if
     xvals = cheb1d_scalar_field(template%elements(), linear, domain(1,1), &
                                 domain(1,2))
     ! Compute the diagonal elements of \(\bm{B}\)
-    alpha = sqrt(2*phi/nu)
-    beta = sqrt(0.5_r8*phi/nu)
+    alpha = sqrt(abs(2*phi/nu))
+    beta = sqrt(abs(0.5_r8*phi/nu))
+    s = sign(1._r8,phi)
     this%D_r = [-beta, -beta, beta, beta]
     this%D_i = [-beta, beta, -beta, beta]
     ! Use the associations as temporary work arrays, prior to
@@ -237,15 +247,15 @@ contains
       emDx_r = [(emDx_i(i)*cos(-this%D_i(i)*xvals), i=1,4)]
       emDx_i = [(emDx_i(i)*sin(-this%D_i(i)*xvals), i=1,4)]
       ! Compute \(\bm{V}^{-1}\)
-      Vinv_r = 0.25_r8*reshape([-beta, -beta,  beta,  beta,  &
-                                -beta, -beta,  beta,  beta,  &
-                                0._r8, 0._r8, 0._r8, 0._r8,  &
-                                1._r8, 1._r8, 1._r8, 1._r8], &
+      Vinv_r = 0.25_r8*reshape([-s*beta, -s*beta, s*beta, s*beta,  &
+                                  -beta,   -beta,   beta,   beta,  &
+                                  0._r8,   0._r8,  0._r8,  0._r8,  &
+                                  1._r8,   1._r8,  1._r8,  1._r8], &
                                [4,4])
-      Vinv_i = 0.25_r8*reshape([  beta, -beta,  beta,  -beta,  &
-                                 -beta,  beta, -beta,   beta,  &
-                                -1._r8, 1._r8, 1._r8, -1._r8,  &
-                                 0._r8, 0._r8, 0._r8,  0._r8], &
+      Vinv_i = 0.25_r8*reshape([s*beta, -s*beta, s*beta, -s*beta,  &
+                                 -beta,    beta,  -beta,    beta,  &
+                                    -s,       s,      s,      -s,  &
+                                 0._r8,   0._r8,  0._r8,   0._r8], &
                                [4,4])
       ! Compute \(e^{-\bm{D}x}\bm{V}^{-1}\)
       this%emDxVinv_r = reshape([((emDx_r(i)*Vinv_r(i,j) - emDx_i(i)*Vinv_i(i,j), &
@@ -258,24 +268,26 @@ contains
     this%eDx_r = [(this%eDx_i(i)*cos(this%D_i(i)*xvals), i=1,4)]
     this%eDx_i = [(this%eDx_i(i)*sin(this%D_i(i)*xvals), i=1,4)]
     ! Compute \(\bm{V}\)
-    this%V_r = reshape([-1_r8/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
-                        -1_r8/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
-                         1_r8/alpha,  1._r8/alpha, 0._r8, 1._r8,  &
-                         1_r8/alpha,  1._r8/alpha, 0._r8, 1._r8], &
+    this%V_r = reshape([-s/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
+                        -s/alpha, -1._r8/alpha, 0._r8, 1._r8,  &
+                         s/alpha,  1._r8/alpha, 0._r8, 1._r8,  &
+                         s/alpha,  1._r8/alpha, 0._r8, 1._r8], &
                        [4,4])
-    this%V_i = reshape([-1_r8/alpha,  1._r8/alpha,  1._r8, 0._r8,  &
-                         1_r8/alpha, -1._r8/alpha, -1._r8, 0._r8,  &
-                        -1_r8/alpha,  1._r8/alpha, -1._r8, 0._r8,  &
-                         1_r8/alpha, -1._r8/alpha,  1._r8, 0._r8], &
+    this%V_i = reshape([-s/alpha,  1._r8/alpha,  s, 0._r8,  &
+                         s/alpha, -1._r8/alpha, -s, 0._r8,  &
+                        -s/alpha,  1._r8/alpha, -s, 0._r8,  &
+                         s/alpha, -1._r8/alpha,  s, 0._r8], &
                        [4,4])
     ! Construct and factor matrix used for satisfying boundary conditions
     dummy_in = [(1,0), (0,1), (0.5, 0.5), (-0.5, 0.5)]
     this%bound_matrix = reshape([((cmplx(this%V_r(i,j), this%V_i(i,j), r8)* &
                                    exp(cmplx(this%D_r(j), this%D_i(j), r8)* &
                                    this%xbounds(i)), i=1,4), j=1,4)], [4,4])
-    call la_gesvx(this%bound_matrix, dummy_in, dummy_out, this%factored_matrix, &
-                  this%pivots, 'E', trans, this%equed, this%r_scales, this%c_scales, &
-                  rcond=rcond, info=info)
+    this%bound_matrix_scaled = this%bound_matrix
+    call la_gesvx(this%bound_matrix_scaled, dummy_in, dummy_out,  &
+                   this%factored_matrix, this%pivots, 'E', trans, &
+                   this%equed, this%r_scales, this%c_scales,      &
+                   rcond=rcond, info=info)
     if (info /= 0) then
       msg = 'Tridiagonal matrix solver returned with flag '//str(info)
       call logger%error('coriolis_block',msg)
@@ -324,14 +336,8 @@ contains
     real(r8), dimension(1) :: rtmp, ctmp
     real(r8), dimension(4) :: bound_vals
     complex(r8), dimension(4) :: rhs, B, C_bounds
-!    complex(r8), dimension(4,2) :: C_bounds
     type(cheb1d_scalar_field) :: tmp
 
-    complex(r8), dimension(4), parameter :: dummy = [(1,0),      &
-                                                     (0,1),      &
-                                                     (0.5, 0.5), &
-                                                     (-0.5, 0.5)]
-    complex(r8), dimension(4) :: dummy_sol
     integer :: info
     real(r8) :: rcond
 
@@ -355,7 +361,20 @@ contains
     tmp = F(4)%get_boundary(this%dvel_bound_loc, 1)
     rtmp = tmp%raw()
     bound_vals(4) = rtmp(1)
-
+    ! If have boundary conditions at both boundaries, correct the
+    ! input fields
+    if (this%vel_bound_loc /= this%integrate_bound) then
+      F(1) = this%integrator%solve_for(F(1), this%vel_bound_loc, zero)
+      F(1) = F(1)%d_dx(1)
+      F(2) = this%integrator%solve_for(F(2), this%vel_bound_loc, zero)
+      F(2) = F(2)%d_dx(1)
+    end if
+    if (this%dvel_bound_loc /= this%integrate_bound) then
+      F(3) = this%integrator%solve_for(F(3), this%dvel_bound_loc, zero)
+      F(3) = F(3)%d_dx(1)
+      F(4) = this%integrator%solve_for(F(4), this%dvel_bound_loc, zero)
+      F(4) = F(4)%d_dx(1)
+    end if
     ! Calculate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\), aliasing variables
     ! which are not needed yet
     associate (emDxVinvF_r => eDxC_r, emDxVinvF_i => eDxC_i, &
@@ -366,8 +385,10 @@ contains
       emDxVinvF_i = [(M_i(i,1)*F(1) + M_i(i,2)*F(2) + M_i(i,3)*F(3) + &
                       M_i(i,4)*F(4), i=1,4)]
       ! Integrate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\) to get \(\bm{C}\)
-      C_r = [(this%integrator%solve_for(emDxVinvF_r(i), -1, zero), i=1,4)]
-      C_i = [(this%integrator%solve_for(emDxVinvF_i(i), -1, zero), i=1,4)]
+      C_r = [(this%integrator%solve_for(emDxVinvF_r(i), this%integrate_bound, &
+              zero), i=1,4)]
+      C_i = [(this%integrator%solve_for(emDxVinvF_i(i), this%integrate_bound, &
+              zero), i=1,4)]
       ! Get the values of \(e^{\bm{D}x}\bm{C}\) at the upper boundary
       do i=1,4
         tmp = C_r(i)%get_boundary(1, 1)
@@ -382,13 +403,13 @@ contains
     end associate
     
     ! Compute RHS for the linear system satisfying the boundary conditions
-    if (this%vel_bound_loc == -1) then
+    if (this%vel_bound_loc == this%integrate_bound) then
       rhs(1:2) = bound_vals(1:2)
     else
       rhs(1:2) = bound_vals(1:2) - matmul(this%bound_matrix(1:2,:), &
                                           C_bounds)
     end if
-    if (this%dvel_bound_loc == -1) then
+    if (this%dvel_bound_loc == this%integrate_bound) then
       rhs(3:4) = bound_vals(3:4)
     else
       rhs(3:4) = bound_vals(3:4) - matmul(this%bound_matrix(3:4,:), &
@@ -397,8 +418,8 @@ contains
 
     ! Compute coefficients for inhomogeneous components of solution so
     ! that boundary conditions are satisfied
-    call la_gesvx(this%bound_matrix, rhs, B, this%factored_matrix, &
-                  this%pivots, 'F', trans, this%equed, this%r_scales, &
+    call la_gesvx(this%bound_matrix_scaled, rhs, B, this%factored_matrix, &
+                  this%pivots, 'F', trans, this%equed, this%r_scales,     &
                   this%c_scales, info=i)
     ! Calculate \(\bm{E} = e^{\bm{D}x}\bm{B} + e^{\bm{D}x}\bm{C}\)
     E_r = [(this%eDx_r(i)*real(B(i)) - this%eDx_i(i)*aimag(B(i)) + &
@@ -436,8 +457,10 @@ contains
     this%integrator = rhs%integrator
     this%vel_bound_loc = rhs%vel_bound_loc
     this%dvel_bound_loc = rhs%dvel_bound_loc
+    this%integrate_bound = rhs%integrate_bound
     this%xbounds= rhs%xbounds
     this%bound_matrix = rhs%bound_matrix
+    this%bound_matrix_scaled = rhs%bound_matrix_scaled
     this%factored_matrix = rhs%factored_matrix
     this%pivots = rhs%pivots
     this%r_scales = rhs%r_scales

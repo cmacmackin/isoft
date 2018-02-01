@@ -88,8 +88,8 @@ contains
                                      domain(1,2))
   end function constructor
 
-  function pseudospec_block_solve_scalar(this, rhs, bound_loc, bound_val) &
-       result(solution)
+  function pseudospec_block_solve_scalar(this, rhs, bound_loc, bound_val, &
+                                         estimate_high) result(solution)
     !* Author: Chris MacMackin
     !  Date: September 2017
     !
@@ -109,6 +109,10 @@ contains
       !! positive, then the upper boundary is returned.
     class(scalar_field), intent(in)        :: bound_val
       !! The value of the result at the specified boundary.
+    logical, intent(in), optional          :: estimate_high
+      !! Estimate the power of the highest mode rather than calculate
+      !! it from boundary values. Useful if the boundary values are
+      !! not trusted. Defaults to `.false.`.
     class(scalar_field), pointer           :: solution
 
     real(r8), dimension(:), allocatable :: sol_vector, bound_vec
@@ -130,9 +134,9 @@ contains
     sol_vector = rhs%raw()
     if (valid_bound) then
       bound_vec = bound_val%raw()
-      call integrate_1d(sol_vector, this%xvals, bloc, bound_vec(1))
+      call integrate_1d(sol_vector, this%xvals, bloc, bound_vec(1), estimate_high)
     else
-      call integrate_1d(sol_vector, this%xvals)
+      call integrate_1d(sol_vector, this%xvals, estimate_high=estimate_high)
     end if
 #ifdef DEBUG
     call logger%debug('pseudospec_block%solve_for', &
