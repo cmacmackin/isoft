@@ -46,7 +46,26 @@ class Jenkins1991Entrainment(object):
         this.coef = coefficient
         this.diff = calculus.Differentiator(size, lower, upper)
 
-    def __call__(this, U, D, b):
+    def __call__(this, U, D, b, rho_diff = None):
         return this.coef * np.linalg.norm(U, axis=-1) * np.abs(this.diff(b))
-        
 
+
+class Kochergin1987Entrainment(object):
+    '''A class representing the entrainment formulation used by Kochergin 
+    (1987).
+
+    coefficient
+        The coefficient $c_l^2x_0/D_0$ used in the entrainment calculation
+    delta
+        The ratio between the scale of the plume thickness and that of the 
+        ice thickness, $D_0/h_0$
+    '''
+
+    def __init__(this, coefficient, delta):
+        this.coef = coefficient
+        this.delta = delta
+
+    def __call__(this, U, D, b, rho_diff):
+        Ri = this.delta*rho_diff*D/np.linalg.norm(U, axis=-1)**2
+        Sm = Ri/(0.0725*(Ri + 0.186 - np.sqrt(Ri**2 - 0.316*Ri + 0.0346)))
+        return this.coef*np.linalg.norm(U, axis=-1)/Sm * np.sqrt(1 + Ri/Sm)
