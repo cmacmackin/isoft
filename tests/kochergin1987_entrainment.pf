@@ -1,0 +1,169 @@
+!
+!  kochergin1987_entrainment_test.pf
+!  This file is part of ISOFT.
+!  
+!  Copyright 2016 Chris MacMackin <cmacmackin@gmail.com>
+!  
+!  This program is free software; you can redistribute it and/or modify
+!  it under the terms of the GNU General Public License as published by
+!  the Free Software Foundation; either version 2 of the License, or
+!  (at your option) any later version.
+!  
+!  This program is distributed in the hope that it will be useful,
+!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!  GNU General Public License for more details.
+!  
+!  You should have received a copy of the GNU General Public License
+!  along with this program; if not, write to the Free Software
+!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+!  MA 02110-1301, USA.
+!  
+
+module kochergin1987_entrainment_test
+  use iso_fortran_env, only: r8 => real64
+  use pfunit_mod
+  use factual_mod, only: scalar_field, vector_field, cheb1d_scalar_field, &
+                         cheb1d_vector_field
+  use kochergin1987_entrainment_mod, only: kochergin1987_entrainment
+  implicit none
+
+  integer, parameter :: resolution = 50
+  real(r8), parameter :: lambda_d = 0.37_r8
+  real(r8), parameter :: big_x = 1.0_r8/lambda_d
+
+  @TestCase
+  type, extends(testcase), public :: test_entrain
+    type(kochergin1987_entrainment) :: ent1, ent2
+    type(cheb1d_scalar_field) :: thickness, depth, dens_diff
+    type(cheb1d_vector_field) :: velocity1, velocity2
+    real(r8) :: time1, time2, coef1, coef2, delta
+    integer :: numpoints = resolution
+  contains
+    procedure :: setup
+ end type test_entrain
+
+contains
+  
+  pure function depth(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: depth
+    depth = 1._r8 - exp(location(1))
+  end function depth
+
+  pure function depth_dx(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: depth_dx
+    depth_dx = -exp(location(1))
+  end function depth_dx
+  
+  pure function thickness(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness
+    thickness = location(1)**2
+  end function thickness
+  
+  pure function thickness_dx(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: thickness_dx
+    thickness_dx = 2.0_r8*location(1)
+  end function thickness_dx
+
+  pure function velocity1(location) result(velocity)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity(1) = velocity1_norm(location)
+  end function velocity1
+
+  pure function velocity1_norm(location) result(velocity)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: velocity
+    velocity = sqrt(1._r8 + big_x - big_x*(1._r8 - location(1)/big_x)**2)
+  end function velocity1_norm
+
+  pure function velocity2(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(2))
+    velocity(1) = sin(location(1)/6.283185307_r8)
+    velocity(2) = cos(location(1)/6.283185307_r8)
+  end function velocity2
+
+  pure function velocity2_norm(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), allocatable :: velocity
+    velocity = 1.0_r8
+  end function velocity2_norm
+
+  pure function rho_diff(location) result(diff)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8) :: diff
+    diff = 0.01_r8*exp(-location(1))
+  end function rho_diff
+
+  pure function Ri(diff, D, Unorm, delta)
+    real(r8), intent(in) :: diff, D, Unorm, delta
+    real(r8) :: Ri
+    Ri = delta*diff*D/Unorm**2
+  end function Ri
+
+  pure function Sm(Ri_num)
+    real(r8), intent(in) :: Ri_num
+    real(r8) :: Sm
+    Sm = Ri_num/(0.0725_r8*(Ri_num + 0.186 - sqrt(Ri_num**2 - 0.316*Ri_num + 0.0346)))
+  end function Sm
+
+  subroutine setup(this)
+    class(test_entrain), intent(inout) :: this
+    this%thickness = cheb1d_scalar_field(this%numpoints,thickness,0._r8,big_x)
+    this%depth = cheb1d_scalar_field(this%numpoints,depth,0._r8,big_x)
+    this%dens_diff = cheb1d_scalar_field(this%numpoints,rho_diff,0._r8,big_x)
+    this%velocity1 = cheb1d_vector_field(this%numpoints,velocity1,0._r8,big_x)
+    this%velocity2 = cheb1d_vector_field(this%numpoints,velocity2,0._r8,big_x,extra_dims=1)
+    this%time1 = 1.0d5
+    this%time2 = -5.7_r8
+    this%coef1 = 1.0_r8
+    this%coef2 = -3.5_r8
+    this%delta = 0.034
+    this%ent1 = kochergin1987_entrainment(this%coef1, this%delta)
+    this%ent2 = kochergin1987_entrainment(this%coef2, this%delta)
+  end subroutine setup
+
+  @Test
+  subroutine test_entrainment_values(this)
+    class(test_entrain), intent(inout) :: this
+    type(cheb1d_scalar_field) :: actual, expected
+    actual = this%ent1%entrainment_rate(this%velocity1,this%thickness,this%depth, &
+                                        this%dens_diff,this%time1)
+    expected = cheb1d_scalar_field(this%numpoints,ent1,0._r8,big_x)
+    @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
+    actual = this%ent2%entrainment_rate(this%velocity2,this%depth,this%thickness, &
+                                        this%dens_diff,this%time2)
+    expected = cheb1d_scalar_field(this%numpoints,ent2,0._r8,big_x)
+    @assertTrue(actual==expected,message='Incorrect entrainment rate calculated.')
+  contains
+    pure function ent1(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: ent1
+      real(r8) :: Sm_val, Unorm_val, diff_val, D_val
+      Unorm_val = velocity1_norm(location)
+      D_val = thickness(location)
+      diff_val = rho_diff(location)
+      Sm_val = Sm(Ri(diff_val, D_val, Unorm_val, this%delta))
+      ent1 = this%coef1/Sm_val * sqrt(Unorm_val**2 + this%delta*diff_val*D_val/Sm_val)
+    end function ent1
+
+    pure function ent2(location)
+      real(r8), dimension(:), intent(in) :: location
+      real(r8) :: ent2
+      real(r8) :: Sm_val, Unorm_val, diff_val, D_val
+      Unorm_val = velocity2_norm(location)
+      D_val = depth(location)
+      diff_val = rho_diff(location)
+      Sm_val = Sm(Ri(diff_val, D_val, Unorm_val, this%delta))
+      ent2 = this%coef1/Sm_val * sqrt(Unorm_val**2 + this%delta*diff_val*D_val/Sm_val)
+    end function ent2
+  end subroutine test_entrainment_values
+
+end module kochergin1987_entrainment_test

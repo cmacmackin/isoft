@@ -115,6 +115,7 @@ contains
     call velocity%guard_temp(); call thickness%guard_temp() 
     call depth%guard_temp(); call density_diff%guard_temp()
     call depth%allocate_scalar_field(entrainment)
+    call entrainment%unset_temp()
     call depth%allocate_scalar_field(Ri)
     call depth%allocate_scalar_field(Sm)
     call Ri%guard_temp(); call Sm%guard_temp()

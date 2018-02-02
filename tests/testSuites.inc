@@ -1,6 +1,7 @@
 ADD_TEST_SUITE(bc_test_suite)
 ADD_TEST_SUITE(dallaston2015_melt_test_suite)
 ADD_TEST_SUITE(jenkins1991_entrainment_test_suite)
+ADD_TEST_SUITE(kochergin1987_entrainment_test_suite)
 ADD_TEST_SUITE(newtonian_viscosity_test_suite)
 ADD_TEST_SUITE(jacobian_block_test_suite)
 ADD_TEST_SUITE(preconditioner_test_suite)
