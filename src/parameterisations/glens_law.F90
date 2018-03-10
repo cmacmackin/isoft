@@ -34,7 +34,7 @@ module glens_law_mod
   ! type using Glen's flow law.
   !
   use iso_fortran_env, only: r8 => real64
-  use factual_mod, only: scalar_field, vector_field, uniform_scalar_field
+  use factual_mod, only: scalar_field, vector_field, abs, sqrt
   use viscosity_mod, only: abstract_viscosity
   implicit none
   private
@@ -101,10 +101,24 @@ contains
     real(r8), intent(in), optional         :: time
       !! The time at which the viscosity is being calculated. If not
       !! present then assumed to be same as previous value passed.
-    class(scalar_field), allocatable       :: viscosity
+    class(scalar_field), pointer           :: viscosity
       !! The value of the viscosity
     call velocity%guard_temp()
-
+    if (velocity%dimensions() > 1) then
+       error stop ('Multidimensional case not implemented')
+       ! This should all work, but there seems to be yet another
+       ! compiler bug. At present I don't need the multi-dimensional
+       ! case anyway.
+       
+!      viscosity => velocity%component_d_dx(1, 1)**2 + &
+!                   velocity%component_d_dx(2, 2)**2 + &
+!                   0.25_r8*(velocity%component_d_dx(1, 2) + &
+!                            velocity%component_d_dx(2, 1)**2)
+!      viscosity => sqrt(viscosity)
+    else
+      viscosity => abs(velocity%component_d_dx(1, 1, 1))
+    end if
+    viscosity => 0.5_r8*this%b_val*viscosity**(1._r8/this%index - 1._r8)
     call velocity%clean_temp()
     call viscosity%set_temp()
   end function glens_ice_viscosity
