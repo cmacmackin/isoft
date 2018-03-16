@@ -388,12 +388,13 @@ contains
 
     call b%guard_temp()
     call this%get_boundaries(t, D_0, Uvec_0, T_0, S_0)
+
     U_0 = Uvec_0(1)
     DU_0 = D_0*U_0
     DUvecU_0 = DU_0*Uvec_0
-    DUS_0 = DU_0*S_0
     DUT_0 = DU_0*T_0
-    y0 = [DU_0, DUvecU_0, DUS_0, DUT_0]
+    DUS_0 = DU_0*S_0
+    y0 = [DU_0, DUvecU_0, DUT_0, DUS_0]
     n = size(y0)
     allocate(ygot(n), yderiv_got(n))
     if (.not. allocated(this%thresholds)) then

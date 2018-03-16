@@ -665,16 +665,19 @@ contains
                   flag)
     if (flag/=0) then
       msg = 'Tridiagonal matrix solver returned with flag '//trim(str(flag))
-      !print*,this%sub_diagonal
-      !print*,this%diagonal
-      !print*,this%super_diagonal
-      !CALL backtrace
+!      print*,this%sub_diagonal
+!      print*,
+!      print*,this%diagonal
+!      print*,
+!      print*,this%super_diagonal
+      CALL backtrace
       call logger%error('jacobian_block%solve_for',msg)
+      !print*,condition_num
 !      stop
+#ifdef DEBUG
     else
       msg = 'Tridiagonal matrix solver returned with estimated condition '// &
             'number '//trim(str(condition_num))
-#ifdef DEBUG
       call logger%debug('jacobian_block%solve_for',msg)
 #endif
     end if

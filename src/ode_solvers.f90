@@ -208,7 +208,7 @@ contains
 
     integer :: npoints, itmax, gitmax, kdim
     real(r8) :: eta, gmres_eta
-    real(r8), parameter :: epsilon = 5.e-8
+    real(r8), parameter :: epsilon = 5e-8
 
     integer :: i, stagnant_iters, gmres_flag
     integer :: nlhs, nrpre, nli, tnlhs, tnrpre, tnli
@@ -253,11 +253,10 @@ contains
     u_prev = get_derivs(solution)
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
-    !print*,f_prev(size(f_prev)-10:)
     init_resid = resid_norm
     old_resid = resid_norm * 1e3_r8
-   ! print*, L(solution) - f_prev
-
+!    print*, L(solution) - f_prev
+!iplvl=4
     do while(resid_norm > eta)
       print*, resid_norm, tnli
       !print*, L(solution) - f_prev
@@ -275,8 +274,9 @@ contains
         flag = 2
         return
       end if
-      if (5*old_resid < resid_norm) then
+      if (20*old_resid < resid_norm) then
         flag = 3
+!    print*, L(solution) - f_prev
         return
       end if
 

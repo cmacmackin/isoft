@@ -60,8 +60,15 @@ module one_equation_melt_mod
       !! The unitless multiplier on the thermal forcing term,
       !! \(\Gamma_Tx_0/D_0\).
     real(r8) :: coef2 = 0.023761_r8
-      !! The unitless multiplier applied to the theram forcing term to
+      !! The unitless multiplier applied to the thermal forcing term to
       !! get the melt rate, \(c_oT_0/L\).
+    real(r8) :: sal_forcing = 0._r8
+      !! The unitless multiplier applied to the thermal forcing term
+      !! to get the salinity forcing. It corresponds to the product of
+      !! `coef2` and the ice salinity. Typically this would be zero,
+      !! but it might be positive if there is some marine ice
+      !! present. Alternatively, depdning on how the salinity has been
+      !! scaled, it may have a negative value.
   contains
     procedure :: solve_for_melt => one_equation_solve
     procedure :: heat_equation_terms => one_equation_heat
@@ -90,17 +97,20 @@ module one_equation_melt_mod
 
 contains
 
-  pure function constructor(coef1, coef2) result(this)
-    real(r8), intent(in) :: coef1
+  pure function constructor(coef1, coef2, ice_sal) result(this)
+    real(r8), intent(in)           :: coef1
       !! The unitless multiplier on the thermal forcing term,
       !! \(\Gamma_Tx_0/D_0\).
-    real(r8), intent(in) :: coef2
+    real(r8), intent(in)           :: coef2
       !! The unitless multiplier applied to the theram forcing term to
       !! get the melt rate, \(c_oT_0/L\).
+    real(r8), intent(in), optional :: ice_sal
+      !! The salinity of the ice. Defaults to 0.
     type(one_equation_melt) :: this
       !! The newly created object representing the melt relationship.
     this%coef1 = coef1!*(-1)
     this%coef2 = coef2!*(-1)
+    if (present(ice_sal)) this%sal_forcing = -ice_sal*coef2
   end function constructor
 
   subroutine one_equation_solve(this, velocity, pressure, temperature, &
@@ -152,6 +162,10 @@ contains
     class(scalar_field), pointer         :: salt
       !! The value of the contribution made by melting/thermal
       !! transfer to the salt equation for a [[plume]]
+    if (.not. allocated(this%forcing_values) .and. this%sal_forcing /= 0._r8) then
+      error stop ('Melt values not calculated')
+    end if
+    salt => this%sal_forcing * this%forcing_values
   end function one_equation_salt
 
   function one_equation_melt_rate(this) result(melt)
@@ -175,7 +189,7 @@ contains
     logical                              :: has_salt
       !! Whether this formulation of melting contributes terms to
       !! the salinity equation of the plume.
-    has_salt = .false.
+    has_salt = (this%sal_forcing /= 0._r8)
   end function one_equation_has_salt
 
 end module one_equation_melt_mod

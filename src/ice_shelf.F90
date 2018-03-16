@@ -832,6 +832,7 @@ contains
     input(5) = 1
     input(9) = -1
     input(10) = 3
+
     state = this%velocity%raw()
     call nitsol(nval, state, nitsol_residual, nitsol_precondition, &
                 1.e-10_r8*nval, 1.e-10_r8*nval, input, info, work, &
@@ -944,7 +945,7 @@ contains
         ! indicatesfailure to prodce $J\vec{v}$, and 2 indicates
         ! failure to produce \(P^{-1}\vec{v}\)
 
-      type(cheb1d_scalar_field) :: delta_u
+      type(cheb1d_scalar_field) :: delta_u, tmp
       integer :: i, sl, el, su, eu
       integer, dimension(2) :: upper_type, lower_type
       integer, dimension(:), allocatable :: boundary_types, boundary_locations
@@ -968,7 +969,11 @@ contains
       associate(h => this%thickness, chi => this%chi, zeta => this%zeta, &
                 jac => this%velocity_jacobian, eta => this%eta)
         if (this%stale_jacobian) then
-          jac = jacobian_block(4._r8*eta*h, 1, 1, boundary_locs=boundary_locations, &
+          ! Mathematically, it should be 4._r8*eta*h which I pass, but
+          ! this sometimes results in an ill-conditioned Jacobian (for
+          ! reasons I'm not clear on). If eta ~ 1 then turns out I get
+          ! good results just ignoring it.
+          jac = jacobian_block(4._r8*h, 1, 1, boundary_locs=boundary_locations, &
                                boundary_types=boundary_types)
           this%stale_jacobian = .false.
         end if
