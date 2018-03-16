@@ -1160,7 +1160,7 @@ contains
         en = st + this%velocity_size - 1
         f(st:en) = vector_tmp%raw()
 
-        scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D_x) - &
+        scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D%d_dx(1,1)) - &
              0.5_r8*this%delta*D**2*rho_x
         buoyancy = scalar_tmp
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
