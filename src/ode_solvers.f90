@@ -54,6 +54,22 @@ module ode_solvers_mod
       real(r8), dimension(size(u,1)) :: f_intr
     end function f_intr
 
+    function jac_intr(u, du)
+      !! An interface for the product of the Jacobian of the
+      !! (nonlinear) right-hand-side of an ODE and another vector.
+      import :: r8
+      implicit none
+      real(r8), dimension(:,:), intent(in) :: u
+        !! The state vector for the system of differential equations,
+        !! and its derivatives, for which the Jacobian should be
+        !! evaluated. Column \(i\) represents the \(i-1\) derivative.
+      real(r8), dimension(:,:), intent(in) :: du
+        !! The state vector for the system of differential equations,
+        !! and its derivatives, which the Jacobian operates on. Column
+        !! \(i\) represents the \(i-1\) derivative.
+      real(r8), dimension(size(u,1)) :: jac_intr
+    end function jac_intr
+
     function diff_intr(u, n)
       !! An interface for a function evaluating the derivative of the
       !! state vector.
@@ -94,8 +110,8 @@ module ode_solvers_mod
 
 contains
 
-  subroutine quasilinear_solve(L, f, solution, order, resid_norm,       &
-                               flag, info, tol, precond, differentiate, &
+  subroutine quasilinear_solve(L, f, jac_prod, solution, order, resid_norm, &
+                               flag, info, tol, precond, differentiate,     &
                                iter_max, gmres_iter_max, krylov_dim)
     !* Author: Chris MacMackin
     !  Date: March 2017
@@ -155,6 +171,10 @@ contains
     procedure(f_intr)                            :: f
       !! A function providing the nonlinear, right-hand-side of the
       !! ODE being solved.
+    procedure(jac_intr)                          :: jac_prod
+      !! A function providing the product of the Jacobian of the
+      !! nonlinear, right-hand-side of the ODE being solved and
+      !! another vector.
     real(r8), dimension(:), intent(inout)        :: solution
       !! On input, an estimate of the solution to the ODE. On output,
       !! the actual solution.
@@ -280,7 +300,7 @@ contains
         return
       end if
 
-      rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
+      rhs = f_prev - jac_prod(u_prev, u_prev)
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       gmres_eta = gmres_eta * 10._r8**(-2*stagnant_iters)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
@@ -360,7 +380,7 @@ contains
         !! Result of the operation
       real(r8), dimension(size(xcur),order) :: v_derivs
       v_derivs = get_derivs(v)
-      lin_op = L(v) - (f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
+      lin_op = L(v) - jac_prod(u_prev, v_derivs)
       success = .true.
     end function lin_op
 

@@ -863,7 +863,7 @@ contains
 #ifdef DEBUG
     call logger%debug('plume%solve','Calling QLM ODE solver')
 #endif
-    call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
+    call quasilinear_solve(L, f, jac_prod, solution, 1, residual, flag, info, &
                            1.e-12_r8*size(solution), precond=preconditioner, &
                            iter_max=100, krylov_dim=85, gmres_iter_max=5000)
     call this%update(solution)
@@ -1097,6 +1097,7 @@ contains
       call S%clean_temp(); call b%clean_temp()
     end subroutine non_diff_terms
 
+    
     function f(v)
       !! The nonlinear operator
       real(r8), dimension(:,:), intent(in) :: v
@@ -1105,13 +1106,76 @@ contains
         !! derivative.
       real(r8), dimension(size(v,1)) :: f
 
+      call this%update(v(:,1))
+      call nonlinear(f, .false.)
+    end function f
+
+    
+    function jac_prod(v, dv)
+      !! The product of the Jacobian of the nonlienar operator at v,
+      !! multiplying dv.
+      real(r8), dimension(:,:), intent(in) :: v
+        !! The state vector for the system of differential equations,
+        !! and its derivatives. Column \(i\) represents the \(i-1\)
+        !! derivative.
+      real(r8), dimension(:,:), intent(in) :: dv
+        !! The state vector for the system of differential equations,
+        !! and its derivatives, to be multiplied by the
+        !! Jacobian. Column \(i\) represents the \(i-1\) derivative.
+      real(r8), dimension(size(v,1)) :: jac_prod
+      type(cheb1d_scalar_field) :: stmp
+      type(cheb1d_vector_field) :: vtmp
+      integer :: i
+
+      call this%update(v(:,1))
+
+      call stmp%assign_meta_data(this%thickness)
+      call vtmp%assign_meta_data(this%velocity)
+      
+      call stmp%set_from_raw(dv(1:this%thickness_size, 1))
+      call this%thickness%set_derivative(stmp)
+      i = 1 + this%thickness_size
+      call vtmp%set_from_raw(dv(i:i + this%velocity_size - 1, 1))
+      call this%velocity%set_derivative(vtmp)
+      i = i + this%velocity_size
+      call vtmp%set_from_raw(dv(i:i + this%velocity_size - 1, 1))
+      call this%velocity_dx%set_derivative(vtmp)
+      i = i + this%velocity_size
+      call stmp%set_from_raw(dv(i:i + this%temperature_size - 1, 1))
+      call this%temperature%set_derivative(stmp)
+      i = i + this%temperature_size
+      call stmp%set_from_raw(dv(i:i + this%temperature_size - 1, 1))
+      call this%temperature_dx%set_derivative(stmp)
+      i = i + this%temperature_size
+      call stmp%set_from_raw(dv(i:i + this%salinity_size - 1, 1))
+      call this%salinity%set_derivative(stmp)
+      i = i + this%salinity_size
+      call stmp%set_from_raw(dv(i:i + this%salinity_size - 1, 1))
+      call this%salinity_dx%set_derivative(stmp)
+      
+      call nonlinear(jac_prod, .true.)
+
+      call this%thickness%unset_derivative()
+      call this%velocity%unset_derivative()
+      call this%velocity_dx%unset_derivative()
+      call this%temperature%unset_derivative()
+      call this%temperature_dx%unset_derivative()
+      call this%salinity%unset_derivative()
+      call this%salinity_dx%unset_derivative()
+    end function jac_prod
+
+    
+    subroutine nonlinear(f, deriv)
+      real(r8), dimension(:), intent(out) :: f
+      logical, intent(in) :: deriv
+        !! If true, return Jacobian product, otherwise return result
+        !! of nonlienar operator.
+
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
       type(cheb1d_scalar_field) :: scalar_tmp(1), D_x, D_nd, S_nd, T_nd
       type(cheb1d_vector_field) :: vector_tmp, buoyancy
       class(scalar_field), pointer :: U, U_x, rho, rho_a, rho_x
       class(vector_field), pointer :: coriolis
-
-      call this%update(v(:,1))
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &
@@ -1146,6 +1210,9 @@ contains
         end if
         st = 1
         en = st + this%thickness_size - 1
+        if (deriv) then
+          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+        end if
         f(st:en) = scalar_tmp(1)%raw()
       
         ! Velocity
@@ -1158,6 +1225,9 @@ contains
         end if
         st = en + 1
         en = st + this%velocity_size - 1
+        if (deriv) then
+          vector_tmp = vector_tmp%get_derivative()
+        end if
         f(st:en) = vector_tmp%raw()
 
         scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D%d_dx(1,1)) - &
@@ -1174,6 +1244,9 @@ contains
         end if
         st = en + 1
         en = st + this%velocity_size - 1
+        if (deriv) then
+          vector_tmp = vector_tmp%get_derivative()
+        end if
         f(st:en) = vector_tmp%raw()
 
         ! Temperature
@@ -1186,6 +1259,9 @@ contains
         end if
         st = en + 1
         en = st + this%temperature_size - 1
+        if (deriv) then
+          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+        end if
         f(st:en) = scalar_tmp(1)%raw()
 
         scalar_tmp(1) = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
@@ -1197,6 +1273,9 @@ contains
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+        end if
         f(st:en) = scalar_tmp(1)%raw()
 
         ! Salinity
@@ -1209,6 +1288,9 @@ contains
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+        end if
         f(st:en) = scalar_tmp(1)%raw()
 
         scalar_tmp(1) = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
@@ -1220,12 +1302,15 @@ contains
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+        end if
         f(st:en) = scalar_tmp(1)%raw()
 
         call U%clean_temp(); call U_x%clean_temp(); call rho%clean_temp()
         call rho_a%clean_temp(); call rho_x%clean_temp()
       end associate
-    end function f
+    end subroutine nonlinear
 
     function preconditioner(v, state, L_op, f_op, fcur, rhs)
       !! The preconditioner, which approximates an inverse of `L`.
