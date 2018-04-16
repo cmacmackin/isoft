@@ -864,7 +864,7 @@ contains
     call logger%debug('plume%solve','Calling QLM ODE solver')
 #endif
     call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
-                           1.e-12_r8*size(solution), precond=preconditioner, &
+                           1.e-8_r8*size(solution), precond=preconditioner, &
                            iter_max=100, krylov_dim=85, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG

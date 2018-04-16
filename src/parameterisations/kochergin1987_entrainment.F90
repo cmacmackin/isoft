@@ -121,6 +121,7 @@ contains
     call Ri%guard_temp(); call Sm%guard_temp()
     entrainment = velocity%norm() ! Have to awkwardly split this operation to prevent ICE
     Ri = this%delta*density_diff*thickness/(entrainment**2)
+    Ri = abs(Ri)
     Sm = Ri/(0.0725_r8*(Ri + 0.186_r8 - sqrt(Ri**2 - 0.316_r8*Ri + 0.0346_r8)))
     entrainment = this%coefficient*entrainment/Sm * sqrt(1._r8 + Ri/Sm)
     call velocity%clean_temp(); call thickness%clean_temp()

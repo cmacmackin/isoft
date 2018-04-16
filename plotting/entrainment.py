@@ -66,6 +66,6 @@ class Kochergin1987Entrainment(object):
         this.delta = delta
 
     def __call__(this, U, D, b, rho_diff):
-        Ri = this.delta*rho_diff*D/np.linalg.norm(U, axis=-1)**2
+        Ri = np.abs(this.delta*rho_diff*D)/np.linalg.norm(U, axis=-1)**2
         Sm = Ri/(0.0725*(Ri + 0.186 - np.sqrt(Ri**2 - 0.316*Ri + 0.0346)))
         return this.coef*np.linalg.norm(U, axis=-1)/Sm * np.sqrt(1 + Ri/Sm)
