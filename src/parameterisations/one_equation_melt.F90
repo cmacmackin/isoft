@@ -63,12 +63,16 @@ module one_equation_melt_mod
       !! The unitless multiplier applied to the thermal forcing term to
       !! get the melt rate, \(c_oT_0/L\).
     real(r8) :: sal_forcing = 0._r8
-      !! The unitless multiplier applied to the thermal forcing term
-      !! to get the salinity forcing. It corresponds to the product of
+      !! The unitless multiplier applied to the forcing values to get
+      !! the salinity forcing. It corresponds to the product of
       !! `coef2` and the ice salinity. Typically this would be zero,
       !! but it might be positive if there is some marine ice
-      !! present. Alternatively, depdning on how the salinity has been
-      !! scaled, it may have a negative value.
+      !! present. Alternatively, depending on how the salinity has
+      !! been scaled, it may have a negative value.
+    real(r8) :: melt_temp = 0._r8
+      !! The melting temperature. While intuitively it makes sense to
+      !! set this to zero, it can be useful to scale temperature in
+      !! such a way that it will have a negative value.
   contains
     procedure :: solve_for_melt => one_equation_solve
     procedure :: heat_equation_terms => one_equation_heat
@@ -97,20 +101,23 @@ module one_equation_melt_mod
 
 contains
 
-  pure function constructor(coef1, coef2, ice_sal) result(this)
+  pure function constructor(coef1, coef2, fresh_sal, melt_temp) result(this)
     real(r8), intent(in)           :: coef1
       !! The unitless multiplier on the thermal forcing term,
       !! \(\Gamma_Tx_0/D_0\).
     real(r8), intent(in)           :: coef2
       !! The unitless multiplier applied to the theram forcing term to
       !! get the melt rate, \(c_oT_0/L\).
-    real(r8), intent(in), optional :: ice_sal
-      !! The salinity of the ice. Defaults to 0.
+    real(r8), intent(in), optional :: fresh_sal
+      !! The salinity of fresh water. Defaults to 0.
+    real(r8), intent(in), optional :: melt_temp
+      !! The melting point of the ice. Defaults to 0.
     type(one_equation_melt) :: this
       !! The newly created object representing the melt relationship.
     this%coef1 = coef1!*(-1)
     this%coef2 = coef2!*(-1)
-    if (present(ice_sal)) this%sal_forcing = -ice_sal*coef2
+    if (present(fresh_sal)) this%sal_forcing = -fresh_sal*coef2
+    if (present(melt_temp)) this%melt_temp = melt_temp
   end function constructor
 
   subroutine one_equation_solve(this, velocity, pressure, temperature, &
@@ -138,7 +145,7 @@ contains
       deallocate(this%forcing_values)
       allocate(this%forcing_values, mold=temperature) 
     end if
-    this%forcing_values = this%coef1*temperature*velocity%norm()
+    this%forcing_values = this%coef1*(temperature - this%melt_temp)*velocity%norm()
     call velocity%clean_temp(); call pressure%clean_temp()
     call temperature%clean_temp(); call salinity%clean_temp()
     call plume_thickness%clean_temp()
@@ -151,7 +158,11 @@ contains
       !! transfer to the heat equation for a [[plume]]
     if (.not. allocated(this%forcing_values)) error stop ('Melt values not calculated')
     call this%forcing_values%allocate_scalar_field(heat)
-    heat = this%forcing_values
+    if (this%melt_temp /= 0._r8) then
+      heat = (1 - this%coef2*this%melt_temp)*this%forcing_values
+    else
+      heat = this%forcing_values
+    end if
     call heat%set_temp() ! Shouldn't need to call this, but for some
                          ! rason being set as non-temporary when
                          ! assignment subroutine returns.

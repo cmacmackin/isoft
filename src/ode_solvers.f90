@@ -228,7 +228,8 @@ contains
 
     integer :: npoints, itmax, gitmax, kdim
     real(r8) :: eta, gmres_eta
-    real(r8), parameter :: epsilon = 5e-8
+    real(r8) :: unorm, eps=1e-5_r8
+    real(r8), parameter :: eps_m = epsilon(1._r8)
 
     integer :: i, stagnant_iters, gmres_flag
     integer :: nlhs, nrpre, nli, tnlhs, tnrpre, tnli
@@ -271,11 +272,13 @@ contains
     stagnant_iters = 0
 
     u_prev = get_derivs(solution)
+    unorm = dnrm2(npoints, u_prev, 1)
     f_prev = f(u_prev)
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     init_resid = resid_norm
     old_resid = resid_norm * 1e3_r8
 !    print*, L(solution) - f_prev
+
 !iplvl=4
     do while(resid_norm > eta)
       print*, resid_norm, tnli
@@ -300,7 +303,10 @@ contains
         return
       end if
 
-      rhs = f_prev - jac_prod(u_prev, u_prev)
+      !eps = sqrt((1+unorm)*eps_m)*max(10._r8, 10._r8**(5-i))/unorm
+      !print*,'RHS epsilon',eps
+      !rhs = f_prev - (f(u_prev + eps*u_prev) - f_prev)/eps
+      rhs = f_prev - (f(u_prev + epsilon*u_prev) - f_prev)/epsilon
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       gmres_eta = gmres_eta * 10._r8**(-2*stagnant_iters)
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
@@ -313,6 +319,7 @@ contains
       if(gmres_flag > 0) print*, 'Warning, GMRES returned with flag', gmres_flag, tnli
 
       u_prev = get_derivs(solution)
+      unorm = dnrm2(npoints, u_prev, 1)
       f_prev = f(u_prev)
     !print*,f_prev(size(f_prev)-10:)
       old_resid = resid_norm
@@ -379,8 +386,13 @@ contains
       real(r8), dimension(size(xcur))       :: lin_op
         !! Result of the operation
       real(r8), dimension(size(xcur),order) :: v_derivs
+      real(r8) :: vnorm
       v_derivs = get_derivs(v)
-      lin_op = L(v) - jac_prod(u_prev, v_derivs)
+      vnorm = dnrm2(npoints, v_derivs, 1)
+      !eps = sqrt((1+unorm)*eps_m)*max(10._r8, 10._r8**(5-i))/vnorm
+      !print*,'LHS epsilon',eps
+      !lin_op = L(v) - (f(u_prev + eps*v_derivs) - f_prev)/eps
+      lin_op = L(v) - (f(u_prev + epsilon*v_derivs) - f_prev)/epsilon
       success = .true.
     end function lin_op
 
