@@ -949,6 +949,7 @@ contains
       integer :: i, sl, el, su, eu
       integer, dimension(2) :: upper_type, lower_type
       integer, dimension(:), allocatable :: boundary_types, boundary_locations
+      real(r8) :: eta_val
 
       if (ijob /= 1) then
         itrmjv = 0
@@ -973,8 +974,16 @@ contains
           ! this sometimes results in an ill-conditioned Jacobian (for
           ! reasons I'm not clear on). If eta ~ 1 then turns out I get
           ! good results just ignoring it.
-          jac = jacobian_block(4._r8*h, 1, 1, boundary_locs=boundary_locations, &
-                               boundary_types=boundary_types)
+          select type(visc => this%viscosity_law)
+          class is(newtonian_viscosity)
+            eta_val = eta%get_element(1)
+            if (eta_val <= 0._r8) eta_val = 1._r8
+            jac = jacobian_block(4._r8*eta*h, 1, 1, boundary_locs=boundary_locations, &
+                                 boundary_types=boundary_types)
+          class default
+            jac = jacobian_block(4._r8*h, 1, 1, boundary_locs=boundary_locations, &
+                                 boundary_types=boundary_types)
+          end select
           this%stale_jacobian = .false.
         end if
         delta_u = jac%solve_for(delta_u)

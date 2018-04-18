@@ -419,7 +419,7 @@ contains
     this%salinity = ygot(n)/ygot(1)
     !print*,'t = ', t
     print*,this%thickness, this%velocity, this%temperature, this%salinity
-    if (this%thickness < 0._r8) error stop
+    if (this%thickness < 0._r8) error stop ('Negative plume thickness found')
     call collect_garbage(comm)
     call b%clean_temp(); call b_x%clean_temp()
 

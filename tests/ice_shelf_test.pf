@@ -32,6 +32,8 @@ module ice_shelf_test
   use newtonian_viscosity_mod, only: newtonian_viscosity
   use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
+  use seasonal_glacier_boundary_mod, only: seasonal_glacier_boundary
+  use rootfind
   use nitsol_mod
   implicit none
 
@@ -45,7 +47,7 @@ module ice_shelf_test
 
   @TestCase
   type, extends(testcase) :: test_shelf
-    type(ice_shelf) :: shelf1, shelf2, shelf3, shelf4, shelf5
+    type(ice_shelf) :: shelf1, shelf2, shelf3, shelf4, shelf5, shelf6
     integer         :: nodes = resolution
     real(r8)        :: lower1 = 0.0_r8, upper1 = 0.9_r8*big_x
     real(r8)        :: lower2 = -1.0_r8, upper2 = 1.0_r8
@@ -54,6 +56,9 @@ module ice_shelf_test
   contains
     procedure :: setup
   end type test_shelf
+
+  real(r8), parameter :: ubar = 1.0_r8, utwid = 0.5_r8, omega=0.1_r8, m=1.0_r8
+  real(r8) :: t_solve
 
 contains
   
@@ -102,6 +107,13 @@ contains
              * velocity1(location)
   end function velocity3
 
+  pure function velocity4(location) result(velocity)
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8), dimension(:), allocatable :: velocity
+    allocate(velocity(1))
+    velocity = 1._r8
+  end function velocity4
+
   subroutine setup(this)
     class(test_shelf), intent(inout) :: this
     real(r8), dimension(1,2) :: domain1, domain2
@@ -130,6 +142,12 @@ contains
                             this%temperature, visc, bound, this%lambda,       &
                             this%chi, this%zeta)
     !call this%shelf5%set_time(1.0_r8)
+    allocate(visc, source=newtonian_viscosity(1.0_r8))
+    allocate(bound, source=seasonal_glacier_boundary(1.0_r8, omega, utwid, &
+                                                     ubar, 0.0_r8))
+    call this%shelf6%initialise(domain1, [this%nodes], thickness3, velocity4, &
+                            this%temperature, visc, bound, this%lambda,       &
+                            0.0_r8, this%zeta, 10._r8)
   end subroutine setup
 
   @Test
@@ -339,5 +357,86 @@ contains
     @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-5_r8)
     iplvl = 0
   end subroutine test_integrate
+
+  @Test
+  subroutine test_integrate_nostretch(this)
+    !! Tests that an ice shelf which doesn't stretch and being forced
+    !! by sinusoidal grounding line velocity evolves according to the
+    !! semi-analytic solution.
+    class(test_shelf), intent(inout) :: this
+    type(ice_shelf), dimension(1) :: shelf_array
+    real(r8) :: t, time
+    integer :: i, steps
+    type(cheb1d_scalar_field) :: melt, drag
+    logical :: success
+    type(cheb1d_scalar_field) :: actual, expected
+
+    time = 0.4
+    t = this%shelf6%time_step()
+    melt = cheb1d_scalar_field(this%nodes, melt_rate, this%lower1, &
+                               this%upper1)
+    drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
+                               this%upper1)
+    iplvl = 0
+    i = -1
+    do while(t < time)
+      i = i + 1
+      shelf_array(1) = this%shelf6
+      call this%shelf6%integrate(shelf_array, melt, drag, 1._r8, t, success)
+      @assertTrue(success,message='Integration of shelf failed.')
+      t = t + this%shelf6%time_step()
+    end do
+    shelf_array(1) = this%shelf6
+    call this%shelf6%integrate(shelf_array, melt, drag, 1._r8, time, success)
+    @assertTrue(success,message='Integration of shelf failed.')
+    t_solve = time
+    actual = this%shelf6%ice_thickness()
+    expected = cheb1d_scalar_field(this%nodes, h_exp, this%lower1, &
+                                   this%upper1)
+    @assertEqual(expected%raw(),actual%raw(),message='Shelf did not evolve as expected.',tolerance=6.e-2_r8)
+    time = 3._r8
+    do while(t < time)
+      i = i + 1
+      shelf_array(1) = this%shelf6
+      call this%shelf6%integrate(shelf_array, melt, drag, 1._r8, t, success)
+      @assertTrue(success,message='Integration of shelf failed.')
+      t = t + this%shelf6%time_step()
+    end do
+    shelf_array(1) = this%shelf6
+    call this%shelf6%integrate(shelf_array, melt, drag, 1._r8, time, success)
+    @assertTrue(success,message='Integration of shelf failed.')
+    t_solve = time
+    actual = this%shelf6%ice_thickness()
+    expected = cheb1d_scalar_field(this%nodes, h_exp, this%lower1, &
+                                   this%upper1)
+    @assertEqual(expected%raw(),actual%raw(),message='Shelf did not evolve as expected.',tolerance=5.e-4_r8)
+    iplvl = 0
+  end subroutine test_integrate_nostretch
+
+  pure function h_exp(x)
+    real(r8), dimension(:), intent(in) :: x
+    real(r8) :: h_exp
+    real(r8) :: sigma, sval, err, hlo, hhi
+    integer :: steps
+    sval = t_solve
+    sigma = x(1) - ubar*sval + utwid/omega*(cos(omega*sval) - 1)
+    if (sigma > 0._r8) then
+      ! transient solution
+      h_exp = thickness3([sigma]) - lambda_d*m*sval
+    else
+      ! long-term solution
+      hlo = 0.0_r8
+      hhi = 1.0_r8
+      call bis_secant(err, h_implicit, 1e-8_r8, 30, steps, h_exp, hlo, hhi)
+    end if
+  contains
+    pure function h_implicit(h) result(resid)
+      real(r8), intent(in) :: h
+      real(r8) :: resid
+      resid = h - 1._r8 + lambda_d*m/ubar*x(1) &
+            - lambda_d*m*utwid/(ubar*omega)*(cos(omega*t_solve + omega*(h-1._r8)/(lambda_d*m)) &
+            - cos(omega*t_solve))
+    end function h_implicit
+  end function h_exp
 
 end module ice_shelf_test

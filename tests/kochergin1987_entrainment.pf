@@ -48,7 +48,7 @@ contains
   pure function depth(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: depth
-    depth = 1._r8 - exp(location(1))
+    depth = 1.1_r8 - exp(location(1))
   end function depth
 
   pure function depth_dx(location)
@@ -60,7 +60,7 @@ contains
   pure function thickness(location)
     real(r8), dimension(:), intent(in) :: location
     real(r8) :: thickness
-    thickness = location(1)**2
+    thickness = location(1)**2 + 1.0_r8
   end function thickness
   
   pure function thickness_dx(location)
@@ -111,7 +111,8 @@ contains
   pure function Sm(Ri_num)
     real(r8), intent(in) :: Ri_num
     real(r8) :: Sm
-    Sm = Ri_num/(0.0725_r8*(Ri_num + 0.186 - sqrt(Ri_num**2 - 0.316*Ri_num + 0.0346)))
+    Sm = Ri_num/(0.0725_r8*(Ri_num + 0.186_r8 &
+       - sqrt(Ri_num**2 - 0.316_r8*Ri_num + 0.0346_r8)))
   end function Sm
 
   subroutine setup(this)
@@ -162,7 +163,7 @@ contains
       D_val = depth(location)
       diff_val = rho_diff(location)
       Sm_val = Sm(Ri(diff_val, D_val, Unorm_val, this%delta))
-      ent2 = this%coef1/Sm_val * sqrt(Unorm_val**2 + this%delta*diff_val*D_val/Sm_val)
+      ent2 = this%coef2/Sm_val * sqrt(Unorm_val**2 + this%delta*diff_val*D_val/Sm_val)
     end function ent2
   end subroutine test_entrainment_values
 

@@ -29,6 +29,8 @@ module ode_solvers_mod
   !
   use iso_fortran_env, only: r8 => real64
   use nitsol_mod, only: gmres_solve, dnrm2, iplvl
+  use logger_mod, only: logger => master_logger
+  use penf, only: str
   implicit none
 
   abstract interface
@@ -241,6 +243,8 @@ contains
 
     if (.not. present(differentiate) .and. order > 1) then
       flag = 3
+      call logger%error('quasilinear_solve','Did not provide routine '//&
+           'to get derivative values.')
       return
     end if
 
@@ -278,7 +282,8 @@ contains
 
 !iplvl=4
     do while(resid_norm > eta)
-      print*, resid_norm, tnli
+      call logger%trivia('quasilinear_solve','Nonlinear iteration'//str(i)//&
+           ', with'//str(tnli)//'linear iterations, and residual '//str(resid_norm))
       !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -310,7 +315,8 @@ contains
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
-      if(gmres_flag > 0) print*, 'Warning, GMRES returned with flag', gmres_flag, tnli
+      if(gmres_flag > 0) call logger%warning('quasilinear_solve', &
+           'GMRES solver returned with flag'//str(gmres_flag))
 
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)
@@ -343,6 +349,8 @@ contains
       info(5) = i
     end if
     flag = 0
+    call logger%trivia('quasilinear_solve','Nonlinear iteration'//str(i)//&
+         ', with'//str(tnli)//' linear iterations, and residual'//str(resid_norm))
 
   contains
 
