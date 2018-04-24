@@ -282,8 +282,8 @@ contains
 
 !iplvl=4
     do while(resid_norm > eta)
-      call logger%trivia('quasilinear_solve','Nonlinear iteration'//str(i)//&
-           ', with'//str(tnli)//'linear iterations, and residual '//str(resid_norm))
+      call logger%trivia('quasilinear_solve','Nonlinear iteration '//str(i)//&
+           ', with '//str(tnli)//'linear iterations, and residual '//str(resid_norm))
       !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
@@ -316,7 +316,7 @@ contains
       tnrpre = tnrpre + nrpre
       tnli   = tnli   + nli
       if(gmres_flag > 0) call logger%warning('quasilinear_solve', &
-           'GMRES solver returned with flag'//str(gmres_flag))
+           'GMRES solver returned with flag '//str(gmres_flag))
 
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)
@@ -349,8 +349,8 @@ contains
       info(5) = i
     end if
     flag = 0
-    call logger%trivia('quasilinear_solve','Nonlinear iteration'//str(i)//&
-         ', with'//str(tnli)//' linear iterations, and residual'//str(resid_norm))
+    call logger%trivia('quasilinear_solve','Nonlinear iteration '//str(i)//&
+         ', with '//str(tnli)//' linear iterations, and residual '//str(resid_norm))
 
   contains
 

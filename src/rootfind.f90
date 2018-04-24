@@ -213,15 +213,15 @@ CONTAINS
         
         ! Get the sets of bracket pairs for the roots of 'fnctn', using
         ! the 'globrack' subroutine 
-        CALL globrack(brackets, dx, fnctn, numroots, verbose, xmax,    &
-                      xmin)
+        CALL global_brackets(brackets, dx, fnctn, numroots, verbose,   &
+                             xmax, xmin)
         
         ! For each bracket pair, find the enclosed root using the 
         ! 'biscnt' subroutine
         DO counter = 1,numroots
-            CALL biscnt(error(counter), fnctn, maxerr, maxsteps,       &
-                        steps(counter), verbose, roots(counter),       &
-                        brackets(1,counter), brackets(2,counter))
+            CALL bis_secant(error(counter), fnctn, maxerr, maxsteps,   &
+                            steps(counter), roots(counter),            &
+                            brackets(1,counter), brackets(2,counter))
         END DO
 
         RETURN
