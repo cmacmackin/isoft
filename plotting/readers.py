@@ -202,7 +202,7 @@ class ShelfPlumeCryosphere(object):
 
     @property
     def chi(self):
-        return self.shelf.lambd
+        return self.shelf.chi
 
     @property
     def s(self):

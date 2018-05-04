@@ -418,7 +418,10 @@ contains
     this%temperature = ygot(n-1)/ygot(1)
     this%salinity = ygot(n)/ygot(1)
     !print*,'t = ', t
-    print*,this%thickness, this%velocity, this%temperature, this%salinity
+    call logger%trivia('upstream_plume_boundary%calculate',             &
+         'Calculated boundary values D='//str(this%thickness)//', U='// &
+         str(this%velocity)//', T='//str(this%temperature)//', S='//    &
+         str(this%salinity))
     if (this%thickness < 0._r8) error stop ('Negative plume thickness found')
     call collect_garbage(comm)
     call b%clean_temp(); call b_x%clean_temp()

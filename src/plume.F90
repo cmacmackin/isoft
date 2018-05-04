@@ -1089,6 +1089,15 @@ contains
         end if
         DUU_x = tmp
         call Unorm%clean_temp(); call rho_x%clean_temp()
+      class default
+!        if (this%phi /= 0._r8) then
+!          coriolis = [0._r8, 0._r8, this%phi] .cross. Uvec
+!          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+!                  + D*(rho_a - rho)*(.grad.(b - this%delta*D)) - D*coriolis
+!        else
+         DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
+                 + D*(rho_a - rho)*(.grad.(b - this%delta*D))
+!        end if
       end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
@@ -1173,7 +1182,7 @@ contains
 
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
       type(cheb1d_scalar_field) :: scalar_tmp(1), D_x, D_nd, S_nd, T_nd
-      type(cheb1d_vector_field) :: vector_tmp, buoyancy
+      type(cheb1d_vector_field) :: vector_tmp, U_nd
       class(scalar_field), pointer :: U, U_x, rho, rho_a, rho_x
       class(vector_field), pointer :: coriolis
 
@@ -1186,7 +1195,7 @@ contains
                 mu => this%mu, r => this%r_val, bounds => this%boundaries)
 
         ! The U_nd term won't be calculated, so just pass any old field
-        call non_diff_terms(D, Uvec, T, S, b, D_nd, buoyancy, T_nd, S_nd)
+        call non_diff_terms(D, Uvec, T, S, b, D_nd, U_nd, T_nd, S_nd)
 
         ! FIXME: Alter this so that can take advantage of
         ! parameterisations returning uniform fields.
@@ -1230,12 +1239,12 @@ contains
         end if
         f(st:en) = vector_tmp%raw()
 
-        scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D%d_dx(1,1)) - &
-             0.5_r8*this%delta*D**2*rho_x
-        buoyancy = scalar_tmp
+!        scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D%d_dx(1,1)) - &
+!             0.5_r8*this%delta*D**2*rho_x
+!        U_nd = scalar_tmp
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
-        vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec + &
-                      mu*Uvec*Uvec%norm() - buoyancy - nu*D_x*Uvec_x)/(nu*D)
+        vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - U_nd - &
+                      nu*D_x*Uvec_x)/(nu*D)
         if (this%lower_bounds(3)) then
           call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
         end if
