@@ -13,15 +13,13 @@ else:
 x = cryo.grid
 D = cryo.D
 Uvec = cryo.Uvec
-U = cryo.U*1000
+U = cryo.U
 T = cryo.T
 S = cryo.S
 b = cryo.b
 
 plt.plot(x, D, label='$D$')
 plt.plot(x, U, label='$U$')
-plt.plot(x, T, label='$T$')
-plt.plot(x, S, label='$S$')
 plt.plot(x, cryo.b, label='$b$')
 plt.xlabel('$x$')
 plt.tight_layout()

@@ -32,9 +32,9 @@ else:
 
 x = cryo.grid
 diff = Differentiator(x.size, x[-1], x[0])
-m = OneEquationMelt(0.0182, 0.0238)
+m = OneEquationMelt(0.0182, 4.86e-4, -2035.3, -54.92)
 e = Jenkins1991Entrainment(1.0, x.size, x[-1], x[0])
-eos = LinearEos(3.05e-1, 7.74e-5, 0.0271, 1., 1.)
+eos = LinearEos(3.05e5, 1.409e-6, 1.336e-5, 0., 0.)
 D = cryo.D
 Uvec = cryo.Uvec
 U = cryo.U
@@ -45,13 +45,13 @@ ent = e(Uvec, D, b)
 mu = cryo.mu
 nu = cryo.nu
 delta = cryo.delta
-T_a = 1.0
-S_a = 1.0
+T_a = 0.0
+S_a = 0.0
 rho = eos(T, S)
 rho_a = eos(T_a, S_a)
 
 plt.plot(x, D, label='D')
-plt.plot(x, U*1000, label='U*10^3')
+plt.plot(x, U, label='U')
 plt.plot(x, T, label='T')
 plt.plot(x, S, label='S')
 plt.plot(x, cryo.b, label='b')

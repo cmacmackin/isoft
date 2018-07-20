@@ -39,18 +39,18 @@ class Dallaston2015Melt(object):
         subshelf melt/entrained flux
     '''
 
-    def __init__(this, beta, epsilon_g, epsilon_m):
-        this.beta = beta
-        this.epsilon_g = epsilon_g
-        this.epsilon_m = epsilon_m
+    def __init__(self, beta, epsilon_g, epsilon_m):
+        self.beta = beta
+        self.epsilon_g = epsilon_g
+        self.epsilon_m = epsilon_m
 
-    def __call__(this, U, p, T, S, D):
-        return np.linalg.norm(U, axis=-1)*(1 - this.epsilon_m/this.beta*T)
+    def __call__(self, U, p, T, S, D):
+        return np.linalg.norm(U, axis=-1)*(1 - self.epsilon_m/self.beta*T)
 
-    def thermal_forcing(this, U, p, T, S, D):
-        return this(U, p, T, S, D)*(this.beta + 1)
+    def thermal_forcing(self, U, p, T, S, D):
+        return self(U, p, T, S, D)*(self.beta + 1)
 
-    def saline_forcing(this, U, p, T, S, D):
+    def saline_forcing(self, U, p, T, S, D):
         return np.zeros(T.size)
 
 
@@ -63,19 +63,26 @@ class OneEquationMelt(object):
         The factor $Gamma_tx_0/D_0$
     coef2
         The factor $c_0T_0/L$
-
+    fresh_sal
+        The numerical salinity value given to fresh water
+    melt_temp
+        The numerical temperature value at which melting occurs
     '''
 
-    def __init__(this, coef1, coef2, fresh_sal=0.):
-        this.coef1 = coef1
-        this.coef2 = coef2
-        this.fresh_sal = fresh_sal
+    def __init__(self, coef1, coef2, fresh_sal=0., melt_temp=0.):
+        self.coef1 = coef1
+        self.coef2 = coef2
+        self.fresh_sal = fresh_sal
+        self.melt_temp = melt_temp
 
-    def __call__(this, U, p, T, S, D):
-        return this.coef1*this.coef2*np.linalg.norm(U, axis=-1)*T
+    def forcing_value(self, U, p, T, S, D):
+        return self.coef1*np.linalg.norm(U, axis=-1)*(T - self.melt_temp)        
 
-    def thermal_forcing(this, U, p, T, S, D):
-        return this.coef1*np.linalg.norm(U, axis=-1)*T
+    def __call__(self, U, p, T, S, D):
+        return self.coef2*self.forcing_value(U, p, T, S, D)
 
-    def saline_forcing(this, U, p, T, S, D):
-        return -this(U, p, T, S, D)*this.fresh_sal
+    def thermal_forcing(self, U, p, T, S, D):
+        return (1. - self.coef2*self.melt_temp)*self.forcing_value(U, p, T, S, D)
+
+    def saline_forcing(self, U, p, T, S, D):
+        return -self(U, p, T, S, D)*self.fresh_sal

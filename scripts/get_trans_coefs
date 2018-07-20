@@ -1,0 +1,512 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  get_trans_coefs
+#  
+#  Copyright 2018 Christopher MacMackin <cmacmackin@gmail.com>
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#  
+
+from plotting.eos import LinearEos
+
+from scipy.optimize import newton
+from scipy.integrate import ode
+import scipy.integrate
+import numpy as np
+import ad
+from ad.admath import *
+import click
+
+
+class AsymptoticPlume(object):
+    def __init__(self, alpha_DU=1, alpha_DV=1, alpha_DT=1,
+                 alpha_UvecU=1, alpha_UvecV=1, f_D=1, f_U=1, f_V=1,
+                 f_T=1, f_S=1, zeta1=0.0182, zeta2=4.86e-4, T_a=0.0,
+                 T_m=-54.92, S_a=0.0, S_m=-2035.3, E_0=1.0, 
+                 eos=LinearEos(3.05e5, 1.409e-6, 1.336e-5, 0., 0.)):
+        self.alpha_DU = alpha_DU
+        self.alpha_DV = alpha_DV
+        self.alpha_DT = alpha_DT
+        self.alpha_UvecU = alpha_UvecU
+        self.alpha_UvecV = alpha_UvecV
+        self.f_D = f_D
+        self.f_U = f_U
+        self.f_V = f_V
+        self.f_T = f_T
+        self.f_S = f_S
+        self.zeta1 = zeta1
+        self.zeta2 = zeta2
+        self.T_a = T_a
+        self.T_m = T_m
+        self.S_a = S_a
+        self.S_m = S_m
+        self.E_0 = E_0
+        self.eos = eos
+
+    def T_steady(self, b_x=1.0):
+        ab_x = np.abs(b_x)
+        c1 = self.zeta1*self.zeta2
+        c2 = self.zeta1
+        A = self.E_0*ab_x*self.f_T - c1*self.T_m*(self.f_T + self.alpha_DT) \
+            + self.alpha_DT*c2
+        return (-A + np.sqrt(A**2 + 4*c1*self.f_T*(self.E_0*ab_x*self.T_a +
+                c2*self.T_m - c1*self.T_m**2)))/(2*c1*self.alpha_DT*self.f_T)
+
+    def S_steady(self, T, b_x=1.0):
+        ab_x = np.abs(b_x)
+        c1 = self.zeta1*self.zeta2
+        m = c1*(self.alpha_DT*T-self.T_m)
+        return (self.E_0*ab_x*self.S_a + m*self.S_m)/(self.f_S*(self.E_0*ab_x + m))
+
+    def U_steady(self, phi=-9.96, dy=0.05, b_x=1.0, mu=0.799, drho=3.08167909):
+        return _U_steady_vectorised(phi, dy, b_x, mu, drho, self.E_0,
+                                    self.f_D, self.f_U, self.f_V,
+                                    self.alpha_DU, self.alpha_DV,
+                                    self.alpha_UvecU, self.alpha_UvecV)
+
+    def V_steady(self, U, phi=-9.96, dy=0.05, b_x=1.0, mu=0.799):
+        ab_x = np.abs(b_x)
+        return np.sqrt(-phi*U*dy*self.E_0*ab_x*self.alpha_DU/
+                       (self.f_D*self.f_V*(self.E_0*ab_x*self.f_V +
+                                           mu*self.alpha_UvecV)))
+
+    def D_steady(self, U, V, Uvec=lambda U, V: np.sqrt(U**2 + V**2),
+                 phi=-9.96, dy=0.05, b_x=1.0, mu=0.799):
+        ab_x = np.abs(b_x)
+        return self.E_0*Uvec(U, V)*ab_x*dy/(self.f_D*self.f_V*V)
+
+    def solve(self, phi=-9.96, dy=0.05, b_x=1.0, mu=0.799,
+              Uvec=lambda U, V: np.sqrt(U**2 + V**2)):
+        self.T = self.T_steady(b_x)
+        self.S = self.S_steady(self.T, b_x)
+        drho = self.eos(self.T_a, self.S_a) - self.eos(self.T, self.S)
+        self.U = self.U_steady(phi, dy, b_x, mu, drho)
+        self.V = self.V_steady(self.U, phi, dy, b_x, mu)
+        self.D = self.D_steady(self.U, self.V, Uvec, phi, dy, b_x, mu)
+
+
+class VelocityPolynomial(object):
+    def __init__(self, phi=-9.96, dy=0.05, b_x=1.0, mu=0.799,
+                 drho=3.08167909, E_0=1.0, f_D=1, f_U=1, f_V=1,
+                 alpha_DU=1, alpha_DV=1, alpha_UvecU=1, alpha_UvecV=1):
+        ab_x = np.abs(b_x)
+        tmp1 = f_D * f_V * (f_U + mu*alpha_UvecU/(E_0*ab_x))
+        tmp2 = phi*dy*alpha_DV
+        self.a = tmp1**2
+        self.b = -2*tmp1*tmp2
+        self.c = tmp2**2
+        self.d = drho**2*ab_x*dy*f_D*f_V*(E_0*f_V*ab_x + mu*alpha_UvecV)/(phi*alpha_DU*E_0)
+
+    def __call__(self, x):
+        return self.a*x**3 + self.b*x**2 + self.c*x + self.d
+
+    def deriv1(self, x):
+        return 3*self.a*x**2 + 2*self.b*x + self.c
+
+    def deriv2(self, x):
+        return 6*self.a*x + 2*self.b
+
+    @property
+    def root(self):
+        f = lambda x: self(x)
+        fp = lambda x: self.deriv1(x)
+        fp2 = lambda x: self.deriv2(x)
+        zero = newton(f, 0., fp, fprime2=fp2)
+        assert abs(self(zero)) <= 1.48e-8
+        return zero
+
+
+@np.vectorize
+def _U_steady_vectorised(phi=-9.96, dy=0.05, b_x=1.0, mu=0.799, drho=3.08167909,
+             E_0=1.0, f_D=1, f_U=1, f_V=1, alpha_DU=1, alpha_DV=1,
+             alpha_UvecU=1, alpha_UvecV=1,):
+    p = VelocityPolynomial(phi, dy, b_x, mu, drho, E_0, f_D, f_U, f_V,
+                           alpha_DU, alpha_DV, alpha_UvecU,
+                           alpha_UvecV)
+    return p.root
+
+
+class NotIntegratedError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
+class TransverseIvp(object):
+    """Object for solving the non-diffusive plume for a given set of
+    boundary conditions, integrating in the transverse direction and
+    assuming local longitudinal uniformity.
+
+    """
+
+    def __init__(self, E_0=1.0, beta_S=1.336e-5, beta_T=1.409e-6,
+                 rho_ref=3.05e5, T_ref=0.0, S_ref=0.0, T_a=0.0,
+                 S_a=0.0, T_m=-54.92, S_m=-2035.3, nu=0.0, mu=0.799,
+                 phi=-9.96, alpha1=0.0182, alpha2=4.86e-4,
+                 delta=0.036, gamma=4.0, lambd=1e2, r=1.12, b_x=0.1,
+                 atol=1e-12, rtol=1e-6, maxsteps=5000):
+        self.E_0 = E_0
+        self.beta_S = beta_S
+        self.beta_T = beta_T
+        self.rho_ref = rho_ref
+        self.T_ref = T_ref
+        self.S_ref = S_ref
+        self.T_a = T_a
+        self.S_a = S_a
+        self.T_m = T_m
+        self.S_m = S_m
+        self.nu = nu
+        self.mu = mu
+        self.phi = phi
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
+        self.delta = delta
+        self.gamma = gamma
+        self.lambd = lambd
+        self.r = r
+        self.b_x = b_x
+        self.atol = atol
+        self.rtol = rtol
+        self.maxsteps= maxsteps
+
+        try:
+            self.coef = 1./sqrt(delta)
+        except:
+            self.coef = 1./sqrt(0.036)
+        self.rho_a = self.rho(S_a, T_a)
+        self.integrated = False
+
+    def e(self, U, V, grad_b):
+        return self.E_0 * sqrt(U**2 + V**2) * abs(grad_b)
+
+    def m(self, U, V, T):
+        return self.alpha1*self.alpha2*(T-self.T_m)*sqrt(U**2 + V**2)
+
+    def TET(self, U, V, T):
+        return self.alpha1*(1-self.alpha2*self.T_m)*(T-self.T_m)\
+            *sqrt(U**2 + V**2)
+
+    def SET(self, U, V, T):
+        return -self.S_m*self.m(U, V, T)
+
+    def rho(self, S, T):
+        return self.rho_ref*(1.0 - self.beta_T*(T-self.T_ref) + 
+                             self.beta_S*(S-self.S_ref))
+
+    def deriv_function(self, t, y):
+        L = y[0]
+        M = y[1]
+        N = y[2]
+        Q = y[3]
+        R = y[4]
+
+        U = M/L
+        V = N/L
+        D = L/V
+        S = Q/L
+        T = R/L
+        ent = self.e(U, V, self.b_x)
+
+        L_y = ent + self.m(U, V, T)
+        Q_y = ent*self.S_a - self.SET(U, V, T)
+        R_y = ent*self.T_a - self.TET(U, V, T)
+
+        rh = self.rho(S, T)
+        rho_y = self.rho_ref/L**2*(self.beta_T*R*L_y - self.beta_T*L*R_y + 
+                                   self.beta_S*L*Q_y - self.beta_S*Q*L_y)
+        M_y = D*(self.rho_a - rh)*self.b_x + self.phi*D*V - self.mu*sqrt(U**2 + V**2)*U
+        N_y = (-2*self.delta*D*(self.rho_a - rh)*L_y/V - self.phi*D*U - 
+               self.mu*sqrt(U**2 + V**2)*V + 0.5*self.delta*D**2*rho_y)/(1. -
+                                    self.delta*D*(self.rho_a - rh)/V**2)
+        return [L_y, M_y, N_y, Q_y, R_y]
+
+
+    def integrate(self, y_max, steps, grid='lin', log_bound=1e-4, y_min=None):
+        if not y_min:
+            y_min = log_bound/1e2
+        a = 4./3.
+        est_init = AsymptoticPlume(a, a, a, a, a, 2, 2, 2, 2, 2,
+                                   self.alpha1, self.alpha2, self.T_a,
+                                   self.T_m, self.S_a, self.S_m,
+                                   self.E_0, LinearEos(self.rho_ref,
+                                                       a*self.beta_T, a*self.beta_S,
+                                                       self.T_ref/a, self.S_ref/a))
+        est_init.solve(self.phi, y_min*2, self.b_x, self.mu)
+        self.L_0 = est_init.D*est_init.V
+        self.M_0 = est_init.D*est_init.V*est_init.U
+        self.N_0 = est_init.D*est_init.V**2
+        self.Q_0 = est_init.D*est_init.V*est_init.S
+        self.R_0 = est_init.D*est_init.V*est_init.T
+        func = lambda t, y: self.deriv_function(t, y)
+        def jacob(t, y):
+            independent = ad.adnumber(y)
+            dependent = self.deriv_function(t, independent)
+            return ad.jacobian(dependent, independent)
+
+        solver = ode(func, jacob).set_integrator('lsoda', atol=self.atol,# with_jacobian=True,
+                                                 rtol=self.rtol, nsteps=self.maxsteps)
+        solver.set_initial_value([self.L_0, self.M_0, self.N_0, self.Q_0, self.R_0], y_min)
+
+        self.integrated = True
+        self.D = np.empty(steps+1)
+        self.U = np.empty(steps+1)
+        self.V = np.empty(steps+1)
+        self.S = np.empty(steps+1)
+        self.T = np.empty(steps+1)
+        if grid.lower().startswith('cheb'):
+            self.y = y_min + (y_max - y_min) * \
+                     (1. + np.cos(np.linspace(0.0, 1.0, steps+1) * np.pi))/2
+            indices = range(steps-1, -1, -1)
+            self.U[-1] = solver.y[1]/solver.y[0]
+            self.V[-1] = solver.y[2]/solver.y[0]
+            self.D[-1] = solver.y[0]/self.V[-1]
+            self.S[-1] = solver.y[3]/solver.y[0]
+            self.T[-1] = solver.y[4]/solver.y[0]
+        elif grid.lower().startswith('lin'):
+            self.y = np.linspace(y_min, y_max, steps+1)
+            indices = range(1, steps+1)
+            self.U[0] = solver.y[1]/solver.y[0]
+            self.V[0] = solver.y[2]/solver.y[0]
+            self.D[0] = solver.y[0]/self.V[0]
+            self.S[0] = solver.y[3]/solver.y[0]
+            self.T[0] = solver.y[4]/solver.y[0]
+        elif grid.lower().startswith('log'):
+            ly2 = log10(y_max)
+            ly1 = log10(log_bound)
+            linsteps = int((steps + 2)/(ly2 - ly1 + 1))
+            logsteps = steps + 2 - linsteps
+            self.y = np.concatenate((np.linspace(y_min, log_bound, linsteps-1, False),
+                                     np.logspace(ly1, ly2, logsteps)))
+            indices = range(1, steps+1)
+            self.U[0] = solver.y[1]/solver.y[0]
+            self.V[0] = solver.y[2]/solver.y[0]
+            self.D[0] = solver.y[0]/self.V[0]
+            self.S[0] = solver.y[3]/solver.y[0]
+            self.T[0] = solver.y[4]/solver.y[0]
+        else:
+            raise ValueError('Unknown grid type "{}"'.format(grid))
+
+        self.successful = True
+        for i in indices:
+            solver.integrate(self.y[i])
+            if not solver.successful() or solver.y[0]**2/solver.y[2] < 0:
+                print('Warning: IVP solver failed with error code {} on step {} at '
+                      'y={}.'.format(solver.get_return_code(), i, self.y[i]))
+                if grid.lower().startswith('cheb'):
+                    del self.y
+                    del self.D
+                    del self.U
+                    del self.V
+                    del self.S
+                    del self.T
+                    self.integrated = False
+                else:
+                    self.y = self.y[0:i]
+                    self.D = self.D[0:i]
+                    self.U = self.U[0:i]
+                    self.V = self.V[0:i]
+                    self.S = self.S[0:i]
+                    self.T = self.T[0:i]
+                self.successful = False
+                break
+            self.U[i] = solver.y[1]/solver.y[0]
+            self.V[i] = solver.y[2]/solver.y[0]
+            self.D[i] = solver.y[0]/self.V[i]
+            self.S[i] = solver.y[3]/solver.y[0]
+            self.T[i] = solver.y[4]/solver.y[0]
+        del solver
+
+
+class PlumeShape(TransverseIvp):
+    def __init__(self, dy_max, steps, E_0=1.0, beta_S=1.336e-5,
+                 beta_T=1.409e-6, rho_ref=3.05e5, T_ref=0.0,
+                 S_ref=0.0, T_a=0.0, S_a=0.0, T_m=-54.92, S_m=-2035.3,
+                 nu=0.0, mu=0.799, phi=-9.96, alpha1=0.0182,
+                 alpha2=4.86e-4, delta=0.036, gamma=4.0, lambd=1e2,
+                 X=10.0, r=1.12, b_x=0.1, atol=1e-12, rtol=1e-6,
+                 maxsteps=5000):
+        super(PlumeShape, self).__init__(E_0, beta_S, beta_T, rho_ref,
+                                         T_ref, S_ref, T_a, S_a, T_m,
+                                         S_m, nu, mu, phi, alpha1,
+                                         alpha2, delta, gamma, lambd,
+                                         r, b_x, atol, rtol, maxsteps)
+        self.integrate(dy_max, steps, grid='log')
+        self.Uabs = np.sqrt(self.U**2 + self.V**2)
+        self.D_scal = scipy.integrate.cumtrapz(self.D, self.y)/self.dy
+        self.U_scal = scipy.integrate.cumtrapz(self.U, self.y)/self.dy
+        self.V_scal = scipy.integrate.cumtrapz(self.V, self.y)/self.dy
+        self.S_scal = scipy.integrate.cumtrapz(self.S, self.y)/self.dy
+        self.T_scal = scipy.integrate.cumtrapz(self.T, self.y)/self.dy
+        self.Uabs_scal = scipy.integrate.cumtrapz(self.Uabs, self.y)/self.dy
+
+    @property
+    def f_D(self):
+        return self.D[1:]/self.D_scal
+
+    @property
+    def f_U(self):
+        return self.U[1:]/self.U_scal
+
+    @property
+    def f_V(self):
+        return self.V[1:]/self.V_scal
+
+    @property
+    def f_S(self):
+        return self.S[1:]/self.S_scal
+
+    @property
+    def f_T(self):
+        return self.T[1:]/self.T_scal
+
+    @property
+    def f_Up(self):
+        return np.gradient(self.U, self.y)[1:]/self.U_scal
+
+    @property
+    def f_Vp(self):
+        return np.gradient(self.V, self.y)[1:]/self.V_scal
+
+    @property
+    def f_Sp(self):
+        return np.gradient(self.S, self.y)[1:]/self.S_scal
+
+    @property
+    def f_Tp(self):
+        return np.gradient(self.T, self.y)[1:]/self.T_scal
+
+    @property
+    def alpha_DU(self):
+        return scipy.integrate.cumtrapz(self.D*self.U,
+                                        self.y)/(self.D_scal*self.U_scal*self.dy)
+
+    @property
+    def alpha_DV(self):
+        return scipy.integrate.cumtrapz(self.D*self.V,
+                                        self.y)/(self.D_scal*self.V_scal*self.dy)
+
+    @property
+    def alpha_DU2(self):
+        return scipy.integrate.cumtrapz(self.D*self.U**2,
+                                      self.y)/(self.D_scal*self.U_scal**2*self.dy)
+
+    @property
+    def alpha_D2(self):
+        if not hasattr(self, '_alpha_D2'):
+            self._alpha_D2 = scipy.integrate.cumtrapz(self.D*self.D,
+                                        self.y)/(self.D_scal**2*self.dy)
+        return self._alpha_D2
+
+    @property
+    def alpha_DV(self):
+        return scipy.integrate.cumtrapz(self.D*self.V,
+                                        self.y)/(self.D_scal*self.V_scal*self.dy)
+
+    @property
+    def alpha_DUV(self):
+        return scipy.integrate.cumtrapz(self.D*self.U*self.V,
+                                        self.y)/(self.D_scal*self.U_scal*self.V_scal*self.dy)
+
+    @property
+    def alpha_UabsV(self):
+        return scipy.integrate.cumtrapz(Uabs*self.V,
+                                        self.y)/(self.Uabs_scal*self.V_scal*self.dy)
+
+    @property
+    def alpha_UabsU(self):
+        return scipy.integrate.cumtrapz(Uabs*self.U,
+                                        self.y)/(self.Uabs_scal*self.U_scal*self.dy)
+
+    @property
+    def alpha_DUS(self):
+        return scipy.integrate.cumtrapz(self.D*self.U*self.S,
+                                        self.y)/(self.D_scal*self.U_scal*self.S_scal*self.dy)
+
+    @property
+    def alpha_DUT(self):
+        return scipy.integrate.cumtrapz(self.D*self.U*self.T,
+                                        self.y)/(self.D_scal*self.U_scal*self.T_scal*self.dy)
+
+    @property
+    def alpha_UabsT(self):
+        return scipy.integrate.cumtrapz(Uabs*self.T,
+                                        self.y)/(self.Uabs_scal*self.T_scal*self.dy)
+
+    @property
+    def alpha_DS(self):
+        return scipy.integrate.cumtrapz(self.D*self.S,
+                                        self.y)/(self.D_scal*self.S_scal*self.dy)
+
+    @property
+    def alpha_DT(self):
+        return scipy.integrate.cumtrapz(self.D*self.T,
+                                        self.y)/(self.D_scal*self.T_scal*self.dy)
+
+    @property
+    def alpha_DS_t(self):
+        return scipy.integrate.cumtrapz(self.D**2 * self.S,
+                                        self.y)/(self.D_scal**2 *
+                                                 self.S_scal*self.dy*self.alpha_D2)
+
+    @property
+    def alpha_DT_t(self):
+        return scipy.integrate.cumtrapz(self.D**2 * self.T,
+                                        self.y)/(self.D_scal**2 *
+                                                 self.T_scal*self.dy*self.alpha_D2)
+    
+    @property
+    def dy(self):
+        return self.y[1:]
+
+
+@click.command()
+@click.option('--E_0', default=1., help='Entrainment coefficient.')
+@click.option('--beta_T', default=1.336e-5, help='Thermal contraction coefficient.')
+@click.option('--beta_S', default=1.336e-5, help='Haline contraction coefficient.')
+@click.option('--rho_ref', default=3.05e5, help='Reference density for linear equation of state.')
+@click.option('--T_ref', default=0., help='Reference temperature for linear equation of state.')
+@click.option('--S_ref', default=0., help='Reference salinity for linear equation of state.')
+@click.option('--T_a', default=0., help='Temperature of ambient ocean.')
+@click.option('--S_a', default=0., help='Salinity of ambient ocean.')
+@click.option('--T_m', default=-54.92, help='Temperature at melting point of ice.')
+@click.option('--S_m', default=2035.3, help='Salinity of ice meltwater.')
+@click.option('--mu', default=0.799, help='Dimensionless drag coefficient.')
+@click.option('--phi', default=-9.96, help='Dimensionless coriolis parameter.')
+@click.option('--alpha1', default=0.0182, help='First melt coefficient.')
+@click.option('--alpha2', default=4.86e-4, help='Second melt coefficient.')
+@click.option('--delta', default=0., help='Ratio of plume thickness scale to ice thickness '
+              'scale. If set too large it can cause the plume to become subcritical and '
+              'the model to break down.')
+@click.option('--atol', default=1e-12, help='Absolute tolerance when integrating ODEs.')
+@click.option('--rtol', default=1e-6, help='Relative tolerance when integrating ODEs.')
+def main(E_0, beta_T, beta_S, rho_ref, T_ref, S_ref, T_a, S_a, T_m,
+         S_m, mu, phi, alpha1, alpha2, delta,
+         atol, rtol):
+    """Outputs Fortran code which will interpolate the shape coefficients
+    of a horizontally-integrated plume model for different slopes of
+    the ice shelf. These calculations are done with the specified
+    plume parameter values and level of sampling. The output is meant
+    to be used in ISOFT, providing a submodule implementing the
+    interfaces given in `transverse_coefficients_mod`.
+
+    """
+    pass
+
+
+if __name__ == '__main__':
+    main()
