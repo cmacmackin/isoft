@@ -442,7 +442,7 @@ contains
         end if
 
         this%vel_precond = coriolis_block(this%phi, this%nu, velbound, &
-                                          dvelbound, this%thickness)
+                                          dvelbound, 1, this%thickness)
       end associate
     end if
     
@@ -885,14 +885,13 @@ contains
     class default
       call bound%set_time(time)
     end select
-
     solution = this%state_vector()
 #ifdef DEBUG
     call logger%debug('asym_plume%solve','Calling QLM ODE solver')
 #endif
-!    call quasilinear_solve(L, f, solution, 1, residual, flag, info,         &
-!                           1.e-12_r8*size(solution), precond=preconditioner, &
-!                           iter_max=100, krylov_dim=85, gmres_iter_max=5000)
+    call quasilinear_solve(L, f, jac_prod, solution, 1, residual, flag, info, &
+                           1.e-9_r8*size(solution), precond=preconditioner, &
+                           iter_max=100, krylov_dim=85, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
     call logger%debug('plume%solve','QLM solver required '//         &
@@ -909,7 +908,7 @@ contains
     case(1)
       call logger%warning('asym_plume%solver','Plume solver stagnated with '// &
                        'residual of '//trim(str(residual)))
-      success = .true.
+      success = .false.
     case(2)
       call logger%error('asym_plume%solver','Reached maximum number of '// &
                         'iterations solving plume')
@@ -945,7 +944,7 @@ contains
       call this%boundaries%thickness_bound_info(-1, btype_l, bdepth_l)
       call this%boundaries%thickness_bound_info(1, btype_u, bdepth_u)
       if (this%lower_bounds(1)) then
-        call scalar_tmp%set_boundary(-1, 1, this%thickness%get_boundary(-1, 1))
+        call scalar_tmp%set_boundary(1, 1, this%thickness%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(1)) then
         call scalar_tmp%set_boundary(1, 1, this%thickness%get_boundary(1, 1))
@@ -955,10 +954,9 @@ contains
       L(st:en) = scalar_tmp%raw()
       
       ! Velocity
-      print*,'----------------------------L-----------------------------------'
       vector_tmp = this%velocity%d_dx(1) - this%velocity_dx
       if (this%lower_bounds(2)) then
-        call vector_tmp%set_boundary(-1, 1, this%velocity%get_boundary(-1, 1))
+        call vector_tmp%set_boundary(1, 1, this%velocity%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(2)) then
         call vector_tmp%set_boundary(1, 1, this%velocity%get_boundary(1, 1))
@@ -966,7 +964,6 @@ contains
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
-      print*,vector_tmp%raw()
 
       if (this%phi /= 0._r8) then
         coriolis = [0._r8, 0._r8, this%phi/this%nu] .cross. this%velocity
@@ -975,7 +972,7 @@ contains
         vector_tmp = this%velocity_dx%d_dx(1)
       end if
       if (this%lower_bounds(3)) then
-        call vector_tmp%set_boundary(-1, 1, this%velocity_dx%get_boundary(-1, 1))
+        call vector_tmp%set_boundary(1, 1, this%velocity_dx%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(3)) then
         call vector_tmp%set_boundary(1, 1, this%velocity_dx%get_boundary(1, 1))
@@ -983,12 +980,12 @@ contains
       st = en + 1
       en = st + this%velocity_size - 1
       L(st:en) = vector_tmp%raw()
-      print*,vector_tmp%raw()
+ !     print*,vector_tmp%raw()
 
       ! Temperature
       scalar_tmp = this%temperature%d_dx(1) - this%temperature_dx
       if (this%lower_bounds(4)) then
-        call scalar_tmp%set_boundary(-1, 1, this%temperature%get_boundary(-1, 1))
+        call scalar_tmp%set_boundary(1, 1, this%temperature%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(4)) then
         call scalar_tmp%set_boundary(1, 1, this%temperature%get_boundary(1, 1))
@@ -999,7 +996,7 @@ contains
 
       scalar_tmp = this%temperature_dx%d_dx(1)
       if (this%lower_bounds(5)) then
-        call scalar_tmp%set_boundary(-1, 1, this%temperature_dx%get_boundary(-1, 1))
+        call scalar_tmp%set_boundary(1, 1, this%temperature_dx%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(5)) then
         call scalar_tmp%set_boundary(1, 1, this%temperature_dx%get_boundary(1, 1))
@@ -1011,7 +1008,7 @@ contains
       ! Salinity
       scalar_tmp = this%salinity%d_dx(1) - this%salinity_dx
       if (this%lower_bounds(6)) then
-        call scalar_tmp%set_boundary(-1, 1, this%salinity%get_boundary(-1, 1))
+        call scalar_tmp%set_boundary(1, 1, this%salinity%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(6)) then
         call scalar_tmp%set_boundary(1, 1, this%salinity%get_boundary(1, 1))
@@ -1022,7 +1019,7 @@ contains
 
       scalar_tmp = this%salinity_dx%d_dx(1)
       if (this%lower_bounds(7)) then
-        call scalar_tmp%set_boundary(-1, 1, this%salinity_dx%get_boundary(-1, 1))
+        call scalar_tmp%set_boundary(1, 1, this%salinity_dx%get_boundary(-1, 1))
       end if
       if (this%upper_bounds(7)) then
         call scalar_tmp%set_boundary(1, 1, this%salinity_dx%get_boundary(1, 1))
@@ -1105,7 +1102,6 @@ contains
         dims = Uvec%raw_size()/Uvec%elements()
         allocate(tmp(dims), mold=D)
         !tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
-        !print*,tmp(1)%raw()
         tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
                  + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U      &
                  + this%phi*D*V - D*U*V/dy) /                      &
@@ -1116,22 +1112,16 @@ contains
         DUU_x = tmp
         call Unorm%clean_temp(); call rho_x%clean_temp()
       class default
-!        if (this%phi /= 0._r8) then
-!          coriolis = [0._r8, 0._r8, this%phi] .cross. Uvec
-!          DUU_x = -this%mu*Uvec*Uvec%norm() + 0.5_r8*this%delta*D**2*(.grad. rho) &
-!                  + D*(rho_a - rho)*(.grad.(b - this%delta*D)) - D*coriolis
-!        else
          dims = Uvec%raw_size()/Uvec%elements()
          allocate(tmp(dims), mold=D)
          tmp(1) = D*(rho_a - rho)*(b%d_dx(1) - this%delta*D%d_dx(1)) &
                 + 0.5_r8*this%delta*D**2*rho%d_dx(1)
          if (dims > 1) then
-           tmp(2) = 0.5_r8*this%delta/dy*D**2*(rho - rho_a)
+           tmp(2) = 0._r8*D
+           !tmp(2) = 0.5_r8*this%delta/dy*D**2*(rho - rho_a)
          end if
          DUU_x = tmp
          DUU_x = DUU_x - this%mu*Uvec*Uvec%norm() - D/dy*V*Uvec
-!         print*,V%raw()
-!        end if
       end select
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
       call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
@@ -1139,6 +1129,7 @@ contains
       call D%clean_temp(); call Uvec%clean_temp(); call T%clean_temp()
       call S%clean_temp(); call b%clean_temp()
     end subroutine non_diff_terms
+
 
     function f(v)
       !! The nonlinear operator
@@ -1148,13 +1139,74 @@ contains
         !! derivative.
       real(r8), dimension(size(v,1)) :: f
 
-      integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
+      call this%update(v(:,1))
+      call nonlinear(f, .false.)
+    end function f
+
+    
+    function jac_prod(v, dv)
+      !! The product of the Jacobian of the nonlienar operator at v,
+      !! multiplying dv.
+      real(r8), dimension(:,:), intent(in) :: v
+        !! The state vector for the system of differential equations,
+        !! and its derivatives. Column \(i\) represents the \(i-1\)
+        !! derivative.
+      real(r8), dimension(:,:), intent(in) :: dv
+        !! The state vector for the system of differential equations,
+        !! and its derivatives, to be multiplied by the
+        !! Jacobian. Column \(i\) represents the \(i-1\) derivative.
+      real(r8), dimension(size(v,1)) :: jac_prod
+      type(cheb1d_scalar_field) :: stmp
+      type(cheb1d_vector_field) :: vtmp
+      integer :: i
+
+      call this%update(v(:,1))
+
+      call stmp%assign_meta_data(this%thickness)
+      call vtmp%assign_meta_data(this%velocity)
+      
+      call stmp%set_from_raw(dv(1:this%thickness_size, 1))
+      call this%thickness%set_derivative(stmp)
+      i = 1 + this%thickness_size
+      call vtmp%set_from_raw(dv(i:i + this%velocity_size - 1, 1))
+      call this%velocity%set_derivative(vtmp)
+      i = i + this%velocity_size
+      call vtmp%set_from_raw(dv(i:i + this%velocity_size - 1, 1))
+      call this%velocity_dx%set_derivative(vtmp)
+      i = i + this%velocity_size
+      call stmp%set_from_raw(dv(i:i + this%temperature_size - 1, 1))
+      call this%temperature%set_derivative(stmp)
+      i = i + this%temperature_size
+      call stmp%set_from_raw(dv(i:i + this%temperature_size - 1, 1))
+      call this%temperature_dx%set_derivative(stmp)
+      i = i + this%temperature_size
+      call stmp%set_from_raw(dv(i:i + this%salinity_size - 1, 1))
+      call this%salinity%set_derivative(stmp)
+      i = i + this%salinity_size
+      call stmp%set_from_raw(dv(i:i + this%salinity_size - 1, 1))
+      call this%salinity_dx%set_derivative(stmp)
+      
+      call nonlinear(jac_prod, .true.)
+
+      call this%thickness%unset_derivative()
+      call this%velocity%unset_derivative()
+      call this%velocity_dx%unset_derivative()
+      call this%temperature%unset_derivative()
+      call this%temperature_dx%unset_derivative()
+      call this%salinity%unset_derivative()
+      call this%salinity_dx%unset_derivative()
+    end function jac_prod
+
+    subroutine nonlinear(f, deriv)
+      real(r8), dimension(:), intent(out) :: f
+      logical, intent(in) :: deriv
+        !! If true, return Jacobian product, otherwise return result
+        !! of nonlienar operator.
+
+      integer :: st, en
       type(cheb1d_scalar_field) :: scalar_tmp, D_x, D_nd, S_nd, T_nd
       type(cheb1d_vector_field) :: vector_tmp, U_nd
       class(scalar_field), pointer :: U, U_x
-      class(vector_field), pointer :: coriolis
-
-      call this%update(v(:,1))
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &
@@ -1176,89 +1228,110 @@ contains
         scalar_tmp = (D_nd - D*U_x)/U
         D_x = scalar_tmp
         if (this%lower_bounds(1)) then
-          call scalar_tmp%set_boundary(-1, 1, bounds%thickness_bound(-1))
+          call scalar_tmp%set_boundary(1, 1, bounds%thickness_bound(-1))
         end if
         if (this%upper_bounds(1)) then
           call scalar_tmp%set_boundary(1, 1, bounds%thickness_bound(1))
         end if
         st = 1
         en = st + this%thickness_size - 1
+        if (deriv) then
+          scalar_tmp = scalar_tmp%get_derivative()
+        end if
         f(st:en) = scalar_tmp%raw()
       
         ! Velocity
         vector_tmp = 0._r8 * Uvec
         if (this%lower_bounds(2)) then
-          call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
+          call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(-1))
         end if
         if (this%upper_bounds(2)) then
           call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(1))
         end if
         st = en + 1
         en = st + this%velocity_size - 1
+        if (deriv) then
+          vector_tmp = vector_tmp%get_derivative()
+        end if
         f(st:en) = vector_tmp%raw()
 
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
         vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - &
                       U_nd - nu*D_x*Uvec_x)/(nu*D)
         if (this%lower_bounds(3)) then
-          call vector_tmp%set_boundary(-1, 1, bounds%velocity_bound(-1))
+          call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(-1))
         end if
         if (this%upper_bounds(3)) then
           call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(1))
         end if
         st = en + 1
         en = st + this%velocity_size - 1
+        if (deriv) then
+          vector_tmp = vector_tmp%get_derivative()
+        end if
         f(st:en) = vector_tmp%raw()
 
         ! Temperature
         scalar_tmp = uniform_scalar_field(0._r8)
         if (this%lower_bounds(4)) then
-          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(-1))
         end if
         if (this%upper_bounds(4)) then
           call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%temperature_size - 1
+        if (deriv) then
+          scalar_tmp = scalar_tmp%get_derivative()
+        end if
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
         if (this%lower_bounds(5)) then
-          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(-1))
         end if
         if (this%upper_bounds(5)) then
           call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp = scalar_tmp%get_derivative()
+        end if
         f(st:en) = scalar_tmp%raw()
 
         ! Salinity
         scalar_tmp = uniform_scalar_field(0._r8)
         if (this%lower_bounds(6)) then
-          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(-1))
         end if
         if (this%upper_bounds(6)) then
           call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp = scalar_tmp%get_derivative()
+        end if
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
         if (this%lower_bounds(7)) then
-          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(-1))
         end if
         if (this%upper_bounds(7)) then
           call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
+        if (deriv) then
+          scalar_tmp = scalar_tmp%get_derivative()
+        end if
         f(st:en) = scalar_tmp%raw()
 
         call U%clean_temp(); call U_x%clean_temp()
       end associate
-    end function f
+    end subroutine nonlinear
 
     function preconditioner(v, state, L_op, f_op, fcur, rhs)
       !! The preconditioner, which approximates an inverse of `L`.
@@ -1286,10 +1359,8 @@ contains
       real(r8) :: nu
       type(asym_plume) :: v_plume
       type(cheb1d_scalar_field) :: scalar_tmp
-      type(cheb1d_vector_field) :: vector_tmp
+      type(cheb1d_vector_field) :: vector_tmp, tmp2
       class(scalar_field), pointer :: U, U_x
-      print*,'---------------------------P^-1---------------------------------'
-!      print*,v
 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)
@@ -1307,25 +1378,19 @@ contains
       nu = this%nu
       bloc = get_bound_loc(1)  
       v_plume%thickness = this%precond%solve_for(v_plume%thickness, bloc, &
-           v_plume%thickness%get_boundary(bloc, 1))
+           v_plume%thickness%get_boundary(1, 1), -1)
       st = 1
       en = st + this%thickness_size - 1
       preconditioner(st:en) = v_plume%thickness%raw()
   
-      print*,v_plume%velocity%raw()
-      print*,v_plume%velocity_dx%raw()
-      if (this%phi /= 0._r8) then
-        call this%vel_precond%solve_for(v_plume%velocity, v_plume%velocity_dx)
-      else
-        bloc = get_bound_loc(3)
-        v_plume%velocity_dx = this%precond%solve_for(v_plume%velocity_dx, bloc, &
-             v_plume%velocity_dx%get_boundary(bloc, 1))
-  
-        bloc = get_bound_loc(2)
-        vector_tmp = v_plume%velocity + v_plume%velocity_dx
-        v_plume%velocity = this%precond%solve_for(vector_tmp, bloc, &
-             v_plume%velocity%get_boundary(bloc, 1))
-      end if
+      bloc = get_bound_loc(3)
+      v_plume%velocity_dx = this%precond%solve_for(v_plume%velocity_dx, bloc, &
+           v_plume%velocity_dx%get_boundary(1, 1), -1)
+
+      bloc = get_bound_loc(2)
+      vector_tmp = v_plume%velocity + v_plume%velocity_dx
+      v_plume%velocity = this%precond%solve_for(vector_tmp, bloc, &
+           v_plume%velocity%get_boundary(1, 1), -1)
       st = en + 1
       en = st + this%velocity_size - 1
       preconditioner(st:en) = v_plume%velocity%raw()
@@ -1341,14 +1406,14 @@ contains
   
       bloc = get_bound_loc(5)
       v_plume%temperature_dx = this%precond%solve_for(v_plume%temperature_dx, bloc, &
-           v_plume%temperature_dx%get_boundary(bloc, 1))
+           v_plume%temperature_dx%get_boundary(1, 1), -1)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%temperature_dx%raw()
   
       bloc = get_bound_loc(4)
       v_plume%temperature = this%precond%solve_for(v_plume%temperature + &
-           v_plume%temperature_dx, bloc, v_plume%temperature%get_boundary(bloc, 1))
+           v_plume%temperature_dx, bloc, v_plume%temperature%get_boundary(1, 1), -1)
       preconditioner(pst:pen) = v_plume%temperature%raw()
 
       ! Precondition S_x terms before S
@@ -1359,14 +1424,14 @@ contains
   
       bloc = get_bound_loc(7)
       v_plume%salinity_dx = this%precond%solve_for(v_plume%salinity_dx, bloc, &
-           v_plume%salinity_dx%get_boundary(bloc, 1))
+           v_plume%salinity_dx%get_boundary(1, 1), -1)
       st = en + 1
       en = st + this%temperature_size - 1
       preconditioner(st:en) = v_plume%salinity_dx%raw()
 
       bloc = get_bound_loc(6)
       v_plume%salinity = this%precond%solve_for(v_plume%salinity+v_plume%salinity_dx, bloc, &
-           v_plume%salinity%get_boundary(bloc, 1))
+           v_plume%salinity%get_boundary(1, 1), -1)
       preconditioner(pst:pen) = v_plume%salinity%raw()
     end function preconditioner
 

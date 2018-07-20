@@ -864,7 +864,7 @@ contains
     call logger%debug('plume%solve','Calling QLM ODE solver')
 #endif
     call quasilinear_solve(L, f, jac_prod, solution, 1, residual, flag, info, &
-                           1.e-12_r8*size(solution), precond=preconditioner, &
+                           1.e-9_r8*size(solution), precond=preconditioner, &
                            iter_max=100, krylov_dim=85, gmres_iter_max=5000)
     call this%update(solution)
 #ifdef DEBUG
@@ -882,7 +882,7 @@ contains
     case(1)
       call logger%warning('plume%solver','Plume solver stagnated with '// &
                        'residual of '//trim(str(residual)))
-      success = .true.
+      success = .false.
     case(2)
       call logger%error('plume%solver','Reached maximum number of '// &
                         'iterations solving plume')
@@ -941,7 +941,7 @@ contains
 
       if (this%phi /= 0._r8) then
         coriolis = [0._r8, 0._r8, this%phi/this%nu] .cross. this%velocity
-        vector_tmp = this%velocity_dx%d_dx(1) + coriolis
+        vector_tmp = this%velocity_dx%d_dx(1) - coriolis
       else
         vector_tmp = this%velocity_dx%d_dx(1)
       end if
@@ -1000,8 +1000,6 @@ contains
       st = en + 1
       en = st + this%salinity_size - 1
       L(st:en) = scalar_tmp%raw()
-!      print*,'----------------------------L-----------------------------------'
-!      print*,L
     end function L
 
     subroutine non_diff_terms(D, Uvec, T, S, b, DU_x, DUU_x, DUT_x, DUS_x)
@@ -1180,11 +1178,10 @@ contains
         !! If true, return Jacobian product, otherwise return result
         !! of nonlienar operator.
 
-      integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
-      type(cheb1d_scalar_field) :: scalar_tmp(1), D_x, D_nd, S_nd, T_nd
+      integer :: st, en
+      type(cheb1d_scalar_field) :: scalar_tmp, D_x, D_nd, S_nd, T_nd
       type(cheb1d_vector_field) :: vector_tmp, U_nd
-      class(scalar_field), pointer :: U, U_x, rho, rho_a, rho_x
-      class(vector_field), pointer :: coriolis
+      class(scalar_field), pointer :: U, U_x
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &
@@ -1194,35 +1191,29 @@ contains
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
                 mu => this%mu, r => this%r_val, bounds => this%boundaries)
 
-        ! The U_nd term won't be calculated, so just pass any old field
         call non_diff_terms(D, Uvec, T, S, b, D_nd, U_nd, T_nd, S_nd)
 
         ! FIXME: Alter this so that can take advantage of
         ! parameterisations returning uniform fields.
         U => this%velocity%component(1)
         U_x => this%velocity_dx%component(1)
-        rho => this%eos%water_density(T, S)
-        rho_a => this%eos%water_density(this%ambient_conds%ambient_temperature(b,time), &
-                                       this%ambient_conds%ambient_salinity(b,time))
-        rho_x => this%eos%water_density_derivative(T, T_x, S, S_x, 1)
-        call U%guard_temp(); call U_x%guard_temp(); call rho%guard_temp()
-        call rho_a%guard_temp(); call rho_x%guard_temp()
+        call U%guard_temp(); call U_x%guard_temp()
 
         ! Thickness
-        scalar_tmp(1) = (D_nd - D*U_x)/U
-        D_x = scalar_tmp(1)
+        scalar_tmp = (D_nd - D*U_x)/U
+        D_x = scalar_tmp
         if (this%lower_bounds(1)) then
-          call scalar_tmp(1)%set_boundary(-1, 1, bounds%thickness_bound(-1))
+          call scalar_tmp%set_boundary(-1, 1, bounds%thickness_bound(-1))
         end if
         if (this%upper_bounds(1)) then
-          call scalar_tmp(1)%set_boundary(1, 1, bounds%thickness_bound(1))
+          call scalar_tmp%set_boundary(1, 1, bounds%thickness_bound(1))
         end if
         st = 1
         en = st + this%thickness_size - 1
         if (deriv) then
-          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+          scalar_tmp = scalar_tmp%get_derivative()
         end if
-        f(st:en) = scalar_tmp(1)%raw()
+        f(st:en) = scalar_tmp%raw()
       
         ! Velocity
         vector_tmp = 0._r8 * Uvec
@@ -1239,9 +1230,6 @@ contains
         end if
         f(st:en) = vector_tmp%raw()
 
-!        scalar_tmp(1) = D*(rho_a - rho)*(b%d_dx(1,1) - delta*D%d_dx(1,1)) - &
-!             0.5_r8*this%delta*D**2*rho_x
-!        U_nd = scalar_tmp
         vector_tmp = D*U*Uvec_x !Needed due to compiler bug
         vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - U_nd - &
                       nu*D_x*Uvec_x)/(nu*D)
@@ -1259,65 +1247,64 @@ contains
         f(st:en) = vector_tmp%raw()
 
         ! Temperature
-        scalar_tmp(1) = uniform_scalar_field(0._r8)
+        scalar_tmp = uniform_scalar_field(0._r8)
         if (this%lower_bounds(4)) then
-          call scalar_tmp(1)%set_boundary(-1, 1, bounds%temperature_bound(-1))
+          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
         end if
         if (this%upper_bounds(4)) then
-          call scalar_tmp(1)%set_boundary(1, 1, bounds%temperature_bound(1))
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%temperature_size - 1
         if (deriv) then
-          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+          scalar_tmp = scalar_tmp%get_derivative()
         end if
-        f(st:en) = scalar_tmp(1)%raw()
+        f(st:en) = scalar_tmp%raw()
 
-        scalar_tmp(1) = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
+        scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
         if (this%lower_bounds(5)) then
-          call scalar_tmp(1)%set_boundary(-1, 1, bounds%temperature_bound(-1))
+          call scalar_tmp%set_boundary(-1, 1, bounds%temperature_bound(-1))
         end if
         if (this%upper_bounds(5)) then
-          call scalar_tmp(1)%set_boundary(1, 1, bounds%temperature_bound(1))
+          call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         if (deriv) then
-          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+          scalar_tmp = scalar_tmp%get_derivative()
         end if
-        f(st:en) = scalar_tmp(1)%raw()
+        f(st:en) = scalar_tmp%raw()
 
         ! Salinity
-        scalar_tmp(1) = uniform_scalar_field(0._r8)
+        scalar_tmp = uniform_scalar_field(0._r8)
         if (this%lower_bounds(6)) then
-          call scalar_tmp(1)%set_boundary(-1, 1, bounds%salinity_bound(-1))
+          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
         end if
         if (this%upper_bounds(6)) then
-          call scalar_tmp(1)%set_boundary(1, 1, bounds%salinity_bound(1))
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         if (deriv) then
-          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+          scalar_tmp = scalar_tmp%get_derivative()
         end if
-        f(st:en) = scalar_tmp(1)%raw()
+        f(st:en) = scalar_tmp%raw()
 
-        scalar_tmp(1) = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
+        scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
         if (this%lower_bounds(7)) then
-          call scalar_tmp(1)%set_boundary(-1, 1, bounds%salinity_bound(-1))
+          call scalar_tmp%set_boundary(-1, 1, bounds%salinity_bound(-1))
         end if
         if (this%upper_bounds(7)) then
-          call scalar_tmp(1)%set_boundary(1, 1, bounds%salinity_bound(1))
+          call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(1))
         end if
         st = en + 1
         en = st + this%salinity_size - 1
         if (deriv) then
-          scalar_tmp(1) = scalar_tmp(1)%get_derivative()
+          scalar_tmp = scalar_tmp%get_derivative()
         end if
-        f(st:en) = scalar_tmp(1)%raw()
+        f(st:en) = scalar_tmp%raw()
 
-        call U%clean_temp(); call U_x%clean_temp(); call rho%clean_temp()
-        call rho_a%clean_temp(); call rho_x%clean_temp()
+        call U%clean_temp(); call U_x%clean_temp()
       end associate
     end subroutine nonlinear
 
@@ -1349,8 +1336,6 @@ contains
       type(cheb1d_scalar_field) :: scalar_tmp
       type(cheb1d_vector_field) :: vector_tmp
       class(scalar_field), pointer :: U, U_x
-!      print*,'---------------------------P^-1---------------------------------'
-!      print*,v
 
       v_plume%thickness_size = this%thickness_size
       call v_plume%thickness%assign_meta_data(this%thickness)
