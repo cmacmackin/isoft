@@ -156,6 +156,7 @@ module coriolis_block_mod
       !! Column scale factors from equilibrating the bound_matrix
     character(len=1)         :: equed
       !! The method used to equilibrate bound_matrix
+    integer :: int
   contains
     private
     procedure, public :: solve_for
@@ -169,7 +170,8 @@ module coriolis_block_mod
 
 contains
 
-  function constructor(phi, nu, velbound, dvelbound, template) result(this)
+  function constructor(phi, nu, velbound, dvelbound, integrate_bound, template) &
+       result(this)
     !* Author: Chris MacMackin
     !  Date: January 2018
     !
@@ -188,6 +190,10 @@ contains
     integer, intent(in)               :: dvelbound
       !! Location code for the velocity's boundary condition. 1
       !! indicates upper boundary, -1 indicates lower boundary.
+    integer, intent(in)               :: integrate_bound
+      !! Location code for the boundary to perform integrations
+      !! from. This should be the opposite boundary from where
+      !! boundary data is stored.
     class(abstract_field), intent(in) :: template
       !! A scalar field with the same grid as any fields passed as
       !! arguments to the [[pseudospec_block(type):solve_for]] method.
@@ -225,11 +231,7 @@ contains
                         'Only boundary location codes 1 or -1 are accepted.')
       error stop
     end if
-    if (velbound == 1 .and. dvelbound == 1) then
-      this%integrate_bound = 1
-    else
-      this%integrate_bound = -1
-    end if
+    this%integrate_bound = integrate_bound
     xvals = cheb1d_scalar_field(template%elements(), linear, domain(1,1), &
                                 domain(1,2))
     ! Compute the diagonal elements of \(\bm{B}\)
@@ -349,32 +351,32 @@ contains
     F(3) = velocity_dx%component(1)
     F(4) = velocity_dx%component(2)
     ! Get boundary values
-    tmp = F(1)%get_boundary(this%vel_bound_loc, 1)
+    tmp = F(1)%get_boundary(this%integrate_bound, 1)
     rtmp = tmp%raw()
     bound_vals(1) = rtmp(1)
-    tmp = F(2)%get_boundary(this%vel_bound_loc, 1)
+    tmp = F(2)%get_boundary(this%integrate_bound, 1)
     rtmp = tmp%raw()
     bound_vals(2) = rtmp(1)
-    tmp = F(3)%get_boundary(this%dvel_bound_loc, 1)
+    tmp = F(3)%get_boundary(this%integrate_bound, 1)
     rtmp = tmp%raw()
     bound_vals(3) = rtmp(1)
-    tmp = F(4)%get_boundary(this%dvel_bound_loc, 1)
+    tmp = F(4)%get_boundary(this%integrate_bound, 1)
     rtmp = tmp%raw()
     bound_vals(4) = rtmp(1)
     ! If have boundary conditions at both boundaries, correct the
     ! input fields
-    if (this%vel_bound_loc /= this%integrate_bound) then
-      F(1) = this%integrator%solve_for(F(1), this%vel_bound_loc, zero)
-      F(1) = F(1)%d_dx(1)
-      F(2) = this%integrator%solve_for(F(2), this%vel_bound_loc, zero)
-      F(2) = F(2)%d_dx(1)
-    end if
-    if (this%dvel_bound_loc /= this%integrate_bound) then
-      F(3) = this%integrator%solve_for(F(3), this%dvel_bound_loc, zero)
-      F(3) = F(3)%d_dx(1)
-      F(4) = this%integrator%solve_for(F(4), this%dvel_bound_loc, zero)
-      F(4) = F(4)%d_dx(1)
-    end if
+!    if (this%vel_bound_loc /= this%integrate_bound) then
+!      F(1) = this%integrator%solve_for(F(1), this%vel_bound_loc, zero)
+!      F(1) = F(1)%d_dx(1)
+!      F(2) = this%integrator%solve_for(F(2), this%vel_bound_loc, zero)
+!      F(2) = F(2)%d_dx(1)
+!    end if
+!    if (this%dvel_bound_loc /= this%integrate_bound) then
+!      F(3) = this%integrator%solve_for(F(3), this%dvel_bound_loc, zero)
+!      F(3) = F(3)%d_dx(1)
+!      F(4) = this%integrator%solve_for(F(4), this%dvel_bound_loc, zero)
+!      F(4) = F(4)%d_dx(1)
+!    end if
     ! Calculate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\), aliasing variables
     ! which are not needed yet
     associate (emDxVinvF_r => eDxC_r, emDxVinvF_i => eDxC_i, &
@@ -387,13 +389,14 @@ contains
       ! Integrate \(e^{-\bm{D}x}\bm{V}^{-1}\bm{F}\) to get \(\bm{C}\)
       C_r = [(this%integrator%solve_for(emDxVinvF_r(i), this%integrate_bound, &
               zero), i=1,4)]
+      emDxVinvF_r(1) = C_r(4)%d_dx(1)
       C_i = [(this%integrator%solve_for(emDxVinvF_i(i), this%integrate_bound, &
               zero), i=1,4)]
       ! Get the values of \(e^{\bm{D}x}\bm{C}\) at the upper boundary
       do i=1,4
-        tmp = C_r(i)%get_boundary(1, 1)
+        tmp = C_r(i)%get_boundary(-this%integrate_bound, 1)
         rtmp = tmp%raw()
-        tmp = C_i(i)%get_boundary(1, 1)
+        tmp = C_i(i)%get_boundary(-this%integrate_bound, 1)
         ctmp = tmp%raw()
         C_bounds(i) = cmplx(rtmp(1), ctmp(1), r8)
       end do
@@ -421,6 +424,9 @@ contains
     call la_gesvx(this%bound_matrix_scaled, rhs, B, this%factored_matrix, &
                   this%pivots, 'F', trans, this%equed, this%r_scales,     &
                   this%c_scales, info=i)
+!print*,this%D_r
+!print*,this%D_i
+!print*,B
     ! Calculate \(\bm{E} = e^{\bm{D}x}\bm{B} + e^{\bm{D}x}\bm{C}\)
     E_r = [(this%eDx_r(i)*real(B(i)) - this%eDx_i(i)*aimag(B(i)) + &
             eDxC_r(i), i=1,4)]
