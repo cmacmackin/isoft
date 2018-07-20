@@ -86,11 +86,13 @@ contains
 
     block1 = pseudospec_block(this%scal)
 
+    actual_scal = this%scal%d_dx(1)
     actual_scal = block1%solve_for(this%scal_dx, bound, this%scal%get_boundary(bound,depth))
     @assertEqual(this%scal%raw(),actual_scal%raw(),tolerance=1.e-9_r8,message='Pseudospec block returns wrong sol.')
     actual_scal = actual_scal%d_dx(1)
     @assertEqual(this%scal_dx%raw(),actual_scal%raw(),tolerance=1e-9_r8,message='Pseudospec block returns wrong sol.')
 
+    actual_vec = this%vec%d_dx(1)
     actual_vec = block1%solve_for(this%vec_dx, bound, this%vec%get_boundary(bound,depth))
     @assertEqual(this%vec%raw(),actual_vec%raw(),tolerance=1.e-9_r8,message='Pseudospec block returns wrong sol.')
     actual_vec = actual_vec%d_dx(1)
@@ -107,11 +109,13 @@ contains
 
     block2 = pseudospec_block(this%scal)
 
+    actual_scal = this%scal%d_dx(1)
     actual_scal = block2%solve_for(this%scal_dx, bound, this%scal%get_boundary(bound,depth))
     @assertEqual(this%scal%raw(),actual_scal%raw(),tolerance=1.e-9_r8,message='Pseudospec block returns wrong sol.')
     actual_scal = actual_scal%d_dx(1)
     @assertEqual(this%scal_dx%raw(),actual_scal%raw(),tolerance=1e-9_r8,message='Pseudospec block returns wrong sol.')
 
+    actual_vec = this%vec%d_dx(1)
     actual_vec = block2%solve_for(this%vec_dx, bound, this%vec%get_boundary(bound, depth))
     @assertEqual(this%vec%raw(),actual_vec%raw(),tolerance=1.e-9_r8,message='Pseudospec block returns wrong sol.')
     actual_vec = actual_vec%d_dx(1)
