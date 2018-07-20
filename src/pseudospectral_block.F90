@@ -89,7 +89,7 @@ contains
   end function constructor
 
   function pseudospec_block_solve_scalar(this, rhs, bound_loc, bound_val, &
-                                         estimate_high) result(solution)
+                                         good_bound) result(solution)
     !* Author: Chris MacMackin
     !  Date: September 2017
     !
@@ -109,10 +109,10 @@ contains
       !! positive, then the upper boundary is returned.
     class(scalar_field), intent(in)        :: bound_val
       !! The value of the result at the specified boundary.
-    logical, intent(in), optional          :: estimate_high
-      !! Estimate the power of the highest mode rather than calculate
-      !! it from boundary values. Useful if the boundary values are
-      !! not trusted. Defaults to `.false.`.
+    integer, intent(in), optional          :: good_bound
+      !! If provided, indicates which boundary contains trusted
+      !! information from which to calculate the power of the highest
+      !! frequency mode. Defaults to the opposite of `bound_loc`.
     class(scalar_field), pointer           :: solution
 
     real(r8), dimension(:), allocatable :: sol_vector, bound_vec
@@ -134,9 +134,9 @@ contains
     sol_vector = rhs%raw()
     if (valid_bound) then
       bound_vec = bound_val%raw()
-      call integrate_1d(sol_vector, this%xvals, bloc, bound_vec(1), estimate_high)
+      call integrate_1d(sol_vector, this%xvals, bloc, bound_vec(1), good_bound)
     else
-      call integrate_1d(sol_vector, this%xvals, estimate_high=estimate_high)
+      call integrate_1d(sol_vector, this%xvals, good_bound=good_bound)
     end if
 #ifdef DEBUG
     call logger%debug('pseudospec_block%solve_for', &
@@ -150,8 +150,8 @@ contains
     call solution%set_temp()
   end function pseudospec_block_solve_scalar
 
-  function pseudospec_block_solve_vector(this, rhs, bound_loc, bound_val) &
-       result(solution)
+  function pseudospec_block_solve_vector(this, rhs, bound_loc, bound_val, &
+                                         good_bound) result(solution)
     !* Author: Chris MacMackin
     !  Date: September 2017
     !
@@ -176,6 +176,10 @@ contains
       !! positive, then the upper boundary is returned.
     class(vector_field), intent(in)        :: bound_val
       !! The value of the result at the specified boundary.
+    integer, intent(in), optional          :: good_bound
+      !! If provided, indicates which boundary contains trusted
+      !! information from which to calculate the power of the highest
+      !! frequency mode. Defaults to the opposite of `bound_loc`.
     class(vector_field), pointer           :: solution
 
     real(r8), dimension(:), allocatable :: sol_vector, bound_vec
@@ -203,9 +207,11 @@ contains
       bcomponent = bound_val%component(i)
       if (valid_bound) then
         bound_vec = bcomponent%raw()
-        call integrate_1d(sol_vector((i-1)*n+1:i*n), this%xvals, bloc, bound_vec(1))
+        call integrate_1d(sol_vector((i-1)*n+1:i*n), this%xvals, &
+                          bloc, bound_vec(1), good_bound)
       else
-        call integrate_1d(sol_vector((i-1)*n+1:i*n), this%xvals)
+        call integrate_1d(sol_vector((i-1)*n+1:i*n), this%xvals, &
+                          good_bound=good_bound)
       end if
     end do
     call bcomponent%clean_temp()
