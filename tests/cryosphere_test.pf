@@ -274,7 +274,7 @@ contains
     @assertEqual(expected,actual,message='Cryosphere incorrectly read HDF data',tolerance=tol)
     call this%cryo%integrate(time)
     actual = this%cryo%state_vector()
-    @assertEqual(integrated,actual,message='Cryosphere did not update to HDF simulation time',tolerance=1e-7_r8)
+    @assertEqual(integrated,actual,message='Cryosphere did not update to HDF simulation time',tolerance=2e-7_r8)
     call execute_command_line('rm -f '//test_file)
     call h5close_f(herr)
   end subroutine test_io

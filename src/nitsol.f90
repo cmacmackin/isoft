@@ -539,6 +539,243 @@ module nitsol_mod
         !!:    Dangerous ill-conditioning detected before an acceptable 
         !!     step has been found.
     end subroutine nitgm2
+
+    subroutine nittfq2 (n, xcur, fcur, step, eta, f, jacv, rpar ,ipar, &
+                        ijacv, irpre, iksmax, ifdord, nfe, njve,       &
+                        nrpre, nli, r ,rcgs, rtil, d, p, q, u, v, y,   &
+                        rwork1, rwork2, rsnrm, dinpr ,dnorm, itrmks )
+      !* Author: Chris MacMackin
+      !  Date: July 2018
+      !
+      ! An interface to my modified versino of the
+      ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+      ! implementation of the transpose-free quasi-minimal residual
+      ! method
+      ! ([TFQMR](https://epubs.siam.org/doi/pdf/10.1137/0914029)) for
+      ! iteratively solving linear systems. It has been modified so
+      ! that the user provides a non-zero initial guess of the
+      ! solution.
+      !
+      import :: r8
+      implicit none
+      integer, intent(in)                            :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)             :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)             :: fcur
+        !! Array of length `n` containing current approximate solution
+      real(r8), dimension(n), intent(inout)          :: step
+        !! Vector of of length `n` containing trial step
+      real(r8), intent(in)                           :: eta
+        !! Relative residual reduction factor
+      procedure(f_intr)                              :: f
+        !! User-supplied subroutine for evaluating the function
+        !! the zero of which is sought.
+      procedure(jacv_intr)                           :: jacv
+        !! User-supplied subroutine for optionally evaluating
+        !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+        !! of \(f\) and \(P\) is a right preconditioning operator. If
+        !! neither analytic \(J\vec{v}\) evaluations nor right
+        !! preconditioning is used, this can be a dummy subroutine;
+        !! if right preconditioning is used but not analytic
+        !! \(J\vec{v}\) evaluations, this need only evaluate
+        !! \(P^{-1}\vec{v}\).
+      real(r8), dimension(*), intent(inout)          :: rpar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, dimension(*), intent(inout)           :: ipar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, intent(in)                            :: ijacv
+        !! Flag for determining method of \(J\vec{v}\) evaluation. 0
+        !! (default) indicates finite-difference evaluation, while 1
+        !! indicates analytic evaluation.
+      integer, intent(in)                            :: irpre
+        !! Flag for right preconditioning. 0 indicates no
+        !! preconditioning, while 1 inidcates right preconditioning.
+      integer, intent(in)                            :: iksmax
+        !! Maximum allowable number of TFQMR iterations
+      integer, intent(in)                            :: ifdord
+        !! Order of the finite-difference formula used in TFQMR
+        !! when J*v products are evaluated using finite-differences. 
+        !! When ijacv = 0 on input to nitsol, ifdord is set to 1, 2, or 
+        !! 4 in nitsol; otherwise, it is irrelevant. When ijacv = 0 on 
+        !! input to this subroutine, ifdord determines the order of the 
+        !! finite-difference formula used at each TFQMR iteration 
+        !! (default 1). In this case, ijacv is set to -1 below to 
+        !! signal to nitjv that the order of the finite-difference 
+        !! formula is to be determined by ifdord. The original value 
+        !! ijacv = 0 is restored on return.
+      integer, intent(inout)                         :: nfe
+        !! Number of function evaluations
+      integer, intent(inout)                         :: njve
+        !! Number of \(J\vec{v}\) evaluations
+      integer, intent(inout)                         :: nrpre
+        !! Number of \(P^{-1}\vec{v}\) evaluations
+      integer, intent(inout)                         :: nli
+        !! Number of linear iterations
+      real(r8), dimension(n), intent(out)            :: r
+        !! Residual vector (for the QMR process)
+      real(r8), dimension(n), intent(out)            :: rcgs
+        !! Residual vector (of the underlying CGS process)
+      real(r8), dimension(n), intent(out)            :: rtil
+        !! 'Shadow' residual vector used in bi-orthogonalization
+      real(r8), dimension(n), intent(out)            :: d
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: p
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: q
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: u
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: v
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: y
+        !! Vector used in TFQMR
+      real(r8), dimension(n), intent(out)            :: rwork1
+        !! Work vector, passed on to nitjv
+      real(r8), dimension(n), intent(out)            :: rwork2
+        !! Work vector, passed on to nitjv
+      real(r8), intent(out)                          :: rsnrm
+        !! TFQMR residual norm on return
+      procedure(dinpr_intr)                          :: dinpr
+        !! Inner-product routine, either user-supplied or BLAS `ddot`.
+      procedure(dnorm_intr)                          :: dnorm
+        !! Norm routine, either user supplied or BLAS dnrm2.
+      integer, intent(out)                           :: itrmks
+        !! Termination flag. Values have the following meanings:
+        !!
+        !!0
+        !!:    normal termination: acceptable step found
+        !!
+        !!1
+        !!:    \(J\vec{v}\)  failure in `nitjv`
+        !!
+        !!2
+        !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+        !!
+        !!3
+        !!:    Acceptable step not found in `iksmax` TFQMR iterations
+        !!
+        !!4
+        !!:    TFQMR breakdown
+        !!
+        !!5
+        !!:    Floating point error (the underlying CGS iteration
+        !!     has probably blown up)
+    end subroutine nittfq2
+
+    subroutine nitstb2 (n, xcur, fcur, step, eta, f, jacv, rpar, ipar, &
+                        ijacv, irpre, iksmax, ifdord, nfe, njve,       &
+                        nrpre, nli, r, rtil, p, phat, v, t, rwork1,    &
+                        rwork2, rsnrm, dinpr, dnorm, itrmks)
+      
+      !* Author: Chris MacMackin
+      !  Date: July 2018
+      !
+      ! An interface to my modified versino of the
+      ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+      ! implementation of the biconjugate gradient stabilized method
+      ! ([BiCGSTAB](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method))
+      ! for iteratively solving linear systems. It has been modified
+      ! so that the user provides a non-zero initial guess of the
+      ! solution.
+      !
+      import :: r8
+      implicit none
+      integer, intent(in)                            :: n
+        !! Dimension of the problem
+      real(r8), dimension(n), intent(in)             :: xcur
+        !! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)             :: fcur
+        !! Array of length `n` containing current approximate solution
+      real(r8), dimension(n), intent(inout)          :: step
+        !! Vector of of length `n` containing trial step
+      real(r8), intent(in)                           :: eta
+        !! Relative residual reduction factor
+      procedure(f_intr)                              :: f
+        !! User-supplied subroutine for evaluating the function
+        !! the zero of which is sought.
+      procedure(jacv_intr)                           :: jacv
+        !! User-supplied subroutine for optionally evaluating
+        !! \(J\vec{v}\) or \(P^{-1}\vec{v}\), where \(J\) is the Jacobian
+        !! of \(f\) and \(P\) is a right preconditioning operator. If
+        !! neither analytic \(J\vec{v}\) evaluations nor right
+        !! preconditioning is used, this can be a dummy subroutine;
+        !! if right preconditioning is used but not analytic
+        !! \(J\vec{v}\) evaluations, this need only evaluate
+        !! \(P^{-1}\vec{v}\).
+      real(r8), dimension(*), intent(inout)          :: rpar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, dimension(*), intent(inout)           :: ipar
+        !! Parameter/work array passed to the `f` and `jacv` routines
+      integer, intent(in)                            :: ijacv
+        !! Flag for determining method of \(J\vec{v}\) evaluation. 0
+        !! (default) indicates finite-difference evaluation, while 1
+        !! indicates analytic evaluation.
+      integer, intent(in)                            :: irpre
+        !! Flag for right preconditioning. 0 indicates no
+        !! preconditioning, while 1 inidcates right preconditioning.
+      integer, intent(in)                            :: iksmax
+        !! Maximum allowable number of BiCGSTAB iterations
+      integer, intent(in)                            :: ifdord
+        !! Order of the finite-difference formula used in BiCGSTAB 
+        !! when J*v products are evaluated using finite-differences. 
+        !! When ijacv = 0 on input to nitsol, ifdord is set to 1, 2, or 
+        !! 4 in nitsol; otherwise, it is irrelevant. When ijacv = 0 on 
+        !! input to this subroutine, ifdord determines the order of the 
+        !! finite-difference formula used at each BiCGSTAB iteration 
+        !! (default 1). In this case, ijacv is set to -1 below to 
+        !! signal to nitjv that the order of the finite-difference 
+        !! formula is to be determined by ifdord. The original value 
+        !! ijacv = 0 is restored on return.
+      integer, intent(inout)                         :: nfe
+        !! Number of function evaluations
+      integer, intent(inout)                         :: njve
+        !! Number of \(J\vec{v}\) evaluations
+      integer, intent(inout)                         :: nrpre
+        !! Number of \(P^{-1}\vec{v}\) evaluations
+      integer, intent(inout)                         :: nli
+        !! Number of linear iterations
+      real(r8), dimension(n), intent(out)            :: r
+        !! Residual vector
+      real(r8), dimension(n), intent(out)            :: rtil
+        !! \(\tilde{r}\) vector used in BiCGSTAB
+      real(r8), dimension(n), intent(out)            :: p
+        !! Vector used in BiCGSTAB
+      real(r8), dimension(n), intent(out)            :: phat
+        !! Vector used in BiCGSTAB
+      real(r8), dimension(n), intent(out)            :: v
+        !! Vector used in BiCGSTAB
+      real(r8), dimension(n), intent(out)            :: t
+        !! Vector used in BiCGSTAB
+      real(r8), dimension(n), intent(out)            :: rwork1
+        !! Work vector, passed on to nitjv
+      real(r8), dimension(n), intent(out)            :: rwork2
+        !! Work vector, passed on to nitjv
+      real(r8), intent(out)                          :: rsnrm
+        !! BiCGSTAB residual norm on return
+      procedure(dinpr_intr)                          :: dinpr
+        !! Inner-product routine, either user-supplied or BLAS `ddot`.
+      procedure(dnorm_intr)                          :: dnorm
+        !! Norm routine, either user supplied or BLAS dnrm2.
+      integer, intent(out)                           :: itrmks
+        !! Termination flag. Values have the following meanings:
+        !!
+        !!0
+        !!:    normal termination: acceptable step found
+        !!
+        !!1
+        !!:    \(J\vec{v}\)  failure in `nitjv`
+        !!
+        !!2
+        !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+        !!
+        !!3
+        !!:    Acceptable step not found in `iksmax` BiCGSTAB iterations
+        !!
+        !!4
+        !!:    BiCGSTAB breakdown
+    end subroutine nitstb2
+
   end interface
 
 
@@ -845,6 +1082,391 @@ contains
     end subroutine jacv
 
   end subroutine  gmres_solve
+
+
+  subroutine tfqmr_solve(solution, lhs, rhs, resid_norm, flag, nlhs, nrpre, &
+                         nli, tol, precond, rpar, ipar, resid_update,       &
+                         iter_max, krylov_dim, inner_prod, norm)
+    !* Author: Chris MacMackin
+    !  Date: March 2017
+    !
+    ! A wraper for the
+    ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+    ! implementation of the transpose-free quasi-minimal residual method
+    ! ([TFQMR](https://epubs.siam.org/doi/pdf/10.1137/0914029))
+    ! for iteratively solving linear systems. This provides a more
+    ! general interface not specifically intended for use with Newton
+    ! iteration. It also uses Fortran 90 features to provide a more
+    ! convenient call signature.
+    !
+    real(r8), dimension(:), intent(inout)           :: solution
+      !! On input, an initial guess of the solution to the linear
+      !! system. On output, the iteratively determined solution.
+    procedure(mat_mult)                             :: lhs
+      !! The linear operator on the left hand side of the linear
+      !! system.
+    real(r8), dimension(:), intent(in)              :: rhs
+      !! The right hand side of the linear system being solved
+    real(r8), intent(out)                           :: resid_norm
+      !! TFQMR residual norm on return
+    integer, intent(out)                            :: flag
+      !! Termination flag. Values have the following meanings:
+      !!
+      !!0
+      !!:    normal termination: acceptable step found
+      !!
+      !!1
+      !!:    \(J\vec{v}\)  failure in `nitjv`
+      !!
+      !!2
+      !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+      !!
+      !!3
+      !!:    Acceptable step not found in `iksmax` TFQMR iterations
+      !!
+      !!4
+      !!:    TFQMR breakdown
+      !!
+      !!5
+      !!:    Floating point error (the underlying CGS iteration
+      !!     has probably blown up)
+    real(r8), intent(in), optional                  :: tol
+      !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
+    integer, intent(out), optional                  :: nlhs
+        !! Number of evaluations of the left hand side of the system
+    integer, intent(out), optional                  :: nrpre
+        !! Number of evaluations of the right-preconditioner
+    integer, intent(out), optional                  :: nli
+        !! Number of iterations
+    procedure(mat_mult), optional                   :: precond
+      !! A right-preconditioner which may be used to improve
+      !! convergence of the solution.
+    real(r8), dimension(*), intent(inout), optional :: rpar
+      !! Parameter/work array passed to the `lhs` and `precond` routines.
+    integer, dimension(*), intent(inout), optional  :: ipar
+      !! Parameter/work array passed to the `lhs` and `precond` routines
+    integer, intent(in), optional                   :: resid_update
+      !! Residual update flag. On GMRES restarts, the residual can
+      !! be updated using a linear combination (`iresup == 0`) or by
+      !! direct evaluation (`iresup == 1`). The first is cheap (one
+      !! n-vector saxpy) but may lose accuracy with extreme residual
+      !! reduction; the second retains accuracy better but costs one
+      !! \(J\vec{v}\) product. Meaningless in this routine, but kept
+      !! for consistent interface.
+    integer, intent(in), optional                   :: iter_max
+      !! Maximum allowable number of TFQMR iterations. Default is
+      !! 1000.
+    integer, intent(in), optional                   :: krylov_dim
+      !! Maximum Krylov subspace dimension; default 10.    
+    procedure(dinpr_intr), optional                 :: inner_prod
+      !! Inner-product routine, either user-supplied or BLAS `ddot`.
+    procedure(dnorm_intr), optional                 :: norm
+      !! Norm routine, either user supplied or BLAS dnrm2.
+    
+    integer  :: npoints, preflag, resup, itmax, kdim, nfe, lnlhs, lnrpre, lnli
+    real(r8) :: eta
+    procedure(dinpr_intr), pointer :: dinpr
+    procedure(dnorm_intr), pointer :: dnorm
+    real(r8), dimension(:), allocatable, save :: xcur
+    real(r8), dimension(:,:), allocatable, save :: workers
+
+    lnlhs  = 0
+    lnrpre = 0
+    lnli   = 0
+
+    npoints = size(solution)
+    if (present(precond)) then
+       preflag = 1
+    else
+       preflag = 0
+    end if
+    if (present(tol)) then
+      eta = tol
+    else
+      eta = 1.e-8_r8 * npoints
+    end if
+    if (present(resid_update)) then
+      resup = resid_update
+    else
+      resup = 0
+    end if
+    if (present(iter_max)) then
+      itmax = iter_max
+    else
+      itmax = 1000
+    end if
+    if (present(krylov_dim)) then
+      kdim = krylov_dim
+    else
+      kdim = 10
+    end if
+    if (present(inner_prod)) then
+      dinpr => inner_prod
+    else
+      dinpr => ddot
+    end if
+    if (present(norm)) then
+      dnorm => norm
+    else
+      dnorm => dnrm2
+    end if
+
+    xcur = solution
+
+    if (allocated(workers)) then
+      if (size(workers,1) /= npoints) then
+        deallocate(workers)
+        allocate(workers(npoints, 11))
+      end if
+    else
+        allocate(workers(npoints, 11))
+    end if
+
+    call nittfq2(npoints, xcur, -rhs, solution, eta, dummy_f, jacv,    &
+                 rpar, ipar, 1, preflag, itmax, 1, nfe, lnlhs, lnrpre, &
+                 lnli, workers(:,1), workers(:,2), workers(:,3),       &
+                 workers(:,4), workers(:,5), workers(:,6),             &
+                 workers(:,6), workers(:,8), workers(:,9),             &
+                 workers(:,10), workers(:,11), resid_norm, dinpr,      &
+                 dnorm, flag)
+
+    if (present(nlhs))  nlhs  = lnlhs
+    if (present(nrpre)) nrpre = lnrpre
+    if (present(nli))   nli   = lnli
+
+  contains
+    
+    subroutine jacv(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! A wrapper on the user-provided routines for the linear
+      !! operator and preconditioner, to put them in the form NITSOL
+      !! expects.
+      !! 
+      integer, intent(in)                   :: n
+        ! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        ! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)    :: fcur
+        ! Array of length `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        ! Integer flag indicating which product is desired. 0
+        ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(n), intent(in)    :: v
+        ! An array of length `n` to be multiplied
+      real(r8), dimension(n), intent(out)   :: z
+        ! An array of length n containing the desired product on
+        ! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        ! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        ! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        ! Termination flag. 0 indcates normal termination, 1
+        ! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
+        ! failure to produce \(P^{-1}\vec{v}\)
+      logical :: success
+      itrmjv = 0
+      if (ijob == 0) then
+        z = lhs(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 1
+      else if (ijob == 1) then
+        z = precond(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 2
+      else
+        error stop ('`ijob` not equal to 0 or 1.')
+      end if
+    end subroutine jacv
+
+  end subroutine tfqmr_solve
+
+
+  subroutine bicgstab_solve(solution, lhs, rhs, resid_norm, flag, nlhs, nrpre, &
+                            nli, tol, precond, rpar, ipar, resid_update,       &
+                            iter_max, krylov_dim, inner_prod, norm)
+    !* Author: Chris MacMackin
+    !  Date: March 2017
+    !
+    ! A wraper for the
+    ! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)
+    ! implementation of the biconjugate gradient stabilized method
+    ! ([BiCGSTAB](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method))
+    ! for iteratively solving linear systems. This provides a more
+    ! general interface not specifically intended for use with Newton
+    ! iteration. It also uses Fortran 90 features to provide a more
+    ! convenient call signature.
+    !
+    real(r8), dimension(:), intent(inout)           :: solution
+      !! On input, an initial guess of the solution to the linear
+      !! system. On output, the iteratively determined solution.
+    procedure(mat_mult)                             :: lhs
+      !! The linear operator on the left hand side of the linear
+      !! system.
+    real(r8), dimension(:), intent(in)              :: rhs
+      !! The right hand side of the linear system being solved
+    real(r8), intent(out)                           :: resid_norm
+      !! BiCGSTAB residual norm on return
+    integer, intent(out)                            :: flag
+      !! Termination flag. Values have the following meanings:
+      !!
+      !!0
+      !!:    normal termination: acceptable step found
+      !!
+      !!1
+      !!:    \(J\vec{v}\)  failure in `nitjv`
+      !!
+      !!2
+      !!:    \(P^{-1}\vec{v}\) failure in `nitjv`
+      !!
+      !!3
+      !!:    Acceptable step not found in `iksmax` BiCGSTAB iterations
+      !!
+      !!4
+      !!:    BiCGSTAB breakdown
+    real(r8), intent(in), optional                  :: tol
+      !! The tolerance for the solution. Default is `size(solution) * 1e-8`.
+    integer, intent(out), optional                  :: nlhs
+        !! Number of evaluations of the left hand side of the system
+    integer, intent(out), optional                  :: nrpre
+        !! Number of evaluations of the right-preconditioner
+    integer, intent(out), optional                  :: nli
+        !! Number of iterations
+    procedure(mat_mult), optional                   :: precond
+      !! A right-preconditioner which may be used to improve
+      !! convergence of the solution.
+    real(r8), dimension(*), intent(inout), optional :: rpar
+      !! Parameter/work array passed to the `lhs` and `precond` routines.
+    integer, dimension(*), intent(inout), optional  :: ipar
+      !! Parameter/work array passed to the `lhs` and `precond` routines
+    integer, intent(in), optional                   :: resid_update
+      !! Residual update flag. On GMRES restarts, the residual can be
+      !! updated using a linear combination (`iresup == 0`) or by
+      !! direct evaluation (`iresup == 1`). The first is cheap (one
+      !! n-vector saxpy) but may lose accuracy with extreme residual
+      !! reduction; the second retains accuracy better but costs one
+      !! \(J\vec{v}\) product. Meaningless in this routine, but kept
+      !! for consistent interface.
+    integer, intent(in), optional                   :: iter_max
+      !! Maximum allowable number of TFQMR iterations. Default is
+      !! 1000.
+    integer, intent(in), optional                   :: krylov_dim
+      !! Maximum Krylov subspace dimension; default 10.    
+    procedure(dinpr_intr), optional                 :: inner_prod
+      !! Inner-product routine, either user-supplied or BLAS `ddot`.
+    procedure(dnorm_intr), optional                 :: norm
+      !! Norm routine, either user supplied or BLAS dnrm2.
+    
+    integer  :: npoints, preflag, resup, itmax, kdim, nfe, lnlhs, lnrpre, lnli
+    real(r8) :: eta
+    procedure(dinpr_intr), pointer :: dinpr
+    procedure(dnorm_intr), pointer :: dnorm
+    real(r8), dimension(:), allocatable, save :: xcur
+    real(r8), dimension(:,:), allocatable, save :: workers
+
+    lnlhs  = 0
+    lnrpre = 0
+    lnli   = 0
+
+    npoints = size(solution)
+    if (present(precond)) then
+       preflag = 1
+    else
+       preflag = 0
+    end if
+    if (present(tol)) then
+      eta = tol
+    else
+      eta = 1.e-8_r8 * npoints
+    end if
+    if (present(resid_update)) then
+      resup = resid_update
+    else
+      resup = 0
+    end if
+    if (present(iter_max)) then
+      itmax = iter_max
+    else
+      itmax = 1000
+    end if
+    if (present(krylov_dim)) then
+      kdim = krylov_dim
+    else
+      kdim = 10
+    end if
+    if (present(inner_prod)) then
+      dinpr => inner_prod
+    else
+      dinpr => ddot
+    end if
+    if (present(norm)) then
+      dnorm => norm
+    else
+      dnorm => dnrm2
+    end if
+
+    xcur = solution
+
+    if (allocated(workers)) then
+      if (size(workers,1) /= npoints) then
+        deallocate(workers)
+        allocate(workers(npoints, 8))
+      end if
+    else
+        allocate(workers(npoints, 8))
+    end if
+
+    call nitstb2(npoints, xcur, -rhs, solution, eta, dummy_f, jacv,    &
+                 rpar, ipar, 1, preflag, itmax, 1, nfe, lnlhs, lnrpre, &
+                 lnli, workers(:,1), workers(:,2), workers(:,3),       &
+                 workers(:,4), workers(:,5), workers(:,6),             &
+                 workers(:,6), workers(:,8), resid_norm, dinpr,      &
+                 dnorm, flag)
+
+    if (present(nlhs))  nlhs  = lnlhs
+    if (present(nrpre)) nrpre = lnrpre
+    if (present(nli))   nli   = lnli
+
+  contains
+    
+    subroutine jacv(n, xcur, fcur, ijob, v, z, rpar, ipar, itrmjv)
+      !! A wrapper on the user-provided routines for the linear
+      !! operator and preconditioner, to put them in the form NITSOL
+      !! expects.
+      !! 
+      integer, intent(in)                   :: n
+        ! Dimension of the problem
+      real(r8), dimension(n), intent(in)    :: xcur
+        ! Array of length `n` containing the current \(x\) value
+      real(r8), dimension(n), intent(in)    :: fcur
+        ! Array of length `n` containing the current \(f(x)\) value
+      integer, intent(in)                   :: ijob
+        ! Integer flag indicating which product is desired. 0
+        ! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).
+      real(r8), dimension(n), intent(in)    :: v
+        ! An array of length `n` to be multiplied
+      real(r8), dimension(n), intent(out)   :: z
+        ! An array of length n containing the desired product on
+        ! output.
+      real(r8), dimension(*), intent(inout) :: rpar
+        ! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        ! Parameter/work array
+      integer, intent(out)                  :: itrmjv
+        ! Termination flag. 0 indcates normal termination, 1
+        ! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates
+        ! failure to produce \(P^{-1}\vec{v}\)
+      logical :: success
+      itrmjv = 0
+      if (ijob == 0) then
+        z = lhs(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 1
+      else if (ijob == 1) then
+        z = precond(v, xcur, fcur, rpar, ipar, success)
+        if (.not. success) itrmjv = 2
+      else
+        error stop ('`ijob` not equal to 0 or 1.')
+      end if
+    end subroutine jacv
+
+  end subroutine bicgstab_solve
 
 !  function scaled_norm(n, x, sx)
 !    !* Author: Chris MacMackin

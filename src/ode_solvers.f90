@@ -28,7 +28,7 @@ module ode_solvers_mod
   ! Provides routines to solve systems of ODEs.
   !
   use iso_fortran_env, only: r8 => real64
-  use nitsol_mod, only: gmres_solve, dnrm2, iplvl
+  use nitsol_mod, only: gmres_solve, dnrm2, iplvl, tfqmr_solve, bicgstab_solve
   use logger_mod, only: logger => master_logger
   use penf, only: str
   implicit none
@@ -278,13 +278,10 @@ contains
     resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
     init_resid = resid_norm
     old_resid = resid_norm * 1e3_r8
-!    print*, L(solution) - f_prev
 
-!iplvl=4
     do while(resid_norm > eta)
       call logger%trivia('quasilinear_solve','Nonlinear iteration '//str(i)//&
            ', with '//str(tnli)//'linear iterations, and residual '//str(resid_norm))
-      !print*, L(solution) - f_prev
       i = i + 1
       if (abs(old_resid - resid_norm)/resid_norm < 1e-2_r8) then
         stagnant_iters = stagnant_iters + 1
@@ -308,9 +305,10 @@ contains
       rhs = f_prev - jac_prod(u_prev, u_prev)
       gmres_eta = max(min(eta*10._r8**min(i+2,6),1e-4_r8),1e-10_r8)
       gmres_eta = gmres_eta * 10._r8**(-2*stagnant_iters)
+
       call gmres_solve(solution, lin_op, rhs, gmres_norm, gmres_flag, &
                        nlhs, nrpre, nli, gmres_eta, preconditioner,   &
-                       iter_max=gitmax, krylov_dim=kdim)
+                       resid_update=0, iter_max=gitmax, krylov_dim=kdim)
 
       tnlhs  = tnlhs  + nlhs
       tnrpre = tnrpre + nrpre
@@ -324,7 +322,7 @@ contains
       old_resid = resid_norm
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
 
-      if (gmres_flag /= 0 .and. resid_norm > old_resid) then
+      if (gmres_flag /= 0 .and. (resid_norm > 20*old_resid .or. any(isnan(solution)))) then
         if (present(info)) then
           info(1) = i + tnlhs + tnrpre
           info(2) = 2*i + tnlhs

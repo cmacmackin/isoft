@@ -1214,7 +1214,7 @@ contains
           scalar_tmp = scalar_tmp%get_derivative()
         end if
         f(st:en) = scalar_tmp%raw()
-      
+
         ! Velocity
         vector_tmp = 0._r8 * Uvec
         if (this%lower_bounds(2)) then

@@ -158,19 +158,19 @@ class ShelfPlumeCryosphere(object):
 
     @property
     def isoft_version(self):
-        return self.attrs['isoft_version']
+        return self.data.attrs['isoft_version']
 
     @property
     def compilation_time(self):
-        return self.attrs['binary_compilation_time']
+        return self.data.attrs['binary_compilation_time']
 
     @property
     def output_time(self):
-        return self.attrs['data_output_time']
+        return self.data.attrs['data_output_time']
 
     @property
     def time(self):
-        return self.attrs['simulation_time']
+        return self.data.attrs['simulation_time'][0]
 
     @property
     def grid(self):
