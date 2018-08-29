@@ -71,13 +71,84 @@ module asymmetric_plume_mod
   character(len=5),  parameter, public :: hdf_r = 'r_val'
   character(len=3),  parameter, public :: hdf_phi = 'phi'
 
+  type, public :: plume_shape
+    !* Author: Christopher MacMackin
+    !  Date: August 2018
+    !
+    ! A type containing the data necessary to specify the transverse
+    ! shape of the plume. All variables in the plume are assumed to be
+    ! seperable with the form \(D(x,y) = f_D(y)\hat{D}(x)\), \(U(x,y)
+    ! = f_U(y)\hat{U}(x)\), etc. The magnitude of the velocity does
+    ! not necessary take the form \(|\vec{U}| = \sqrt{U^2 + V^2}\) and
+    ! is treated as an independent seperable variable \(|\vec{U}| =
+    ! f_{|\vec{U}|}(y)\widehat{|\vec{U}|}(x)\). The transverse
+    ! functions \(f_{D}(y)\), \(f_U(y)\), etc. have all been
+    ! normalised over the integration width \(y_1\) to \(y_2\).
+    !
+    ! @Note that a number of variables are definied using the
+    ! averaging operator $$ \overline{A} = \frac{1}{y_2 - y_1}
+    ! \int^{y_2}_{y_1} A(y) dy. $$
+    ! 
+    real(r8) :: f_D = 1.0_r8
+      !! \(f_D(y_2)\)
+    real(r8) :: f_U = 1.0_r8
+      !! \(f_U(y_2)\)
+    real(r8) :: f_V = 1.0_r8
+      !! \(f_V(y_2)\)
+    real(r8) :: f_S = 1.0_r8
+      !! \(f_S(y_2)\)
+    real(r8) :: f_T = 1.0_r8
+      !! \(f_T(y_2)\)
+    real(r8) :: f_Up = 0.0_r8
+      !! \(df_U(y_2)/dy\)
+    real(r8) :: f_Vp = 0.0_r8
+      !! \(df_V(y_2)/dy\)
+    real(r8) :: f_Sp = 0.0_r8
+      !! \(df_S(y_2)/dy\)
+    real(r8) :: f_Tp = 0.0_r8
+      !! \(df_T(y_2)/dy\)
+    real(r8) :: a_DU = 1.0_r8
+      !! \(\alpha_{DU} = \overline{f_D f_U} \)
+    real(r8) :: a_DV = 1.0_r8
+      !! \(\alpha_{DV} = \overline{f_D f_V} \)
+    real(r8) :: a_DU2 = 1.0_r8
+      !! \(\alpha_{DU^2} = \overline{f_D f_U^2} \)
+    real(r8) :: a_DUV = 1.0_r8
+      !! \(\alpha_{DUV} = \overline{f_D f_U f_V} \)
+    real(r8) :: a_D2 = 1.0_r8
+      !! \(\alpha_{D^2} = \overline{f_D^2}\)
+    real(r8) :: a_UabsU = 1.0_r8
+      !! \(\alpha_{|\vec{U}|U} = \overline{f_{|\vec{U}|} f_U\)
+    real(r8) :: a_UabsV = 1.0_r8
+      !! \(\alpha_{|\vec{U}|V} = \overline{f_{|\vec{U}|} f_V\)
+    real(r8) :: a_DUS = 1.0_r8
+      !! \(\alpha_{DUS} = \overline{f_D f_U f_S} \)
+    real(r8) :: a_DUT = 1.0_r8
+      !! \(\alpha_{DUT} = \overline{f_D f_U f_T} \)
+    real(r8) :: a_UabsT = 1.0_r8
+      !! \(\alpha_{|\vec{U}|T} = \overline{f_{|\vec{U}|} f_T\)
+    real(r8) :: a_DS = 1.0_r8
+      !! \(\alpha_{DS} = \overline{f_D f_S} \)
+    real(r8) :: a_DT = 1.0_r8
+      !! \(\alpha_{DT} = \overline{f_D f_T} \)
+    real(r8) :: a_DS_t = 1.0_r8
+      !! \(\tilde{\alpha}_{DS} = \overline{f_D f_S}/\alpha_{D^2} \)
+    real(r8) :: a_DT_t = 1.0_r8
+      !! \(\tilde{\alpha}_{DT} = \overline{f_D f_T}/\alpha_{D^2} \)
+  end type plume_shape
+
   type, extends(basal_surface), public :: asym_plume
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
     ! A concrete implementation of the [[basal_surface(type)]]
     ! abstract data type, representing the buoyant plume beneath an
-    ! ice shelf, with some variation in the y-direction.
+    ! ice shelf, which has been horizontally integrated over width
+    ! \(\Delta y = y_2 - y_1\) in the y-direction. Transverse
+    ! variation is assumed to be seperable, with variables having the
+    ! form \(D(x,y) = f_D(y)\hat{D}(x)\), \(U(x,y) =
+    ! f_U(y)\hat{U}(x)\). The shape of the transverse functions are
+    ! described using the [[plume_shape(type)]] type.
     !
     private
     type(cheb1d_scalar_field) :: thickness
@@ -110,15 +181,21 @@ module asymmetric_plume_mod
       !! An object specifying the boundary conditions for the plume.
     real(r8)                  :: delta
       !! The dimensionless ratio \(\delta \equiv \frac{D_0}{h_0}\)
-    real(r8), public                  :: nu
+    real(r8), public          :: nu
       !! The dimensionless ratio \(\nu \equiv \frac{\kappa_0}{x_0U_o}\)
     real(r8)                  :: mu
       !! The dimensionless ratio \(\mu \equiv \frac{\C_dx_0}{D_0}\)
     real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
-    real(r8), public                  :: phi
-      !! The inverse Rossby number, \(\Phi \equif \frac{fx_0}{U_0}\)
+    real(r8), public          :: phi
+      !! The inverse Rossby number, \(\Phi \equiv \frac{fx_0}{U_0}\)
+    type(plume_shape)         :: shape
+      !! The coefficients describing the transverse shape of the
+      !! plume.
+    real(r8)                  :: dy
+      !! The width \(\Delta y = y_2-y_1\) over which the plume has
+      !! been horizontally averaged.
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
     integer                   :: thickness_size
@@ -129,6 +206,8 @@ module asymmetric_plume_mod
       !! The number of data values in the temperature field
     integer                   :: salinity_size
       !! the number of data values in the salinity field
+    integer                   :: vel_dims
+      !! The number of vector dimensions for the velocity
     logical, dimension(7)     :: lower_bounds = .false.
       !! Which variables have boundary conditions at the grounding
       !! line.
@@ -162,7 +241,7 @@ module asymmetric_plume_mod
 #undef elemental 
 #endif
 
-     pure function scalar_func(location) result(scalar)
+    pure function scalar_func(location) result(scalar)
       !* Author: Chris MacMackin
       !  Date: April 2016
       !
@@ -201,11 +280,11 @@ module asymmetric_plume_mod
 
 contains
 
-  subroutine asym_plume_initialise(this, domain, resolution,       &
-                              thickness, velocity, temperature,    &
-                              salinity, entrainment_formulation,   &
-                              melt_formulation, ambient_conds, eos,&
-                              boundaries, delta, nu, mu, r_val, phi)
+  subroutine asym_plume_initialise(this, domain, resolution,            &
+                              thickness, velocity, temperature,         &
+                              salinity, shape, entrainment_formulation, &
+                              melt_formulation, ambient_conds, eos,     &
+                              boundaries, delta, nu, mu, r_val, phi, dy)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     ! 
@@ -237,6 +316,10 @@ contains
     procedure(scalar_func)     :: salinity
       !! A function which calculates the initial value of the salinity of 
       !! the plume at a given location.
+    type(plume_shape), optional, intent(in) :: shape
+      !! An object with components describing the transverse profile
+      !! of the plume. Default is a plume that is uniform in the
+      !! transverse direction.
     class(abstract_entrainment), allocatable, optional, &
                            intent(inout) :: entrainment_formulation
       !! An object which calculates entrainment into the plume. Will
@@ -284,12 +367,14 @@ contains
     real(r8), optional, intent(in)       :: phi
       !! The inverse Rossby number, \(\Phi \equif
       !! \frac{fx_0}{U_0}\). Defaults to 0.
+    real(r8), optional, intent(in)       :: dy
+      !! The width over which the plume has been averaged. Defualts to 1.
 
     integer :: i, btype_l, btype_u, bdepth_l, bdepth_u
 
-    i = size(velocity([0._r8]))
+    this%vel_dims = size(velocity([0._r8]))
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1),domain(1,2))
-    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2),i-1)
+    this%velocity = cheb1d_vector_field(resolution(1),velocity,domain(1,1),domain(1,2),this%vel_dims-1)
     this%temperature = cheb1d_scalar_field(resolution(1),temperature,domain(1,1),domain(1,2))
     this%salinity = cheb1d_scalar_field(resolution(1),salinity,domain(1,1),domain(1,2))
     this%thickness_size = this%thickness%raw_size()
@@ -299,6 +384,7 @@ contains
     this%velocity_dx = this%velocity%d_dx(1)
     this%salinity_dx = this%salinity%d_dx(1)
     this%temperature_dx = this%temperature%d_dx(1)
+    if (present(shape)) this%shape = shape
     if (present(entrainment_formulation)) then
       call move_alloc(entrainment_formulation, this%entrainment_formulation)
     else
@@ -348,6 +434,11 @@ contains
       this%phi = phi
     else
       this%phi = 0.0_r8
+    end if
+    if (present(dy)) then
+      this%dy = dy
+    else
+      this%dy = 1.0_r8
     end if
     this%time = 0.0_r8
 
@@ -933,7 +1024,7 @@ contains
       real(r8), dimension(size(v))       :: L
       
       integer :: st, en, btype_l, btype_u, bdepth_l, bdepth_u
-      type(cheb1d_scalar_field) :: scalar_tmp
+      type(cheb1d_scalar_field) :: scalar_tmp, ctmp(2)
       type(cheb1d_vector_field) :: vector_tmp
       type(cheb1d_vector_field) :: coriolis
 
@@ -966,7 +1057,9 @@ contains
       L(st:en) = vector_tmp%raw()
 
       if (this%phi /= 0._r8) then
-        coriolis = [0._r8, 0._r8, this%phi/this%nu] .cross. this%velocity
+        ctmp(1) = -this%phi/this%nu*this%shape%a_DV*this%velocity%component(2)
+        ctmp(2) = this%phi/this%nu*this%shape%a_DU*this%velocity%component(1)
+        coriolis = ctmp
         vector_tmp = this%velocity_dx%d_dx(1) - coriolis
       else
         vector_tmp = this%velocity_dx%d_dx(1)
@@ -1053,79 +1146,104 @@ contains
       class(scalar_field), intent(out) :: DUS_x
         !! The derivative of the product DUS
      
-      integer :: dims
-      class(scalar_field), pointer :: m, rho, e, S_a, U, V, &
+      class(scalar_field), pointer :: m, rho_b, rho_t, e, S_a, U, V, &
                                       T_a, rho_a, rho_x, Unorm
       class(scalar_field), allocatable, dimension(:) :: tmp
       type(cheb1d_vector_field) :: coriolis
-      real(r8), parameter :: dy = 0.1_r8
 
       call D%guard_temp(); call Uvec%guard_temp(); call T%guard_temp()
       call S%guard_temp(); call b%guard_temp()
       S_a => this%ambient_conds%ambient_salinity(b,time)
       T_a => this%ambient_conds%ambient_temperature(b,time)
-      rho => this%eos%water_density(T, S)
+      ! Fixme: I need new EOS implementation with my twiddle and bar
+      ! versions of density, as well as the non-integrated version.
+      rho_b => this%eos%water_density(T, S)
+      rho_t => rho_b
       U => Uvec%component(1)
       V => Uvec%component(2)
-      call S_a%guard_temp(); call T_a%guard_temp(); call rho%guard_temp()
-      call U%guard_temp(); call V%guard_temp()
+      call S_a%guard_temp(); call T_a%guard_temp(); call rho_b%guard_temp()
+      call rho_t%guard_temp(); call U%guard_temp(); call V%guard_temp()
       rho_a => this%eos%water_density(T_a, S_a)
       call rho_a%guard_temp()
-      e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, rho_a - rho, time)
+      e => this%entrainment_formulation%entrainment_rate(Uvec, D, b, rho_a - rho_b, time)
       call e%guard_temp()
 
       call this%melt_formulation%solve_for_melt(Uvec, b, T, S, D, time)
       m => this%melt_formulation%melt_rate()
       call m%guard_temp()
 
-      DU_x = e + m - D*V/dy
-      if (this%melt_formulation%has_heat_terms()) then
-        DUT_x = e*T_a - D*V*T/dy - this%melt_formulation%heat_equation_terms()
-      else
-        DUT_x = e*T_a - D*V*T/dy
-      end if
-      if (this%melt_formulation%has_salt_terms()) then
-        DUS_x = e*S_a - D*V*S/dy - this%melt_formulation%salt_equation_terms()
-      else
-        DUS_x = e*S_a - D*V*S/dy
-      end if
-
-      select type(Uvec)
-      class is(uniform_vector_field)
-        Unorm => Uvec%norm()
-        rho_x => this%eos%water_density_derivative(T, (DUT_x - DU_x*T)/(D*U), &
-                                                   S, (DUS_x - DU_x*S)/(D*U), 1)
-        call Unorm%guard_temp(); call rho_x%guard_temp()
-        ! For some reason calling the vector_dimensions() method
-        ! causes a segfault. I can't be bother to figure out why right
-        ! now, so this works instead.
-        dims = Uvec%raw_size()/Uvec%elements()
-        allocate(tmp(dims), mold=D)
-        !tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
-        tmp(1) = (D*(rho_a - rho)*(b%d_dx(1) - 2*this%delta*DU_x/U) &
-                 + 0.5*this%delta*D**2*rho_x - this%mu*Unorm*U      &
-                 + this%phi*D*V - D*U*V/dy) /                      &
-                 (1._r8 - this%delta*D*(rho_a - rho)/U**2)
-        if (dims > 1) then
-          tmp(2) = -this%mu*Unorm*V - this%phi*D*U - D*V**2/dy
+      associate(f_D => this%shape%f_D, f_U => this%shape%f_U, f_V => this%shape%f_V,  &
+                f_S => this%shape%f_V, f_T => this%shape%f_T, a_DU => this%shape%a_DU, & 
+                a_DU2 => this%shape%a_DU2, a_DUV => this%shape%a_DUV,                &
+                a_DUS => this%shape%a_DUS, a_DUT => this%shape%a_DUT,                &
+                a_D2 => this%shape%a_D2, a_DV => this%shape%a_DV,                    &
+                a_UabsU => this%shape%a_UabsU, a_UabsV => this%shape%a_UabsV,      &
+                dy => this%dy)
+        DU_x = (e + m - f_D*D * f_V*V/dy)/a_DU
+        if (this%melt_formulation%has_heat_terms()) then
+          DUT_x = (e*T_a - f_D*D * f_V*V * f_T*T/dy - &
+                   this%melt_formulation%heat_equation_terms())/a_DUT
+        else
+          DUT_x = (e*T_a - f_D*D * f_V*V * f_T*T/dy)/a_DUT
         end if
-        DUU_x = tmp
-        call Unorm%clean_temp(); call rho_x%clean_temp()
-      class default
-         dims = Uvec%raw_size()/Uvec%elements()
-         allocate(tmp(dims), mold=D)
-         tmp(1) = D*(rho_a - rho)*(b%d_dx(1) - this%delta*D%d_dx(1)) &
-                + 0.5_r8*this%delta*D**2*rho%d_dx(1)
-         if (dims > 1) then
-           tmp(2) = 0._r8*D
-           !tmp(2) = 0.5_r8*this%delta/dy*D**2*(rho - rho_a)
-         end if
-         DUU_x = tmp
-         DUU_x = DUU_x - this%mu*Uvec*Uvec%norm() - D/dy*V*Uvec
-      end select
+        if (this%melt_formulation%has_salt_terms()) then
+          DUS_x = (e*S_a - f_D*D * f_V*V * f_S*S/dy - &
+                   this%melt_formulation%salt_equation_terms())/a_DUS
+        else
+          DUS_x = (e*S_a - f_D*D * f_V*V * f_S*S/dy)/a_DUS
+        end if
+  
+        Unorm => Uvec%norm()
+        call Unorm%guard_temp()
+        select type(Uvec)
+        class is(uniform_vector_field)
+          rho_x => this%eos%water_density_derivative(T, (DUT_x - DU_x*T)/(D*U), &
+                                                    S, (DUS_x - DU_x*S)/(D*U), 1)
+          call rho_x%guard_temp()
+          ! For some reason calling the vector_dimensions() method
+          ! causes a segfault. I can't be bother to figure out why right
+          ! now, so this works instead.
+          allocate(tmp(this%vel_dims), mold=D)
+          !tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
+          tmp(1) = (D*(rho_a - rho_b)*b%d_dx(1) &
+                 - 2._r8*D*this%delta*a_D2*(rho_a - rho_t)*DU_x/U &
+                 + 0.5*this%delta*a_D2*D**2*rho_x &
+                 - this%mu*a_UabsU*Unorm*U &
+                 + this%phi*a_DV*D*V &
+                 - f_D*D * f_U*U * f_V*V/dy) / &
+                   (a_DU2 - this%delta*a_D2*D*(rho_a - rho_t)/U**2)
+          if (this%vel_dims > 1) then
+             ! FIXME: the hydrostatic term here isn't quite right. I'm
+             ! implicitly assuming uniform aslinity and temperature,
+             ! as well as D(y_1) = 0.
+            tmp(2) = (0._r8*f_D**2 * this%delta/dy*D**2*(rho_b - rho_a) &
+                   - this%mu*a_UabsV*Unorm*V - a_DU*this%phi*D*U &
+                   - f_D*D * f_V**2*V**2/dy)/a_DUV
+          end if
+          DUU_x = tmp
+          call rho_x%clean_temp()
+        class default
+           allocate(tmp(this%vel_dims), mold=D)
+           tmp(1) = (D*(rho_a - rho_b)*b%d_dx(1) &
+                  - a_D2*D*(rho_a - rho_t)*this%delta*D%d_dx(1) &
+                  + 0.5_r8*a_D2*this%delta*D**2*rho_t%d_dx(1) &
+                  - this%mu*a_UabsU*U*Unorm &
+                  - f_D*D * f_V*V * f_U*U/dy)/a_DU2
+           if (this%vel_dims > 1) then
+             ! FIXME: the hydrostatic term here isn't quite right. I'm
+             ! implicitly assuming uniform aslinity and temperature,
+             ! as well as D(y_1) = 0.
+             tmp(2) = (0._r8*f_D**2 * this%delta/dy*D**2*(rho_b - rho_a) &
+                    - this%mu*a_UabsV*V*Unorm &
+                    - f_D*D * f_V**2 * V**2/dy)/a_DUV
+           end if
+           DUU_x = tmp
+        end select
+        call Unorm%clean_temp()
+      end associate
       call e%clean_temp(); call S_a%clean_temp(); call T_a%clean_temp()
-      call rho%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
-      call U%clean_temp(); call V%clean_temp()
+      call rho_b%clean_temp(); call m%clean_temp(); call rho_a%clean_temp()
+      call rho_t%clean_temp(); call U%clean_temp(); call V%clean_temp()
       call D%clean_temp(); call Uvec%clean_temp(); call T%clean_temp()
       call S%clean_temp(); call b%clean_temp()
     end subroutine non_diff_terms
@@ -1205,8 +1323,9 @@ contains
 
       integer :: st, en
       type(cheb1d_scalar_field) :: scalar_tmp, D_x, D_nd, S_nd, T_nd
+      type(cheb1d_scalar_field), allocatable, dimension(:) :: vtmp
       type(cheb1d_vector_field) :: vector_tmp, U_nd
-      class(scalar_field), pointer :: U, U_x
+      class(scalar_field), pointer :: U, V, U_x, V_x
 
       ! Use same or similar notation for variables as used in equations
       associate(D => this%thickness, Uvec => this%velocity,     &
@@ -1214,15 +1333,25 @@ contains
                 S_x => this%salinity_dx, T => this%temperature, &
                 T_x => this%temperature_dx, mf => this%melt_formulation, &
                 h => ice_thickness, delta => this%delta, nu => this%nu,  &
-                mu => this%mu, r => this%r_val, bounds => this%boundaries)
+                mu => this%mu, r => this%r_val, bounds => this%boundaries,&
+                a_DU2 => this%shape%a_DU2, a_DUV => this%shape%a_DUV,     &
+                a_DUS => this%shape%a_DUS, a_DUT => this%shape%a_DUT,     &
+                a_DU => this%shape%a_DU, a_DV => this%shape%a_DV,         &
+                a_DS => this%shape%a_DS, a_DT => this%shape%a_DT,         &
+                f_D => this%shape%f_D, f_Up => this%shape%f_Up,           &
+                f_Vp => this%shape%f_Vp, f_Sp => this%shape%f_Sp,         &
+                f_Tp => this%shape%f_Tp, dy => this%dy )
 
         call non_diff_terms(D, Uvec, T, S, b, D_nd, U_nd, T_nd, S_nd)
 
-        ! FIXME: Alter this so that can take advantage of
-        ! parameterisations returning uniform fields.
         U => this%velocity%component(1)
         U_x => this%velocity_dx%component(1)
         call U%guard_temp(); call U_x%guard_temp()
+        if (this%vel_dims > 1) then
+          V => this%velocity%component(2)
+          V_x => this%velocity_dx%component(2)
+          call V%guard_temp(); call V_x%guard_temp()
+        end if
 
         ! Thickness
         scalar_tmp = (D_nd - D*U_x)/U
@@ -1239,7 +1368,7 @@ contains
           scalar_tmp = scalar_tmp%get_derivative()
         end if
         f(st:en) = scalar_tmp%raw()
-      
+
         ! Velocity
         vector_tmp = 0._r8 * Uvec
         if (this%lower_bounds(2)) then
@@ -1254,10 +1383,17 @@ contains
           vector_tmp = vector_tmp%get_derivative()
         end if
         f(st:en) = vector_tmp%raw()
-
-        vector_tmp = D*U*Uvec_x !Needed due to compiler bug
-        vector_tmp = (vector_tmp + D*U_x*Uvec + D_x*U*Uvec - &
-                      U_nd - nu*D_x*Uvec_x)/(nu*D)
+        
+        allocate (vtmp(this%vel_dims), mold=D)
+        vtmp(1) = D*U*U_x !Needed due to compiler bug
+        vtmp(1) = (a_DU2*(vtmp(1) + D*U_x*U + D_x*U**2 - U_nd%component(1)) &
+                - nu*a_DU*D_x*U_x - nu*f_D*D*f_Up*U/dy)/(nu*a_DU*D)
+        if (this%vel_dims > 1) then
+          vtmp(2) = 2._r8*D*U*V_x
+          vtmp(2) = (a_DUV*(vtmp(1) + D_x*U*V - U_nd%component(2)) &
+                  - nu*a_DV*D_x*V_x - nu*f_D*D*f_Vp*V/dy)/(nu*a_DV*D)
+        end if
+        vector_tmp = vtmp
         if (this%lower_bounds(3)) then
           call vector_tmp%set_boundary(1, 1, bounds%velocity_bound(-1))
         end if
@@ -1286,7 +1422,8 @@ contains
         end if
         f(st:en) = scalar_tmp%raw()
 
-        scalar_tmp = (D*U*T_x + D*U_x*T + D_x*U*T - T_nd - nu*D_x*T_x)/(nu*D)
+        scalar_tmp = (a_DUT*(D*U*T_x + D*U_x*T + D_x*U*T - T_nd) - &
+                      nu*a_DT*D_x*T_x - nu*f_D*D*f_Tp*T/dy)/(nu*a_DT*D)
         if (this%lower_bounds(5)) then
           call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(-1))
         end if
@@ -1315,7 +1452,8 @@ contains
         end if
         f(st:en) = scalar_tmp%raw()
 
-        scalar_tmp = (D*U*S_x + D*U_x*S + D_x*U*S - S_nd - nu*D_x*S_x)/(nu*D)
+        scalar_tmp = (a_DUS*(D*U*S_x + D*U_x*S + D_x*U*S - S_nd) - &
+                      nu*a_DS*D_x*S_x - nu*f_D*D*f_Sp*S/dy)/(nu*a_DS*D)
         if (this%lower_bounds(7)) then
           call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(-1))
         end if
@@ -1330,6 +1468,9 @@ contains
         f(st:en) = scalar_tmp%raw()
 
         call U%clean_temp(); call U_x%clean_temp()
+        if (this%vel_dims > 0) then
+          call V%clean_temp(); call V_x%clean_temp()
+        end if
       end associate
     end subroutine nonlinear
 
