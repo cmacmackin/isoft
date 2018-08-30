@@ -53,6 +53,7 @@ module asymmetric_plume_mod
   use pseudospectral_block_mod, only: pseudospec_block
   use coriolis_block_mod, only: coriolis_block
   use linear_eos_mod, only: linear_eos
+  use ave_linear_eos_mod, only: ave_linear_eos
   use hdf5
   use h5lt
   use logger_mod, only: logger => master_logger
@@ -60,7 +61,7 @@ module asymmetric_plume_mod
   implicit none
   private
 
-  character(len=9),  parameter, public :: hdf_type_name = 'asym_plume'
+  character(len=10), parameter, public :: hdf_type_name = 'asym_plume'
   character(len=9),  parameter, public :: hdf_thickness = 'thickness'
   character(len=8),  parameter, public :: hdf_velocity = 'velocity'
   character(len=11), parameter, public :: hdf_temperature = 'temperature'
@@ -77,64 +78,74 @@ module asymmetric_plume_mod
     !
     ! A type containing the data necessary to specify the transverse
     ! shape of the plume. All variables in the plume are assumed to be
-    ! seperable with the form \(D(x,y) = f_D(y)\hat{D}(x)\), \(U(x,y)
-    ! = f_U(y)\hat{U}(x)\), etc. The magnitude of the velocity does
+    ! seperable with the form \(D(x,y) = f_D2(y)\hat{D}(x)\), \(U(x,y)
+    ! = f_U2(y)\hat{U}(x)\), etc. The magnitude of the velocity does
     ! not necessary take the form \(|\vec{U}| = \sqrt{U^2 + V^2}\) and
     ! is treated as an independent seperable variable \(|\vec{U}| =
     ! f_{|\vec{U}|}(y)\widehat{|\vec{U}|}(x)\). The transverse
-    ! functions \(f_{D}(y)\), \(f_U(y)\), etc. have all been
+    ! functions \(f_{D}(y)\), \(f_U2(y)\), etc. have all been
     ! normalised over the integration width \(y_1\) to \(y_2\).
     !
     ! @Note that a number of variables are definied using the
     ! averaging operator $$ \overline{A} = \frac{1}{y_2 - y_1}
     ! \int^{y_2}_{y_1} A(y) dy. $$
     ! 
-    real(r8) :: f_D = 1.0_r8
-      !! \(f_D(y_2)\)
-    real(r8) :: f_U = 1.0_r8
-      !! \(f_U(y_2)\)
-    real(r8) :: f_V = 1.0_r8
-      !! \(f_V(y_2)\)
-    real(r8) :: f_S = 1.0_r8
-      !! \(f_S(y_2)\)
-    real(r8) :: f_T = 1.0_r8
-      !! \(f_T(y_2)\)
+    real(r8) :: f_D1 = 1.0_r8
+      !! \(f_D2(y_1)\)
+    real(r8) :: f_D2 = 1.0_r8
+      !! \(f_D2(y_2)\)
+    real(r8) :: f_U1 = 1.0_r8
+      !! \(f_U2(y_1)\)
+    real(r8) :: f_U2 = 1.0_r8
+      !! \(f_U2(y_2)\)
+    real(r8) :: f_V1 = 1.0_r8
+      !! \(f_V2(y_1)\)
+    real(r8) :: f_V2 = 1.0_r8
+      !! \(f_V2(y_2)\)
+    real(r8) :: f_S1 = 1.0_r8
+      !! \(f_S2(y_1)\) 
+    real(r8) :: f_S2 = 1.0_r8
+      !! \(f_S2(y_2)\)
+    real(r8) :: f_T1 = 1.0_r8
+      !! \(f_T2(y_1)\)
+    real(r8) :: f_T2 = 1.0_r8
+      !! \(f_T2(y_2)\)
     real(r8) :: f_Up = 0.0_r8
-      !! \(df_U(y_2)/dy\)
+      !! \(df_U2(y_2)/dy\)
     real(r8) :: f_Vp = 0.0_r8
-      !! \(df_V(y_2)/dy\)
+      !! \(df_V2(y_2)/dy\)
     real(r8) :: f_Sp = 0.0_r8
-      !! \(df_S(y_2)/dy\)
+      !! \(df_S2(y_2)/dy\)
     real(r8) :: f_Tp = 0.0_r8
-      !! \(df_T(y_2)/dy\)
+      !! \(df_T2(y_2)/dy\)
     real(r8) :: a_DU = 1.0_r8
-      !! \(\alpha_{DU} = \overline{f_D f_U} \)
+      !! \(\alpha_{DU} = \overline{f_D2 f_U2} \)
     real(r8) :: a_DV = 1.0_r8
-      !! \(\alpha_{DV} = \overline{f_D f_V} \)
+      !! \(\alpha_{DV} = \overline{f_D2 f_V2} \)
     real(r8) :: a_DU2 = 1.0_r8
-      !! \(\alpha_{DU^2} = \overline{f_D f_U^2} \)
+      !! \(\alpha_{DU^2} = \overline{f_D2 f_U2^2} \)
     real(r8) :: a_DUV = 1.0_r8
-      !! \(\alpha_{DUV} = \overline{f_D f_U f_V} \)
+      !! \(\alpha_{DUV} = \overline{f_D2 f_U2 f_V2} \)
     real(r8) :: a_D2 = 1.0_r8
-      !! \(\alpha_{D^2} = \overline{f_D^2}\)
+      !! \(\alpha_{D^2} = \overline{f_D2^2}\)
     real(r8) :: a_UabsU = 1.0_r8
-      !! \(\alpha_{|\vec{U}|U} = \overline{f_{|\vec{U}|} f_U\)
+      !! \(\alpha_{|\vec{U}|U} = \overline{f_{|\vec{U}|} f_U2\)
     real(r8) :: a_UabsV = 1.0_r8
-      !! \(\alpha_{|\vec{U}|V} = \overline{f_{|\vec{U}|} f_V\)
+      !! \(\alpha_{|\vec{U}|V} = \overline{f_{|\vec{U}|} f_V2\)
     real(r8) :: a_DUS = 1.0_r8
-      !! \(\alpha_{DUS} = \overline{f_D f_U f_S} \)
+      !! \(\alpha_{DUS} = \overline{f_D2 f_U2 f_S2} \)
     real(r8) :: a_DUT = 1.0_r8
-      !! \(\alpha_{DUT} = \overline{f_D f_U f_T} \)
+      !! \(\alpha_{DUT} = \overline{f_D2 f_U2 f_T2} \)
     real(r8) :: a_UabsT = 1.0_r8
-      !! \(\alpha_{|\vec{U}|T} = \overline{f_{|\vec{U}|} f_T\)
+      !! \(\alpha_{|\vec{U}|T} = \overline{f_{|\vec{U}|} f_T2\)
     real(r8) :: a_DS = 1.0_r8
-      !! \(\alpha_{DS} = \overline{f_D f_S} \)
+      !! \(\alpha_{DS} = \overline{f_D2 f_S2} \)
     real(r8) :: a_DT = 1.0_r8
-      !! \(\alpha_{DT} = \overline{f_D f_T} \)
+      !! \(\alpha_{DT} = \overline{f_D2 f_T2} \)
     real(r8) :: a_DS_t = 1.0_r8
-      !! \(\tilde{\alpha}_{DS} = \overline{f_D f_S}/\alpha_{D^2} \)
+      !! \(\tilde{\alpha}_{DS} = \overline{f_D2 f_S2}/\alpha_{D^2} \)
     real(r8) :: a_DT_t = 1.0_r8
-      !! \(\tilde{\alpha}_{DT} = \overline{f_D f_T}/\alpha_{D^2} \)
+      !! \(\tilde{\alpha}_{DT} = \overline{f_D2 f_T2}/\alpha_{D^2} \)
   end type plume_shape
 
   type, extends(basal_surface), public :: asym_plume
@@ -146,8 +157,8 @@ module asymmetric_plume_mod
     ! ice shelf, which has been horizontally integrated over width
     ! \(\Delta y = y_2 - y_1\) in the y-direction. Transverse
     ! variation is assumed to be seperable, with variables having the
-    ! form \(D(x,y) = f_D(y)\hat{D}(x)\), \(U(x,y) =
-    ! f_U(y)\hat{U}(x)\). The shape of the transverse functions are
+    ! form \(D(x,y) = f_D2(y)\hat{D}(x)\), \(U(x,y) =
+    ! f_U2(y)\hat{U}(x)\). The shape of the transverse functions are
     ! described using the [[plume_shape(type)]] type.
     !
     private
@@ -1155,10 +1166,14 @@ contains
       call S%guard_temp(); call b%guard_temp()
       S_a => this%ambient_conds%ambient_salinity(b,time)
       T_a => this%ambient_conds%ambient_temperature(b,time)
-      ! Fixme: I need new EOS implementation with my twiddle and bar
-      ! versions of density, as well as the non-integrated version.
-      rho_b => this%eos%water_density(T, S)
-      rho_t => rho_b
+      select type(eos => this%eos)
+      class is(ave_linear_eos)
+        rho_b => eos%water_density_ave1(T, S)
+        rho_t => eos%water_density_ave2(T, S)
+      class default
+        rho_b => eos%water_density(T, S)
+        rho_t => rho_b
+      end select
       U => Uvec%component(1)
       V => Uvec%component(2)
       call S_a%guard_temp(); call T_a%guard_temp(); call rho_b%guard_temp()
@@ -1172,25 +1187,27 @@ contains
       m => this%melt_formulation%melt_rate()
       call m%guard_temp()
 
-      associate(f_D => this%shape%f_D, f_U => this%shape%f_U, f_V => this%shape%f_V,  &
-                f_S => this%shape%f_V, f_T => this%shape%f_T, a_DU => this%shape%a_DU, & 
-                a_DU2 => this%shape%a_DU2, a_DUV => this%shape%a_DUV,                &
-                a_DUS => this%shape%a_DUS, a_DUT => this%shape%a_DUT,                &
-                a_D2 => this%shape%a_D2, a_DV => this%shape%a_DV,                    &
-                a_UabsU => this%shape%a_UabsU, a_UabsV => this%shape%a_UabsV,      &
-                dy => this%dy)
-        DU_x = (e + m - f_D*D * f_V*V/dy)/a_DU
+      associate(f_D1 => this%shape%f_D1, f_D2 => this%shape%f_D2,       &
+                f_U2 => this%shape%f_U2, f_V2 => this%shape%f_V2,       &
+                f_S1 => this%shape%f_S1, f_S2 => this%shape%f_S2,       &
+                f_T1 => this%shape%f_T1, f_T2 => this%shape%f_T2,       &
+                a_DU => this%shape%a_DU, a_DU2 => this%shape%a_DU2,     &
+                a_DUV => this%shape%a_DUV, a_DUS => this%shape%a_DUS,   &
+                a_DUT => this%shape%a_DUT, a_D2 => this%shape%a_D2,     &
+                a_DV => this%shape%a_DV, a_UabsU => this%shape%a_UabsU, &
+                a_UabsV => this%shape%a_UabsV, dy => this%dy)
+        DU_x = (e + m - f_D2*D * f_V2*V/dy)/a_DU
         if (this%melt_formulation%has_heat_terms()) then
-          DUT_x = (e*T_a - f_D*D * f_V*V * f_T*T/dy - &
+          DUT_x = (e*T_a - f_D2*D * f_V2*V * f_T2*T/dy - &
                    this%melt_formulation%heat_equation_terms())/a_DUT
         else
-          DUT_x = (e*T_a - f_D*D * f_V*V * f_T*T/dy)/a_DUT
+          DUT_x = (e*T_a - f_D2*D * f_V2*V * f_T2*T/dy)/a_DUT
         end if
         if (this%melt_formulation%has_salt_terms()) then
-          DUS_x = (e*S_a - f_D*D * f_V*V * f_S*S/dy - &
+          DUS_x = (e*S_a - f_D2*D * f_V2*V * f_S2*S/dy - &
                    this%melt_formulation%salt_equation_terms())/a_DUS
         else
-          DUS_x = (e*S_a - f_D*D * f_V*V * f_S*S/dy)/a_DUS
+          DUS_x = (e*S_a - f_D2*D * f_V2*V * f_S2*S/dy)/a_DUS
         end if
   
         Unorm => Uvec%norm()
@@ -1200,25 +1217,26 @@ contains
           rho_x => this%eos%water_density_derivative(T, (DUT_x - DU_x*T)/(D*U), &
                                                     S, (DUS_x - DU_x*S)/(D*U), 1)
           call rho_x%guard_temp()
-          ! For some reason calling the vector_dimensions() method
-          ! causes a segfault. I can't be bother to figure out why right
-          ! now, so this works instead.
           allocate(tmp(this%vel_dims), mold=D)
-          !tmp(1) = 1._r8 - this%delta*D*(rho_a - rho)/U**2
           tmp(1) = (D*(rho_a - rho_b)*b%d_dx(1) &
                  - 2._r8*D*this%delta*a_D2*(rho_a - rho_t)*DU_x/U &
                  + 0.5*this%delta*a_D2*D**2*rho_x &
                  - this%mu*a_UabsU*Unorm*U &
                  + this%phi*a_DV*D*V &
-                 - f_D*D * f_U*U * f_V*V/dy) / &
+                 - f_D2*D * f_U2*U * f_V2*V/dy) / &
                    (a_DU2 - this%delta*a_D2*D*(rho_a - rho_t)/U**2)
           if (this%vel_dims > 1) then
-             ! FIXME: the hydrostatic term here isn't quite right. I'm
-             ! implicitly assuming uniform aslinity and temperature,
-             ! as well as D(y_1) = 0.
-            tmp(2) = (0._r8*f_D**2 * this%delta/dy*D**2*(rho_b - rho_a) &
-                   - this%mu*a_UabsV*Unorm*V - a_DU*this%phi*D*U &
-                   - f_D*D * f_V**2*V**2/dy)/a_DUV
+             ! Use entrainment and melt as work-arrays to hold the
+             ! upper and lower boundary density values. Should be able
+             ! to just multiply the function results directly, but
+             ! there's a compiler bug.
+             call e%clean_temp(); call m%clean_temp()
+             e => this%eos%water_density(f_T2*T, f_S2*S)
+             m => this%eos%water_density(f_T1*T, f_S1*S)
+             call e%guard_temp(); call m%guard_temp()
+             tmp(2) = ((f_D2**2*(e - rho_a) - f_D1**2*(m - rho_a))*  &
+                      0.5_r8*this%delta/dy*D**2 - this%mu*a_UabsV*Unorm*V       &
+                      - a_DU*this%phi*D*U - f_D2*D * f_V2**2*V**2/dy)/a_DUV
           end if
           DUU_x = tmp
           call rho_x%clean_temp()
@@ -1228,14 +1246,19 @@ contains
                   - a_D2*D*(rho_a - rho_t)*this%delta*D%d_dx(1) &
                   + 0.5_r8*a_D2*this%delta*D**2*rho_t%d_dx(1) &
                   - this%mu*a_UabsU*U*Unorm &
-                  - f_D*D * f_V*V * f_U*U/dy)/a_DU2
+                  - f_D2*D * f_V2*V * f_U2*U/dy)/a_DU2
            if (this%vel_dims > 1) then
-             ! FIXME: the hydrostatic term here isn't quite right. I'm
-             ! implicitly assuming uniform aslinity and temperature,
-             ! as well as D(y_1) = 0.
-             tmp(2) = (0._r8*f_D**2 * this%delta/dy*D**2*(rho_b - rho_a) &
-                    - this%mu*a_UabsV*V*Unorm &
-                    - f_D*D * f_V**2 * V**2/dy)/a_DUV
+             ! Use entrainment and melt as work-arrays to hold the
+             ! upper and lower boundary density values. Should be able
+             ! to just multiply the function results directly, but
+             ! there's a compiler bug.
+             call e%clean_temp(); call m%clean_temp()
+             e => this%eos%water_density(f_T2*T, f_S2*S)
+             m => this%eos%water_density(f_T1*T, f_S1*S)
+             call e%guard_temp(); call m%guard_temp()
+             tmp(2) = ((f_D2**2*(e - rho_a) - f_D1**2*(m - rho_a))* &
+                      0.5_r8*this%delta/dy*D**2 - this%mu*a_UabsV*V*Unorm &
+                      - f_D2*D * f_V2**2 * V**2/dy)/a_DUV
            end if
            DUU_x = tmp
         end select
@@ -1338,7 +1361,7 @@ contains
                 a_DUS => this%shape%a_DUS, a_DUT => this%shape%a_DUT,     &
                 a_DU => this%shape%a_DU, a_DV => this%shape%a_DV,         &
                 a_DS => this%shape%a_DS, a_DT => this%shape%a_DT,         &
-                f_D => this%shape%f_D, f_Up => this%shape%f_Up,           &
+                f_D2 => this%shape%f_D2, f_Up => this%shape%f_Up,           &
                 f_Vp => this%shape%f_Vp, f_Sp => this%shape%f_Sp,         &
                 f_Tp => this%shape%f_Tp, dy => this%dy )
 
@@ -1385,13 +1408,11 @@ contains
         f(st:en) = vector_tmp%raw()
         
         allocate (vtmp(this%vel_dims), mold=D)
-        vtmp(1) = D*U*U_x !Needed due to compiler bug
-        vtmp(1) = (a_DU2*(vtmp(1) + D*U_x*U + D_x*U**2 - U_nd%component(1)) &
-                - nu*a_DU*D_x*U_x - nu*f_D*D*f_Up*U/dy)/(nu*a_DU*D)
+        vtmp(1) = (a_DU2*(2._r8*D*U*U_x + D_x*U**2 - U_nd%component(1)) &
+                - nu*a_DU*D_x*U_x - nu*f_D2*D*f_Up*U/dy)/(nu*a_DU*D)
         if (this%vel_dims > 1) then
-          vtmp(2) = 2._r8*D*U*V_x
-          vtmp(2) = (a_DUV*(vtmp(1) + D_x*U*V - U_nd%component(2)) &
-                  - nu*a_DV*D_x*V_x - nu*f_D*D*f_Vp*V/dy)/(nu*a_DV*D)
+          vtmp(2) = (a_DUV*(D*U*V_x + D*U_x*V + D_x*U*V - U_nd%component(2)) &
+                  - nu*a_DV*D_x*V_x - nu*f_D2*D*f_Vp*V/dy)/(nu*a_DV*D)
         end if
         vector_tmp = vtmp
         if (this%lower_bounds(3)) then
@@ -1423,7 +1444,7 @@ contains
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (a_DUT*(D*U*T_x + D*U_x*T + D_x*U*T - T_nd) - &
-                      nu*a_DT*D_x*T_x - nu*f_D*D*f_Tp*T/dy)/(nu*a_DT*D)
+                      nu*a_DT*D_x*T_x - nu*f_D2*D*f_Tp*T/dy)/(nu*a_DT*D)
         if (this%lower_bounds(5)) then
           call scalar_tmp%set_boundary(1, 1, bounds%temperature_bound(-1))
         end if
@@ -1453,7 +1474,7 @@ contains
         f(st:en) = scalar_tmp%raw()
 
         scalar_tmp = (a_DUS*(D*U*S_x + D*U_x*S + D_x*U*S - S_nd) - &
-                      nu*a_DS*D_x*S_x - nu*f_D*D*f_Sp*S/dy)/(nu*a_DS*D)
+                      nu*a_DS*D_x*S_x - nu*f_D2*D*f_Sp*S/dy)/(nu*a_DS*D)
         if (this%lower_bounds(7)) then
           call scalar_tmp%set_boundary(1, 1, bounds%salinity_bound(-1))
         end if
