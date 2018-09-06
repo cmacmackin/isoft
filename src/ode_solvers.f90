@@ -298,7 +298,6 @@ contains
       end if
       if (20*old_resid < resid_norm) then
         flag = 3
-!    print*, L(solution) - f_prev
         return
       end if
 
@@ -318,9 +317,9 @@ contains
 
       u_prev = get_derivs(solution)
       f_prev = f(u_prev)
-    !print*,f_prev(size(f_prev)-10:)
       old_resid = resid_norm
       resid_norm = dnrm2(npoints, L(solution) - f_prev, 1)
+
 
       if (gmres_flag /= 0 .and. (resid_norm > 20*old_resid .or. any(isnan(solution)))) then
         if (present(info)) then

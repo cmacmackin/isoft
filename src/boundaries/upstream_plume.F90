@@ -417,7 +417,6 @@ contains
     this%velocity = ygot(2:n-2)/ygot(1)
     this%temperature = ygot(n-1)/ygot(1)
     this%salinity = ygot(n)/ygot(1)
-    !print*,'t = ', t
     call logger%trivia('upstream_plume_boundary%calculate',             &
          'Calculated boundary values D='//str(this%thickness)//', U='// &
          str(this%velocity)//', T='//str(this%temperature)//', S='//    &

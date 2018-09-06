@@ -1068,8 +1068,10 @@ contains
       L(st:en) = vector_tmp%raw()
 
       if (this%phi /= 0._r8) then
-        ctmp(1) = -this%phi/this%nu*this%shape%a_DV*this%velocity%component(2)
-        ctmp(2) = this%phi/this%nu*this%shape%a_DU*this%velocity%component(1)
+        ctmp(1) = -this%phi*this%shape%a_DV/(this%nu*this%shape%a_DU) &
+                  *this%velocity%component(2)
+        ctmp(2) = this%phi*this%shape%a_DU/(this%nu*this%shape%a_DV) &
+                  *this%velocity%component(1)
         coriolis = ctmp
         vector_tmp = this%velocity_dx%d_dx(1) - coriolis
       else
@@ -1242,6 +1244,7 @@ contains
           call rho_x%clean_temp()
         class default
            allocate(tmp(this%vel_dims), mold=D)
+           tmp(1) = b%d_dx(1)
            tmp(1) = (D*(rho_a - rho_b)*b%d_dx(1) &
                   - a_D2*D*(rho_a - rho_t)*this%delta*D%d_dx(1) &
                   + 0.5_r8*a_D2*this%delta*D**2*rho_t%d_dx(1) &
