@@ -201,7 +201,7 @@ module asymmetric_plume_mod
       !! density of the overlying ice shelf.
     real(r8), public          :: phi
       !! The inverse Rossby number, \(\Phi \equiv \frac{fx_0}{U_0}\)
-    type(plume_shape)         :: shape
+    type(plume_shape), public         :: shape
       !! The coefficients describing the transverse shape of the
       !! plume.
     real(r8)                  :: dy

@@ -43,7 +43,7 @@ module ice_shelf_mod
   use glacier_boundary_mod, only: glacier_boundary
   use dallaston2015_glacier_boundary_mod, only: dallaston2015_glacier_boundary
   use jacobian_block_mod, only: jacobian_block
-  use preconditioner_mod, only: preconditioner
+  use boundary_types_mod
   use nitsol_mod
   use hdf5
   use h5lt
@@ -52,12 +52,14 @@ module ice_shelf_mod
   implicit none
   private
 
-  character(len=9), parameter, public :: hdf_type_name = 'ice_shelf'
-  character(len=9), parameter, public :: hdf_thickness = 'thickness'
-  character(len=8), parameter, public :: hdf_velocity = 'velocity'
-  character(len=6), parameter, public :: hdf_lambda = 'lambda'
-  character(len=4), parameter, public :: hdf_zeta = 'zeta'
-  character(len=3), parameter, public :: hdf_chi = 'chi'
+  character(len=9), parameter, public  :: hdf_type_name = 'ice_shelf'
+  character(len=9), parameter, public  :: hdf_thickness = 'thickness'
+  character(len=8), parameter, public  :: hdf_velocity = 'velocity'
+  character(len=6), parameter, public  :: hdf_lambda = 'lambda'
+  character(len=4), parameter, public  :: hdf_zeta = 'zeta'
+  character(len=3), parameter, public  :: hdf_chi = 'chi'
+  character(len=10), parameter, public :: hdf_n_kappa = 'num_kappas'
+  character(len=15), parameter, public :: hdf_kappa = '("kappa_",i0.4)'
 
   type, extends(glacier), public :: ice_shelf
     !* Author: Chris MacMackin
@@ -73,6 +75,10 @@ module ice_shelf_mod
       !! Flow velocity of ice shelf, \(\vec{u}\)
     type(cheb1d_scalar_field) :: eta
       !! Viscosity of the ice, \(\eta\)
+    type(cheb1d_scalar_field), dimension(:), allocatable :: kappa
+      !! Taylor coefficients for the vertical structure of a
+      !! Lagrangian tracer representing englacial layers/internal
+      !! reflectors.
     real(r8)                  :: lambda
       !! The dimensionless ratio 
       !! $\lambda \equiv \frac{\rho_0m_0x_0}{\rho_iH-0u_0}$
@@ -134,23 +140,44 @@ module ice_shelf_mod
     procedure :: set_time => shelf_set_time
     procedure :: data_size => shelf_data_size
     procedure :: state_vector => shelf_state_vector
+    procedure :: kappa_vector => shelf_kappa_vector
     procedure :: read_data => shelf_read_data
     procedure :: write_data => shelf_write_data
     procedure :: time_step => shelf_time_step
     procedure :: solve_velocity => shelf_solve_velocity
 !    procedure :: integrate => shelf_integrate
     procedure, private :: assign => shelf_assign
+    procedure :: integrate_layers => ice_shelf_integrate_layers
   end type ice_shelf
 
 !  interface ice_shelf
 !    module procedure constructor
 !  end interface ice_shelf
 
+  abstract interface
+    pure function kappa_init_func(n, location) result(kappa)
+      !* Author: Chris MacMackin
+      !  Date: September 2018
+      !
+      ! Abstract interface for function providing the Taylor
+      ! coefficients describing the distribution of internal
+      ! reflectors within an ice shelf.
+      !
+      import :: r8
+      integer, intent(in)                :: n
+        !! The index of the Taylor coefficient being calculated
+      real(r8), dimension(:), intent(in) :: location
+        !! The position $\vec{x}$ at which to compute the coefficient
+      real(r8) :: kappa
+        !! The value of coefficient `n` at `location`
+    end function kappa_init_func
+  end interface
+
 contains
   
   subroutine shelf_initialise(this, domain, resolution, thickness, velocity, &
-                              temperature, viscosity_law, boundaries,  &
-                              lambda, chi, zeta, courant, max_dt)
+                              temperature, viscosity_law, boundaries, lambda, &
+                              chi, zeta, courant, max_dt, kappa, n_kappa)
     !* Author: Christopher MacMackin
     !  Date: April 2016
     !
@@ -204,7 +231,22 @@ contains
     real(r8), intent(in), optional       :: max_dt
       !! The maximum allowable time step. This defaults to \(1\times
       !! 10^{99}\) (effectively no maximum).
+    procedure(kappa_init_func), optional :: kappa
+      !! A function which specifies the initial values of the Taylor
+      !! coefficients describing the vertical distribution of internal
+      !! reflectors within the ice. The initial conditions at the
+      !! grounding line will provide the boundary conditions there
+      !! throughout the simulation. If this parameter is not provided
+      !! then these layers will not be included in the
+      !! integration. Both this parameter and `n_kappa` must be
+      !! specified for the calculation to take place.
+    integer, optional, intent(in)        :: n_kappa
+      !! The number of Taylor coefficients used to describe internal
+      !! reflectors. If not provided then these reflectors will not be
+      !! included in the integration. Both this parameter and `kappa`
+      !! must be specified for the calculation to take place.
 
+    integer :: n
     integer, dimension(:), allocatable :: lower, upper
 
     this%thickness = cheb1d_scalar_field(resolution(1),thickness,domain(1,1), &
@@ -215,6 +257,14 @@ contains
                                    upper_bound=domain(1,2))
     this%thickness_size = this%thickness%raw_size()
     this%velocity_size = this%velocity%raw_size()
+
+    if (present(kappa) .and. present(n_kappa)) then
+      allocate(this%kappa(n_kappa))
+      do n = 1, n_kappa
+        this%kappa(n) = cheb1d_scalar_field(resolution(1),kappa_func,domain(1,1), &
+                                            domain(1,2))
+      end do
+    end if
 
     if (present(temperature)) then
       continue ! This doesn't do anything at the moment
@@ -290,6 +340,23 @@ contains
 #ifdef DEBUG
     call logger%debug('ice_shelf','Initialised new ice shelf object')
 #endif
+
+  contains
+
+    pure function kappa_func(location) result(thickness)
+      !* Author: Chris MacMackin
+      !  Date: April 2016
+      !
+      ! Wrapper around user-provided `kappa` routine, converting it to
+      ! the form needed to initialise field-types.
+      !
+      real(r8), dimension(:), intent(in) :: location
+        !! The position $\vec{x}$ at which to compute the thickness
+      real(r8) :: thickness
+        !! The thickness of the glacier at `location`
+      thickness = kappa(n, location)
+    end function kappa_func
+
   end subroutine shelf_initialise
 
 
@@ -603,6 +670,31 @@ contains
   end function shelf_state_vector
 
 
+  function shelf_kappa_vector(this) result(kappa_vector) 
+    !* Author: Christopher MacMackin
+    !  Date: April 2016
+    !
+    ! Returns the a vector representing the current state of the
+    ! internal reflectors in the ice shelf.  This takes the form of a
+    ! 1D array. The routien is only used for debugging purposes.
+    !
+    class(ice_shelf), intent(in)        :: this
+    real(r8), dimension(:), allocatable :: kappa_vector
+      !! The state vector describing the ice shelf.
+    integer :: i
+    if (allocated(this%kappa)) then
+      allocate(kappa_vector(this%thickness_size*size(this%kappa)))
+      do i = 1, size(this%kappa)
+        kappa_vector((i-1)*this%thickness_size + 1:this%thickness_size*i) = this%kappa(i)%raw()
+      end do
+    end if
+#ifdef DEBUG
+    call logger%debug('ice_shelf%state_vector','Returning state vector '// &
+                      'for ice shelf.')
+#endif
+  end function shelf_kappa_vector
+
+
   subroutine shelf_read_data(this,file_id,group_name,error)
     !* Author: Chris MacMackin
     !  Date: April 2017
@@ -622,8 +714,10 @@ contains
       !! Flag indicating whether routine ran without error. If no
       !! error occurs then has value 0.
     integer(hid_t) :: group_id
-    integer :: ret_err
+    integer :: ret_err, i, nkap
     real(r8), dimension(1) :: param
+    integer, dimension(1) :: iparam
+    character(len=20) :: fieldname
     character(len=50) :: ice_type
 
     ret_err = 0
@@ -658,6 +752,16 @@ contains
                           group_name)
       ret_err = error
     end if
+    call h5ltget_attribute_int_f(file_id, group_name, hdf_n_kappa, &
+                                 iparam, error)
+    if (error /= 0) then
+      ! For backwards compatibility, don't crash if this attribute is
+      ! not present. Instead just realise there is no internal layer
+      ! data in the HDF file.
+      nkap = 0
+    else
+      nkap = iparam(1)
+    end if
 
     call this%thickness%read_hdf(group_id, hdf_thickness, error)
     if (error /= 0) then
@@ -675,6 +779,18 @@ contains
                           'from HDF file')
       if (ret_err == 0) ret_err = error
     end if
+
+    if (nkap > 0) allocate(this%kappa(nkap))
+    do i = 1, nkap
+      write(fieldname , hdf_kappa), i
+      call this%kappa(i)%read_hdf(group_id, hdf_thickness, error)
+      if (error /= 0) then
+        call logger%warning('ice_shelf%read_data','Error code '//        &
+                            trim(str(error))//' returned when reading '// &
+                            'ice shelf kappa field from HDF file')
+        if (ret_err == 0) ret_err = error
+      end if
+    end do
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
@@ -710,7 +826,8 @@ contains
       !! Flag indicating whether routine ran without error. If no
       !! error occurs then has value 0.
     integer(hid_t) :: group_id
-    integer :: ret_err
+    integer :: ret_err, i, nkap
+    character(len=20) :: fieldname
 
     ret_err = 0
     call h5gcreate_f(file_id, group_name, group_id, error)
@@ -723,6 +840,12 @@ contains
       return
     end if
 
+    if (allocated(this%kappa)) then
+      nkap = size(this%kappa)
+    else
+      nkap = 0
+    end if
+
     call h5ltset_attribute_string_f(file_id, group_name, hdf_type_attr, &
                                     hdf_type_name, error)
     call h5ltset_attribute_double_f(file_id, group_name, hdf_lambda, &
@@ -731,6 +854,8 @@ contains
                                     [this%chi], 1_size_t, error)
     call h5ltset_attribute_double_f(file_id, group_name, hdf_zeta, &
                                     [this%zeta], 1_size_t, error)
+    call h5ltset_attribute_int_f(file_id, group_name, hdf_n_kappa, &
+                                 [nkap], 1_size_t, error)
     if (error /= 0) then
       call logger%warning('ice_shelf%write_data','Error code '// &
                           trim(str(error))//' returned when '//  &
@@ -755,6 +880,18 @@ contains
                           'to HDF file')
       if (ret_err == 0) ret_err = error
     end if
+
+    do i = 1, nkap
+      write(fieldname , hdf_kappa), i
+      call this%kappa(i)%write_hdf(group_id, trim(fieldname), error)
+      if (error /= 0) then
+        call logger%warning('ice_shelf%write_data','Error code '// &
+                            trim(str(error))//' returned when '//  &
+                            'writing ice shelf kappa field '//  &
+                            'to HDF file')
+        if (ret_err == 0) ret_err = error
+      end if
+    end do
 
     call h5gclose_f(group_id, error)
     if (error /= 0) then
@@ -1066,6 +1203,10 @@ contains
       this%velocity_upper_bound_size = rhs%velocity_upper_bound_size
       this%stale_jacobian = .true.
       this%stale_eta = .true.
+      if (allocated(rhs%kappa)) then
+        allocate(this%kappa(size(rhs%kappa)))
+        this%kappa = rhs%kappa
+      end if
     class default
       call logger%fatal('ice_shelf%assign','Type other than `ice_shelf` '// &
                         'requested to be assigned.')
@@ -1075,5 +1216,121 @@ contains
     call logger%debug('ice_shelf%assign','Copied ice shelf data.')
 #endif
   end subroutine shelf_assign
+
+
+  subroutine ice_shelf_integrate_layers(this, old_states, time, success)
+    !* Author: Chris MacMackin
+    !  Date: September 2018
+    !
+    ! Integrate the Taylor coefficients representing the vertical
+    ! structure of internal reflectors forward to the specified
+    ! time. This is done using an implicit method, with the resulting
+    ! linear system solved using GMRES.
+    !
+    class(ice_shelf), intent(inout)          :: this
+    class(glacier), dimension(:), intent(in) :: old_states
+      !! Previous states of the ice_shelf, with the most recent one
+      !! first.
+    real(r8), intent(in)                     :: time
+      !! The time to which the ice_shelf should be integrated
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+
+    integer :: n, flag
+    real(r8), dimension(:), allocatable :: solution
+    real(r8) :: dt, resid
+    type(jacobian_block) :: precond_block
+
+    if (.not. allocated(this%kappa)) return
+    select type(old_states)
+    class is(ice_shelf)
+      dt = time - old_states(1)%time
+      do n = 1, size(this%kappa)
+        solution = this%kappa(n)%raw()
+        precond_block = jacobian_block(dt*this%velocity%component(1), 1, &
+                                       boundary_locs=[this%thickness_size], &
+                                       boundary_types=[dirichlet], &
+                                       coef=real(-n, r8)) + 1._r8
+        call gmres_solve(solution, operator, old_states(1)%kappa(n)%raw(), resid, &
+                         flag, precond=preconditioner, krylov_dim=40)
+        if (flag /= 0) then
+          call logger%error('ice_shelf%integrate_layers','GMRES solver '// &
+                            'returned with error code '//str(flag))
+          success = .false.
+          return
+        end if
+        call this%kappa(n)%set_from_raw(solution)
+      end do
+    class default
+      call logger%fatal('ice_shelf%integrate_layers','Type other than `ice_shelf` '// &
+                        'passed to `ice_shelf` object as a previous state.')
+      error stop
+    end select
+
+  contains
+
+    function operator(v, xcur, rhs, rpar, ipar, success)
+      real(r8), dimension(:), intent(in)    :: v
+        !! The vector to be multiplied
+      real(r8), dimension(:), intent(in)    :: xcur
+        !! Array containing the current estimate of the independent
+        !! variables in the linear system. This may not be needed, but
+        !! is provided just in case.
+      real(r8), dimension(:), intent(in)    :: rhs
+        !! Array containing the right hand side of the linear
+        !! system. This may not be needed, but is provided just in
+        !! case.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      logical, intent(out)                  :: success
+        !! Indicates whether operation was completed succesfully
+      real(r8), dimension(size(xcur))       :: operator
+        !! Result of the operation
+
+      type(cheb1d_scalar_field) :: kappa
+      class(scalar_field), pointer :: tmp
+      
+      call kappa%assign_meta_data(this%kappa(n))
+      call kappa%set_from_raw(v)
+      tmp => dt*this%velocity .dot. (.grad. kappa)
+      kappa = (1._r8 - n*dt*(.div.this%velocity))*kappa + tmp
+      operator = kappa%raw()
+      operator(this%thickness_size) = v(this%thickness_size)
+      success = .true.
+    end function operator
+
+
+    function preconditioner(v, xcur, rhs, rpar, ipar, success)
+      real(r8), dimension(:), intent(in)    :: v
+        !! The vector to be multiplied
+      real(r8), dimension(:), intent(in)    :: xcur
+        !! Array containing the current estimate of the independent
+        !! variables in the linear system. This may not be needed, but
+        !! is provided just in case.
+      real(r8), dimension(:), intent(in)    :: rhs
+        !! Array containing the right hand side of the linear
+        !! system. This may not be needed, but is provided just in
+        !! case.
+      real(r8), dimension(*), intent(inout) :: rpar
+        !! Parameter/work array 
+      integer, dimension(*), intent(inout)  :: ipar
+        !! Parameter/work array
+      logical, intent(out)                  :: success
+        !! Indicates whether operation was completed succesfully
+      real(r8), dimension(size(xcur))       :: preconditioner
+        !! Result of the operation
+
+      type(cheb1d_scalar_field) :: tmp
+      
+      call tmp%assign_meta_data(this%kappa(n))
+      call tmp%set_from_raw(v)
+      tmp = precond_block%solve_for(tmp)
+      preconditioner = tmp%raw()
+      success = .true.
+    end function preconditioner
+  end subroutine ice_shelf_integrate_layers
+
 
 end module ice_shelf_mod

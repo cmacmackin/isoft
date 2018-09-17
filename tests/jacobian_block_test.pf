@@ -34,9 +34,9 @@ module jacobian_block_test
   type, extends(testcase), public :: test_jacobian
     type(jacobian_block)      :: block1, block2, block3, block4, &
                                  block5, block6, block7, block8, &
-                                 block9
+                                 block9, block10
     type(cheb1d_scalar_field) :: ones, contents, vector, rhs1, &
-                                 rhs2, rhs3, rhs4, rhs5,       &
+                                 rhs2, rhs3, rhs4, rhs5, rhs6, &
                                  dvector, d2vector
   contains
     procedure :: setup
@@ -122,6 +122,12 @@ contains
     prod5 = prod1(location) + prod2(location)
   end function prod5
 
+  pure function prod6(location)
+    real(r8), dimension(:), intent(in) :: location
+    real(r8) :: prod6
+    prod6 = 3*f_dx(location)*g(location) + f(location)*g_dx(location)
+  end function prod6
+
   subroutine bounds1(contents, derivative, rhs, boundary_locs, boundary_types, &
                      boundary_values)
     class(scalar_field), intent(in)                :: contents
@@ -193,6 +199,9 @@ contains
     tmp = this%block1
     this%block9 = jacobian_block(this%contents, 1, 1, [1,resolution], &
                                  [neumann,dirichlet], bounds2) + tmp
+    this%block10 = jacobian_block(this%contents, 1, boundary_locs=[resolution], &
+                                 boundary_types=[neumann], &
+                                 boundary_operations=bounds1, coef=3._r8)
     ! Create vectors for solving/multiplying with
     ! Must mess around with some of them to make boundary conditions work.
     this%vector = cheb1d_scalar_field(resolution, g)
@@ -212,6 +221,8 @@ contains
     this%rhs5 = cheb1d_scalar_field(resolution, prod5)
     call this%rhs5%set_element(1,g_dx([1._r8]))
     call this%rhs5%set_element(resolution,g([-1._r8]))
+    this%rhs6 = cheb1d_scalar_field(resolution, prod6)
+    call this%rhs6%set_element(resolution,g_dx([-1._r8]))
   end subroutine setup
 
   @Test
@@ -237,6 +248,8 @@ contains
     @assertEqual(this%rhs3%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
     actual = this%block9 * this%vector
     @assertEqual(this%rhs5%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
+    actual = this%block10 * this%vector
+    @assertEqual(this%rhs6%raw(),actual%raw(),tolerance=1.e-9_r8,message='Jacobian block multiplication returns wrong result.')
   end subroutine test_jacobian_multiply
 
   @Test
@@ -259,6 +272,8 @@ contains
     @assertEqual(this%vector%raw(),actual%raw(),tolerance=5.e-2_r8,message='Failed to solve Jacobian block system.')
     actual = this%block9%solve_for(this%rhs5)
     @assertEqual(this%vector%raw(),actual%raw(),tolerance=5.e-2_r8,message='Failed to solve Jacobian block system.')
+    actual = this%block10%solve_for(this%rhs6)
+    @assertEqual(this%vector%raw(),actual%raw(),tolerance=1.e-2_r8,message='Failed to solve Jacobian block system.')
   end subroutine test_jacobian_solve
 
 end module jacobian_block_test

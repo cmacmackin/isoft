@@ -116,8 +116,11 @@ module jacobian_block_mod
       !! right-hand-side of the Jacobian block operator. Defaults
       !! none.
     class(scalar_field), allocatable    :: contents
-      !!The value, \(A\), to which the Jacobian block operation is
-      !!beiing applied.
+      !! The value, \(A\), to which the Jacobian block operation is
+      !! beiing applied.
+    real(r8)                            :: coef = 1._r8
+      !! Optional coefficient by which the the \(\partial F/\partial x
+      !! \) term in the operator will be multiplied.
     procedure(jacobian_block_bounds), pointer, nopass  :: &
                                            get_boundaries
       !! A subroutine which determines the expected boundary conditions
@@ -196,7 +199,7 @@ contains
 
   function constructor(source_field, direction, extra_derivative, &
                        boundary_locs, boundary_types,             &
-                       boundary_operations) result(this)
+                       boundary_operations, coef) result(this)
     !* Author: Chris MacMackin
     !  Date: December 2016
     !
@@ -231,10 +234,14 @@ contains
       !! `boundary_locs`.
     procedure(jacobian_block_bounds),  optional :: boundary_operations
       !! A function specifying the values to place at the boundaries
-      !! of teh result when using the Jacobian block for
+      !! of the result when using the Jacobian block for
       !! multiplication. By default, all boundaries are set to 0. The
       !! order in which the resulting values are stored should match
       !! that of `boundary_locs`.
+    real(r8), optional, intent(in)              :: coef
+      !! An optional coefficient by which the the \(\partial
+      !! F/\partial x \) term in the operator will be
+      !! multipled. Default value is 1.
     type(jacobian_block)                        :: this
       !! A new Jacobian block
     call source_field%guard_temp()
@@ -244,6 +251,7 @@ contains
     this%direction = direction
     this%derivative = this%contents%d_dx(this%direction)
     if (present(extra_derivative)) this%extra_derivative = extra_derivative
+    if (present(coef)) this%coef = coef
     if (present(boundary_locs)) then
       this%boundary_locs = boundary_locs
     else
@@ -287,12 +295,12 @@ contains
     if (this%extra_derivative==no_extra_derivative) then
       select case(this%has_increment)
       case(0)
-        product = this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
+        product = this%coef*this%derivative * rhs + this%contents * rhs%d_dx(this%direction)
       case(1)
-        product = (this%derivative + this%real_increment) * rhs &
+        product = (this%coef*this%derivative + this%real_increment) * rhs &
                 + this%contents * rhs%d_dx(this%direction)
       case(2)
-        product = (this%derivative + this%field_increment) * rhs &
+        product = (this%coef*this%derivative + this%field_increment) * rhs &
                 + this%contents * rhs%d_dx(this%direction)
       case default
         error stop ('Invalid increment has been added.')
@@ -303,12 +311,12 @@ contains
       tmp = rhs%d_dx(this%extra_derivative)
       select case(this%has_increment)
       case(0)
-        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
+        product = this%coef*this%derivative * tmp + this%contents * tmp%d_dx(this%direction)
       case(1)
-        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
+        product = this%coef*this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
                 + this%real_increment*rhs
       case(2)
-        product = this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
+        product = this%coef*this%derivative * tmp + this%contents * tmp%d_dx(this%direction) &
                 + this%field_increment*rhs
       case default
         error stop ('Invalid increment has been added.')
@@ -410,6 +418,7 @@ contains
     allocate(this%contents, mold=rhs%contents)
     allocate(this%derivative, mold=rhs%derivative)
     this%contents = rhs%contents
+    this%coef = rhs%coef
     this%derivative = rhs%derivative
     this%get_boundaries => rhs%get_boundaries
     if (allocated(rhs%diagonal)) then
@@ -523,7 +532,7 @@ contains
     if (this%extra_derivative == no_extra_derivative) then
       ! Create the tridiagonal matrix when there is no additional
       ! differentiation operator on the RHS
-      diagonal = this%derivative%raw()
+      diagonal = this%coef*this%derivative%raw()
       select case(this%has_increment)
       case(0)
         continue
@@ -542,7 +551,7 @@ contains
       ! Create the tridiagonal matrix when the additional
       ! differentiation operator on the RHS operates in the same
       ! direction as the derivative of the contents.
-      deriv = this%derivative%raw()
+      deriv = this%coef*this%derivative%raw()
       allocate(diagonal(n))
       diagonal(2:n-1) = cont(2:n-1) * cached_dx2_ud(2:n-1)
       diagonal(1) = cont(1) * cached_dx2_ud(1) &

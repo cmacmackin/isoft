@@ -114,6 +114,27 @@ contains
     velocity = 1._r8
   end function velocity4
 
+  pure function kappa1(n, location) result(kappa)
+    integer, intent(in)                 :: n
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8) :: kappa
+    real(r8), dimension(3), parameter :: coefs = [0.3_r8, -0.1_r8, 1.0_r8]
+    real(r8), dimension(:), allocatable :: tmp
+    tmp = coefs(n) * (velocity1(location)/velocity1([0._r8]))**n
+    kappa = tmp(1)
+  end function kappa1
+
+  pure function kappa3(n, location) result(kappa)
+    integer, intent(in)                 :: n
+    real(r8), dimension(:), intent(in)  :: location
+    real(r8) :: kappa
+    real(r8), dimension(3), parameter :: coefs = [0.3_r8, -0.1_r8, 1.0_r8]
+    real(r8), dimension(:), allocatable :: tmp
+    tmp = coefs(n) * (velocity3(location)/velocity3([0._r8]))**n &
+        + 0.1*real(n, r8)*location(1)
+    kappa = tmp(1)
+  end function kappa3
+
   subroutine setup(this)
     class(test_shelf), intent(inout) :: this
     real(r8), dimension(1,2) :: domain1, domain2
@@ -127,14 +148,14 @@ contains
     domain2(1,2) = this%upper2
     call this%shelf1%initialise(domain1, [this%nodes], thickness1, velocity1, &
                             this%temperature, visc, bound, this%lambda,       &
-                            this%chi, this%zeta)
+                            this%chi, this%zeta, kappa=kappa1, n_kappa=3)
     call this%shelf2%initialise(domain2, [this%nodes], thickness2, velocity2)
     this%shelf3 = this%shelf1
     allocate(visc, source=newtonian_viscosity(1.0_r8))
     allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
     call this%shelf4%initialise(domain1, [this%nodes], thickness3, velocity3, &
                             this%temperature, visc, bound, this%lambda,       &
-                            this%chi, this%zeta)
+                            this%chi, this%zeta, kappa=kappa3, n_kappa=3)
     call this%shelf3%set_time(1.0_r8)
     allocate(visc, source=newtonian_viscosity(1.0_r8))
     allocate(bound, source=dallaston2015_glacier_boundary(1.0_r8,1.0_r8,chi_val))
@@ -311,6 +332,7 @@ contains
                                this%upper1)
     drag = cheb1d_scalar_field(this%nodes, drag_coef, this%lower1, &
                                this%upper1)
+    iplvl = 0
     time = 0._r8
     do i=1,steps
       time = time + dt
@@ -321,6 +343,10 @@ contains
     expected = this%shelf3%state_vector()
     actual = this%shelf1%state_vector()
     @assertEqual(expected,actual,message='Shelf diverged from steady state.',tolerance=1.e-9_r8)
+    expected = this%shelf3%kappa_vector()
+    actual = this%shelf1%kappa_vector()
+    @assertEqual(expected,actual,message='Internal layers diverged from steady state.',tolerance=1.e-9_r8)
+    iplvl = 0
   end subroutine test_integrate_steady
 
   @Test
@@ -355,6 +381,9 @@ contains
     expected = this%shelf1%state_vector()
     actual = this%shelf4%state_vector()
     @assertEqual(expected,actual,message='Shelf did not converge to steady state.',tolerance=5.e-5_r8)
+    expected = this%shelf4%kappa_vector()
+    actual = this%shelf1%kappa_vector()
+    @assertEqual(expected,actual,message='Internal layers did not converge to steady state.',tolerance=5.e-5_r8)
     iplvl = 0
   end subroutine test_integrate
 

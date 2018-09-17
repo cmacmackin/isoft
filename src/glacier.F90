@@ -91,6 +91,9 @@ module glacier_mod
       !! Performs a time-step of the integration, taking the state of
       !! the glacier to the specified time using the provided
       !! melt-rate data.
+    procedure                         :: integrate_layers => glacier_integrate_layers
+      !! Dummy routine which can be over-ridden to integrate internal
+      !! layers of the glacier to the specified time.
   end type glacier
 
   abstract interface
@@ -279,7 +282,7 @@ module glacier_mod
       real(r8) :: thickness
         !! The thickness of the glacier at `location`
     end function thickness_func
-      
+
     pure function velocity_func(location) result(velocity)
       !* Author: Chris MacMackin
       !  Date: July 2016
@@ -417,6 +420,10 @@ contains
       success = .false.
     end select
 
+    if (success) then
+      call this%integrate_layers(old_states, time, success)
+    end if
+
     call basal_melt%clean_temp(); call basal_drag%clean_temp()
 
   contains
@@ -492,5 +499,22 @@ contains
     end subroutine nitsol_precondition
 
   end subroutine glacier_integrate
+
+  subroutine glacier_integrate_layers(this, old_states, time, success)
+    !* Author: Chris MacMackin
+    !  Date: September 2018
+    !
+    ! Dummy routine which does nothing.
+    !
+    class(glacier), intent(inout)            :: this
+    class(glacier), dimension(:), intent(in) :: old_states
+      !! Previous states of the glacier, with the most recent one
+      !! first.
+    real(r8), intent(in)                     :: time
+      !! The time to which the glacier should be integrated
+    logical, intent(out)                     :: success
+      !! True if the integration is successful, false otherwise
+    continue
+  end subroutine glacier_integrate_layers
 
 end module glacier_mod
