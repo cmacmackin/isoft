@@ -26,6 +26,7 @@ Contains classes for reading simulation data from HDF5 files.
 '''
 
 import h5py
+import numpy as np
 
 class Glacier(object):
     '''A class which reads glacier data from HDF5 output. It presents
@@ -61,6 +62,14 @@ class Glacier(object):
     @property
     def v(self):
         return self.uvec[1,...]
+
+    @property
+    def kappa(self):
+        n = self.data.attrs['num_kappas']
+        kap = np.empty((n, self.data['thickness'].len()))
+        for i in range(n):
+            kap[i,:] = self.data['kappa_{0:04d}'.format(i+1)][...]
+        return kap
 
     @property
     def glacier_type(self):
@@ -191,6 +200,10 @@ class ShelfPlumeCryosphere(object):
     @property
     def v(self):
         return self.shelf.v
+
+    @property
+    def kappa(self):
+        return self.shelf.kappa
 
     @property
     def glacier_type(self):

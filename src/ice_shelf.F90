@@ -783,7 +783,7 @@ contains
     if (nkap > 0) allocate(this%kappa(nkap))
     do i = 1, nkap
       write(fieldname , hdf_kappa), i
-      call this%kappa(i)%read_hdf(group_id, hdf_thickness, error)
+      call this%kappa(i)%read_hdf(group_id, fieldname, error)
       if (error /= 0) then
         call logger%warning('ice_shelf%read_data','Error code '//        &
                             trim(str(error))//' returned when reading '// &
@@ -1253,6 +1253,7 @@ contains
                                        coef=real(-n, r8)) + 1._r8
         call gmres_solve(solution, operator, old_states(1)%kappa(n)%raw(), resid, &
                          flag, precond=preconditioner, krylov_dim=40)
+        call this%kappa(n)%set_from_raw(solution)
         if (flag /= 0) then
           call logger%error('ice_shelf%integrate_layers','GMRES solver '// &
                             'returned with error code '//str(flag))
