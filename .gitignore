@@ -21,3 +21,4 @@ tests/*.F90
 *.old
 *.h5
 isoft
+buildtools/
