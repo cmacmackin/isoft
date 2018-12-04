@@ -47,7 +47,7 @@ module glacier_boundary_mod
     ! of glaciers are to be specified. The descendent types can
     ! contain whatever data is needed to compute the result. It
     ! provides the routine
-    ! [[glacier_boundary(type):get_boundaries_residual]] to return an
+    ! [[glacier_boundary(type):boundary_residuals]] to return an
     ! array with the residuals representing deviation from satisfying
     ! the conditions. This can then be appended to a
     ! [[glacier(type)]]'s residual array.

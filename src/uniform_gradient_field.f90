@@ -184,7 +184,7 @@ contains
     !  Date: July 2017
     !
     ! Evaluates whether two scalar fields are equal within a tolerance,
-    ! specified by [[set_tol]].
+    ! specified by `set_tol`.
     !
     class(uniform_gradient_field), intent(in) :: this
     class(scalar_field), intent(in) :: rhs

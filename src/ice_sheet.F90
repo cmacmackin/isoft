@@ -404,9 +404,9 @@ contains
     !  Date: August 2016
     !
     ! Returns the number of elements in the ice sheet's state vector.
-    ! This is the size of the vector returned by [[ice_sheet:residual]]
-    ! and [[ice_sheet:state_vector]] and taken as an argument by 
-    ! [[ice_sheet:update]].
+    ! This is the size of the vector returned by [[ice_sheet(type):residual]]
+    ! and [[ice_sheet(type):state_vector]] and taken as an argument by 
+    ! [[ice_sheet(type):update]].
     !
     class(ice_sheet), intent(in) :: this
     integer :: sheet_data_size

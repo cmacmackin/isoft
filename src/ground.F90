@@ -145,9 +145,9 @@ contains
     !  Date: August 2016
     !
     ! Returns the number of elements in the ground's state vector.
-    ! This is the size of the vector returned by [[ground:residual]]
-    ! and [[ground:state_vector]] and taken as an argument by 
-    ! [[ground:update]].
+    ! This is the size of the vector returned by
+    ! [[ground(type):state_vector]] and taken as an argument by
+    ! [[ground(type):update]].
     !
     class(ground), intent(in) :: this
     integer                   :: ground_data_size

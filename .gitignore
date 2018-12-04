@@ -17,6 +17,7 @@ tests/*.F90
 *.log.*
 *.mp4
 *.png
+!media/*.png
 *.out
 *.old
 *.h5

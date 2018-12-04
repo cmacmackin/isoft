@@ -90,7 +90,7 @@ contains
     ! ```
     ! with the variables in a different order than how the equation is
     ! usually formulated. If they are in the correct order then
-    ! `gfortran` expects the result to be a [[vector_field(type)]]. It
+    ! `gfortran` expects the result to be a `vector_field`. It
     ! is not clear whether this is due to a bug in `gfortran` or in
     ! `factual`.
     !
