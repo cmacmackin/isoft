@@ -5,24 +5,26 @@ Date: December 2018
 The shelf/plume simulation requires computing various derivatives, for
 which a pseudospectral method is used. An introduction to this
 technique is provided below; for a more thorough explanation, see
-\citet{Trefethen2000}. Spectral methods provide a fast and accurate way to numerically
-differentiate discrete data. While more
-computationally expensive than finite difference methods for the same
-number of grid points, spectral methods give exponential convergence
-and thus often require significantly fewer grid points to achieve the
-same level of accuracy. Numerical accuracy is of particular importance
-here, as the purpose of running simulations is to test the stability
-of an ice-shelf to potentially small perturbations. Spectral methdos are often used for
-problems with periodic boundary conditions, where a Fourier
-series, \(f(\theta) = \sum_k a_k e^{ik\theta}\), can be used to
-interpolate between grid points. If the grid points are evenly spaced
-then the coefficients \(a_k\) can easily be calculated with a discrete
-Fourier transform. Typically this would be done using the highly
-efficient fast Fourier transform (FFT) algorithm \citep{Cooley1965},
-which requires \(O(N\log N)\) operations for N grid-points. The
-derivative is then \(f'(\theta) = \sum_k ika_k e^{ik\theta}\) and an
-inverse FFT can be used to convert the new coefficients \(ika_k\) to the
-values of \(f'\) at each grid point.
+[Trefethen (2000)](../6-bibliog.html#Trefethen2000). Spectral methods
+provide a fast and accurate way to numerically differentiate discrete
+data. While more computationally expensive than finite difference
+methods for the same number of grid points, spectral methods give
+exponential convergence and thus often require significantly fewer
+grid points to achieve the same level of accuracy. Numerical accuracy
+is of particular importance here, as the purpose of running
+simulations is to test the stability of an ice-shelf to potentially
+small perturbations. Spectral methdos are often used for problems with
+periodic boundary conditions, where a Fourier series, \(\setcounter{20} f(\theta) =
+\sum_k a_k e^{ik\theta}\), can be used to interpolate between grid
+points. If the grid points are evenly spaced then the coefficients
+\(a_k\) can easily be calculated with a discrete Fourier
+transform. Typically this would be done using the highly efficient
+fast Fourier transform (FFT) algorithm
+[(Cooley and Tukey, 1965)](../6-bibliog.html#Cooley1965), which
+requires \(O(N\log N)\) operations for N grid-points. The derivative
+is then \(f'(\theta) = \sum_k ika_k e^{ik\theta}\) and an inverse FFT
+can be used to convert the new coefficients \(ika_k\) to the values of
+\(f'\) at each grid point.
 
 However, the boundary conditions for the ice shelf and plume
 are not periodic. Instead, say there is an
@@ -33,11 +35,11 @@ method, it is necessary to map the interpolant to a function
 of the boundary conditions on \(F\), \(f\) will be periodic and even in
 \(\theta\) and can thus be differentiated as before. The results can
 then be mapped back onto the grid points in the \(x\)-domain. By
-choosing \(x\) grid points to be \textit{Chebyshev collocation points},
+choosing \(x\) grid points to be _Chebyshev collocation points_,
 defined below, the corresponding grid points in \(\theta\) will be
 equally spaced and an FFT can be used to find the Fourier
-coefficients. This is known as the \textit{Chebyshev pseudospectral
-  method}~\citep{Trefethen2000}. If \(N + 1\) Chebyshev collocation
+coefficients. This is known as the _Chebyshev pseudospectral
+  method_ [(Trefethen, 2000)](../6-bibliog.html#Trefethen2000). If \(N + 1\) Chebyshev collocation
 points are needed, their positions are given by
 \begin{equation}
   \label{eq:cheb-colloc}
@@ -47,7 +49,7 @@ This approach provides uneven spacing of points in \(x\), with a
 clustering of resolution near the domain boundaries, and hence is also
 well suited to capture rapid variation near the grounding line.
 
-Following \citet{Trefethen2000}, the practical algorithm used to
+Following [Trefethen (2000)](../6-bibliog.html#Trefethen2000), the practical algorithm used to
 differentiate discrete data \(v_j = v(x_j)\), for
 \(0 \le j \le N\), corresponding to values at Chebyshev collocation
 nodes \(x_0=1,\ldots,x_N=-1\), is as follows:
@@ -75,10 +77,12 @@ nodes \(x_0=1,\ldots,x_N=-1\), is as follows:
 
 Discrete sine and cosine transforms are variations of the discrete
 Fourier transform which take advantage of data being real and either
-even or odd. The FFTW3 package \citep{Frigo2005} was used to compute
-these. A more rigorous and detailed explanation of the above methods for
-periodic and non-periodic functions is provided
-by~\citet{Trefethen2000} in chapters 3 and 8, respectively.
+even or odd. The FFTW3 package
+[(Frigo and Johnson, 2005)](../6-bibliog.html#Frigo2005) was used to
+compute these. A more rigorous and detailed explanation of the above
+methods for periodic and non-periodic functions is provided by
+[Trefethen (2000)](../6-bibliog.html#Trefethen2000) in chapters 3 and
+8, respectively.
 
 If a domain other than \(-1 \le x \le 1\) is desired then the
 Collocation points can be scaled and offset as necessary, giving a

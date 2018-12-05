@@ -4,23 +4,24 @@ Date: November 2018
 
 ## Ice Shelf Solver: NITSOL
 
-As described in XXXXXX, when integrating the ice shelf the nonlinear
-solver NITSOL
+As [described earlier](../2-numerics/2-shelf-solver.html), when
+integrating the ice shelf the nonlinear solver NITSOL
 [(Pernice and Walker, 1998)](../6-bibliog.html#Pernice1998) was
 used. This is a legacy package written in FORTRAN77. ISOFT contains an
 explicit interface to the main NITSOL subroutine so that arguments can
 be checked by the compiler when it is invoked. NITSOL takes as an
 argument a subroutine which receives the current estimate of the state
 of the system and returns the corresponding residual according to
-equation XXXX or XXXX, depending on whether solving for the ice
+[equation 22](../2-numerics/3-shelf-solver.html#mjx-eqn-eqshelf-resid)
+or [26](../2-numerics/3-shelf-solver.html#mjx-eqn-equ-resid), depending
+on whether solving for the ice
 thickness or velocity. The state of the system and the residual are
 both represented as 1-D arrays of real values. When the state array is
 received by the residual subroutine it is used to update the value of
-a field type (see
-[the previous page](./2-discretisation.html)). Operations are
-performed using the field type to calculate a residual field. A 1-D
-array containing the data of the residual field is then extracted and
-returned by the subroutine.
+a field type (see [the previous page](./2-discretisation.html)).
+Operations are performed using the field type to calculate a
+residual field. A 1-D array containing the data of the residual field
+is then extracted and returned by the subroutine.
 
 For NITSOL to converge it required a preconditioner which inverts the
 Jacobian operator \(\mathcal{D}_x A \equiv \partial A/\partial x +
@@ -30,7 +31,8 @@ subroutine which takes as an argument an array to be preconditioned
 and returns the result of that preconditioning as an array. Similarly
 to the calculation of the residual, the preconditioner subroutine
 converts the array to a field type, performs the preconditioning, and
-then converts back to an array. As described in XXXXXX, the operator
+then converts back to an array. As
+[previously described](../2-numerics/2-shelf-solver.html), the operator
 can be inverted by solving a tridiagonal matrix approximating the
 Jacobian using finite-difference discretisation. A derived type called
 a [[jacobian_block(type)]] (see below) was written to encapsulate this
@@ -50,8 +52,9 @@ apply the forward operator to fields.
 
 ## Plume Solver: QLM
 
-The plume is solved using the quasi-linearisation method (QLM), as
-described in XXXXXX. As the QLM is an obscure
+The plume is solved using the
+[quasi-linearisation method](../2-numerics/4-shelf-solver.html) (QLM).
+As the QLM is an obscure
 algorithm, a custom implementation was written in modern Fortran for
 ISOFT. It takes as arguments functions representing the linear and
 nonlinear portions of the nonlinear system of ODEs being solved. It also
@@ -85,7 +88,7 @@ approach to differentiation. However, the much greater accuracy and
 comparable computational cost of the [[pseudospec_block(type)]] made it the
 better choice.
 
-As mentioned in XXXXXXX, it was found that, to get the level of
+As previously mentioned, it was found that to get the level of
 accuracy needed for the plume solver to converge, the product of the
 Jacobian could not simply be evaluated using a finite difference
 approximation. Instead, the automatic differentiation feature of the

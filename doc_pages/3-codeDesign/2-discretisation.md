@@ -32,9 +32,10 @@ Properties such as geometry and discretisation are specified within
 the concrete implementations of the field types. As shown in the class
 diagram above, two groups of these concrete field types exist. The
 first is the `cheb1d_scalar_field`/`cheb1d_vector_field`, which offers
-a 1-D field on a Chebyshev grid. The Chebyshev pseudo-spectral method,
-described XXXXXXX, is used to calculate derivatives, with Fast Fourier
-Transforms performed using the FFTW3 library
+a 1-D field on a Chebyshev grid. The
+[Chebyshev pseudo-spectral method](../2-numerics/2-spatial.html) is
+used to calculate derivatives, with Fast Fourier Transforms performed
+using the FFTW3 library
 [(Frigo and Johnson, 2005)](../6-bibliog.html#Frigo2005). These were
 subtypes of the abstract classes
 `array_scalar_field`/`array_vector_field`. The `array` field types
@@ -84,17 +85,21 @@ the
 [Parameterisations and Boundary Conditions](./parameterisations.html)
 section).
 
-However, one situation in which using the field types proved useful was
-when implementing automatic differentiation
-[(Neidinger 2010)](../6-bibliog.html#Neidinger2010). This works
-by applying the chain rule to the arithmetic operations and elementary
+However, one situation in which using the field types proved useful
+was when implementing automatic differentiation
+[(Neidinger, 2010)](../6-bibliog.html#Neidinger2010). This works by
+applying the chain rule to the arithmetic operations and elementary
 mathematical functions applied to data in order to calculate the
-derivative of the result with respect to one or more pieces of the data
-used to produce it. The simpler of the two approaches to doing this is
-to overload the arithmetic operators and elementary functions to
-propagate the derivative using the chain rule.[^1] Consider ordered
-pairs of the form \(\langle u, u'\rangle\), where \(u\) is some value \(u'\)
-is a differential associated with that value. Then: $$\begin{aligned}
+derivative of the result with respect to one or more pieces of the
+data used to produce it. The simpler of the two approaches to doing
+this is to overload the arithmetic operators and elementary functions
+to propagate the derivative using the chain rule. (The other
+technique, known as *source transformation*, automatically rewrites
+the entire code prior to compilation so that propagation of the
+derivative is performed inline.) Consider ordered pairs of the form
+\(\langle u, u'\rangle\), where \(u\) is some value \(u'\) is a
+differential associated with that value. Then:
+$$\begin{aligned}
   \langle u, u' \rangle + \langle v, v' \rangle &=  \langle u + v, u'
                                                   + v' \rangle, \\
   \langle u, u' \rangle \times \langle v, v' \rangle &=  \langle uv,
@@ -125,8 +130,3 @@ number of settings other than ISOFT. As such, they were written as a
 separate library called FACTUAL (Fortran Abstract Calculus Types, Usable
 and Aesthetic Library). This is distributed with ISOFT but can also be
 downloaded on its own.
-
-
-[^1]: The other technique, known as *source transformation*,
-    automatically rewrites the entire code prior to compilation so that
-    propagation of the derivative is performed inline.

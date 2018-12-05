@@ -16,6 +16,7 @@ display: public
 graph: false
 source: false
 search: false
+mathjax_config: mj-config.js
 extra_filetypes: py #
 extra_mods: factual_mod:https://cmacmackin.github.io/factual
             f95_lapack:http://www.netlib.org/lapack95/lug95/

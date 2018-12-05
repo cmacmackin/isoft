@@ -40,17 +40,20 @@ approximation of
 was implemented as [[one_equation_melt(type)]]. A variation of this
 was implemented as [[ave_one_equation_melt(type)]], implementing the
 horizontally-averaged version of the one equation formulation found in
-equation XXXX. The subtype [[dallaston2015_melt(type)]] provides a way
+[equations 48 and 49](../2-numerics/6-horzint.html#mjx-eqn-eqhorz-melt).
+The subtype [[dallaston2015_melt(type)]] provides a way
 to convert from the scaling choices used by
 [Dallaston, Hewitt, and Wells (2015)](../bibliog.html#Dallaston2015)
 to those used in ISOFT, which was useful for writing unit
 tests. Finally, the abstract type [[equation_of_state(type)]] sets out
 the interface for calculating the density of water from salinity and
 temperature. Subtype [[linear_eos(type)]] implements the linearised
-equation of state in equation XXXX. The related
-[[ave_linear_eos(type)]] provides additional methods methods for
+equation of state in
+[equation 20](../2-numerics/1-equations.html#mjx-eqn-eqlin-eos). The
+related [[ave_linear_eos(type)]] provides additional methods methods for
 calculating \(\overline{\rho}\) and \(\tilde{\rho}\), as defined in
-equations XXX and XXX. Last, the subtype [[prescribed_eos(type)]]
+[equations 46 and 47](6-horzint.html#mjx-eqn-eqrho-bar), respectively.
+Last, the subtype [[prescribed_eos(type)]]
 calculates the density assuming no dependence on temperature and using
 a prescribed salinity profile; this is also useful in unit
 tests. Class diagrams for each set of derived types are provided
@@ -69,19 +72,22 @@ all inherited abstract methods, but this is not shown for reasons of
 space.](|media|/eos.png)
 
 A similar approach was taken for boundary conditions and ambient ocean
-properties. The types [[glacier_boundary(type)]]
-and [[plume_boundary(type)]] (class diagrams below) provide interfaces
-for identifying the types of boundary conditions at different locations
+properties. The types [[glacier_boundary(type)]] and
+[[plume_boundary(type)]] (class diagrams below) provide interfaces for
+identifying the types of boundary conditions at different locations
 and determining the appropriate values. The default implementations
 effectively do not specify boundary conditions and the methods must be
-overridden to be useful. The interface provided by [[plume_boundary(type)]] is
-quite different from that provided by [[glacier_boundary(type)]]. The latter should
-ideally be refactored to be closer to the more usable interface provided
-by the former. The subtypes for [[glacier_boundary(type)]] are
-[[dallaston2015_glacier_boundary(type)]], which provides time-independent
-boundary conditions like those described in equations XXXX and XXXX, and
-[[seasonal_glacier_boundary(type)]], which modifies these conditions according
-to equations  or  to allow seasonal oscillations in ice flux.
+overridden to be useful. The interface provided by
+[[plume_boundary(type)]] is quite different from that provided by
+[[glacier_boundary(type)]]. The latter should ideally be refactored to
+be closer to the more usable interface provided by the former. The
+subtypes for [[glacier_boundary(type)]] are
+[[dallaston2015_glacier_boundary(type)]], which prescribes a
+time-independent ice thickness and velocity at the grounding line and
+a balance between normal stress and hydrostatic pressure at the
+calving front, and [[seasonal_glacier_boundary(type)]], which modifies
+introduces sinusoidal or square-wave variation to the grounding line
+velocity.
 
 ![A UML class diagram for the glacier boundary type. Subtypes implement
 all inherited abstract methods, but this is not shown for reasons of
@@ -92,22 +98,23 @@ all inherited abstract methods, but this is not shown for reasons of
 space.](|media|/plumebound.png)
 
 The first subtype of [[plume_boundary(type)]] is
-[[simple_plume_boundary(type)]], which implements boundary conditions
-of the type described in equations XXXX and XXXX.  Closely related to
-this is [[dallaston2015_seasonal_boundary(type)]], which modifies the
-boundary conditions according to equation XXXXX. The type which was
-ultimately used in all simulations was
-[[upstream_plume_boundary(type)]].  This takes a user-provided
-function which specifies the inflow value of each plume variable and
-then, assuming no diffusion, integrates the plume a small distance
-upstream along the current basal draft of the ice shelf using
+[[simple_plume_boundary(type)]], which implements Dirichlet boundary
+conditions at the grounding line and Neumann conditions (zero
+gradient) for velocity, salinity, and temperature at the calving
+front.  Closely related to this type is
+[[dallaston2015_seasonal_boundary(type)]], which modifies the boundary
+conditions by sinusoidally perturbing the plume thickness and velocity
+at the grounding line. The type which was ultimately used in all
+simulations was [[upstream_plume_boundary(type)]].  This takes a
+user-provided function which specifies the inflow value of each plume
+variable and then, assuming no diffusion, integrates the plume a small
+distance upstream along the current basal draft of the ice shelf using
 [[rksuite_90]]
 [(Brankin and Gladwell, 1994)](../6-bibliog.html#Brankin1994). This
 allows the plume solver itself to avoid handling narrow boundary
 layers where the plume salinity and temperature change
-rapidly. Outflow conditions are again defined according to
-equation XXX. Ambient ocean conditions are described according to the
-interface defined by the abstract type
+rapidly. Outflow conditions remain unchanged. Ambient ocean conditions
+are described according to the interface defined by the abstract type
 [[ambient_conditions(type)]]. As shown in the class diagram below, at
 present only one implementation is provided
 ([[uniform_ambient_conditions(type)]]), specifying constant ambient
