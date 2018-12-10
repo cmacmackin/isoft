@@ -1,3 +1,21 @@
 [submodule "factual"]
-	path = factual
+	path = libs/factual
 	url = https://github.com/cmacmackin/factual
+[submodule "libs/nitsol"]
+	path = libs/nitsol
+	url = https://github.com/cmacmackin/nitsol
+[submodule "libs/flogging"]
+	path = libs/flogging
+	url = https://github.com/cmacmackin/flogging
+[submodule "libs/FACE"]
+	path = libs/FACE
+	url = https://github.com/szaghi/FACE
+[submodule "libs/lapack95"]
+	path = libs/lapack95
+	url = https://github.com/cmacmackin/lapack95
+[submodule "libs/pFUnit"]
+	path = libs/pFUnit
+	url = git://git.code.sf.net/p/pfunit/code
+[submodule "libs/PENF"]
+	path = libs/PENF
+	url = https://github.com/szaghi/PENF

@@ -17,30 +17,70 @@
 #  MA 02110-1301, USA.
 #  
 
+# System-specific variables
+SYSTEM_LIB := /usr/lib      # Paths containing external libraries
+SYSTEM_INC := /usr/include  # Paths containing module/include files
+                            # for external libraries
+
+
+SHELL := /bin/bash
+
 # Directories
-EXEC_FILE := main.o
-SDIR := ./src
-TDIR := ./tests
-MDIR := ./mod
-FDIR := ./factual
-PFUNIT = $(HOME)/Code/pfunit-$(F90)
+SDIR := src
+TDIR := tests
+MDIR := mod
+LDIR := libs
+
+# ISOFT path
+IDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# Included libraries
+FACT_DIR := $(IDIR)$(LDIR)/factual
+FACT_LIB := $(FACT_DIR)/libfactual.a
+FACT_INC := $(FACT_DIR)/mod
+
+FLOG_DIR := $(IDIR)$(LDIR)/flogging
+FLOG_LIB := $(FLOG_DIR)/build/libflogging.a
+FLOG_INC := $(FLOG_DIR)/build/include
+
+FACE_DIR := $(IDIR)$(LDIR)/FACE
+FACE_LIB := $(FACE_DIR)/lib/libface.a
+FACE_INC := $(FACE_DIR)/lib/mod
+
+LA_DIR := $(IDIR)$(LDIR)/lapack95
+LA_LIB := $(LA_DIR)/lapack95.a
+LA_INC := $(LA_DIR)/lapack95_modules 
+
+NIT_DIR := $(IDIR)$(LDIR)/nitsol
+NIT_LIB := $(NIT_DIR)/Nitsol/libnitsol.a
+NIT_INC := 
+
+PENF_DIR := $(IDIR)$(LDIR)/PENF
+PENF_LIB := $(PENF_DIR)/static/penf.a
+PENF_INC := $(PENF_DIR)/static/mod
+
+PF_DIR := $(IDIR)$(LDIR)/pFUnit
+PF_LIB := $(PF_DIR)/install/lib/libpfunit.a
+PF_INC := $(PF_DIR)/install/mod
+PF_DRIVE := $(PF_DIR)/install/include/driver.F90
+
+# External libraries
+BLAS := blas
+LAPACK := lapack
+HDF5 := hdf5_fortran
+HDF5HL := hdf5hl_fortran
+FFTW3 := fftw3
+
+# Build tools
+VENV := buildtools
+FYPP := $(VENV)/bin/fypp
+FOBIS := $(VENV)/bin/FoBiS.py
+FORD := $(VENV)/bin/ford
 
 # Output
-EXEC := isoft
 TEXEC := tests.x
 LIB := libisoft.a
-FLIB := $(FDIR)/libfactual.a
-FMDIR := $(FDIR)/mod
-FMOD := $(FMDIR)/factual_mod.mod
-PREFIX := $(HOME)/.local
-LIBDIR := $(PREFIX)/lib
-INCDIR := $(PREFIX)/include 
-BINDIR := $(PREFIX)/bin
-
-BLAS := openblas
-
-# Include paths internal to project
-PROJECT_INCDIRS := $(FMDIR) $(TDIR)
+SCRIPT_NAME := compile.sh
 
 # The compiler
 VENDOR ?= GNU
@@ -64,12 +104,44 @@ else
 endif
 
 # Include paths
-FCFLAGS += -I$(MDIR) $(PROJECT_INCDIRS:%=-I%) -I$(INCDIR) -I/usr/include -I$(PFUNIT)/mod
+INC_FLAGS := -I$(FACT_INC) -I$(FLOG_INC) -I$(FACE_INC) \
+	   -I$(LA_INC) -I$(PENF_INC) -I$(PF_INC) $(SYSTEM_INC:%=-I%)
+FCFLAGS += -I$(MDIR) $(INC_FLAGS)
 
 # Libraries for use at link-time
-LIBS := -L$(LIBDIR) -lfftw3 -lnitsol -llapack95 -lhdf5_fortran -lhdf5hl_fortran -lflogging \
-        -l$(BLAS) -llapack -lpenf
-LDFLAGS += $(LIBS)
+LIBS := $(FACT_LIB) $(FLOG_LIB) $(FACE_LIB) $(LA_LIB) $(NIT_LIB) $(PENF_LIB)
+LIBDIRS := -L$(SYSTEM_LIB:%=-L%)
+EXT_LIBS := -l$(FFTW3) -l$(HDF5) -l$(HDF5HL) -l$(BLAS) -l$(LAPACK)
+LDFLAGS += $(LIBS) $(LIBDIRS) $(EXT_LIBS)
+
+# Compile script
+define COMP_SCRIPT
+#!/bin/bash
+
+if [ "$$#" -gt 0 ]
+then
+    ifile=$$1
+else
+    ifile="main.f90"
+fi
+if [ "$$#" -gt 1 ]
+then
+    iexec=$$2
+else
+    iexec="isoft"
+fi
+
+f90="$(F90)"
+idir="$(IDIR)"
+ilib="$${idir}/$(LIB)"
+
+flags="-O3 -I$(IDIR)$(MDIR) $(INC_FLAGS) $(LDFLAGS)"
+
+command="$${f90} $${ifile} -o $${iexec} $${ilib} $${flags}"
+echo $$command
+$$($$command)
+endef
+export COMP_SCRIPT
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
@@ -96,38 +168,68 @@ META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)
 #OBJS := $(filter-out $(META_OBJ), $(OBJS))
 
 # "make" builds all
-all: exec
+all: lib
 
 all_objects: clean_src_mod $(OBJS)
-
-exec: $(EXEC) 
-
-$(EXEC): $(EXEC_FILE) $(LIB) $(FLIB)
-	$(F90) $^ $(LDFLAGS) -o $@
-
-install_exec: exec
-	cp $(EXEC) $(BINDIR)
 
 tests: $(TEXEC)
 	./$(TEXEC)
 
-$(TEXEC): $(TOBJS) $(LIB) $(FLIB) # $(TDIR)/testSuites.inc
-	$(F90) -I$(PFUNIT)/include $(PFUNIT)/include/driver.F90 $(COVFLAGS) \
-		$(FCFLAGS) $^ $(LIBS) -L$(PFUNIT)/lib -lpfunit -o $@
+$(TEXEC): $(TOBJS) $(LIB) $(PF_LIB) | $(TDIR)/testSuites.inc
+	$(F90) -I$(TDIR) $(PF_DRIVE) $(COVFLAGS) \
+		$(FCFLAGS) $^ $(LDFLAGS) -o $@
 
 lib: $(LIB)
 
 $(LIB): $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
-install_lib: lib
-	cp $(LIB) $(LIBDIR)
-	cp $(MDIR)/*.mod $(INCDIR)
+$(FACT_LIB): $(FYPP)
+	source $(VENV)/bin/activate
+	make -C $(FACT_DIR)
 
-$(FMOD): $(FLIB)
+$(FACE_LIB): $(FOBIS)
+	source $(VENV)/bin/activate
+	cd $(FACE_DIR); \
+	FoBiS.py build -f fobos -mode face-static-gnu
 
-$(FLIB):
-	make -C $(FLIB) all
+$(FLOG_LIB): $(FACE_LIB) $(FOBIS)
+	source $(VENV)/bin/activate
+	cd $(FLOG_DIR); \
+	FoBiS.py build -f fobos -mode gnu-static -i ../../$(FACE_INC)
+
+$(LA_LIB): | $(LA_INC)
+	make -C $(LA_DIR)/SRC single_double_complex_dcomplex OPTS0='-O3'
+
+$(LA_INC):
+	mkdir $(LA_INC)
+
+$(NIT_LIB):
+	make -C $(NIT_DIR)
+
+$(PENF_LIB): $(FOBIS)
+	source $(VENV)/bin/activate
+	cd $(PENF_DIR); \
+	FoBiS.py build -f fobos -mode static-gnu
+
+$(PF_LIB):
+	make -C $(PF_DIR) tests F90=$(F90) F90_VENDOR=GNU
+	make -C $(PF_DIR) install INSTALL_DIR=install
+
+$(FOBIS): $(VENV)
+	source $(VENV)/bin/activate
+	pip install FoBiS.py
+
+$(FORD): $(VENV)
+	source $(VENV)/bin/activate
+	pip install ford
+
+$(FYPP): $(VENV)
+	source $(VENV)/bin/activate
+	pip install fypp
+
+$(VENV):
+	virtualenv $(VENV)
 
 ifeq ($(MAKECMDGOALS),clean)
 else ifeq ($(MAKECMDGOALS),doc)
@@ -140,7 +242,7 @@ endif
 
 # General rule for building Fortran files, where $(1) is the file extension
 define fortran_rule
-%.o: %.$(1) $(FMOD) | $(MDIR)
+%.o: %.$(1) $(LIBS) | $(MDIR)
 	$$(F90) $$(COVFLAGS) $$(FCFLAGS) -c $$< -o $$@
 
 %.d: %.$(1) get_deps
@@ -157,6 +259,13 @@ $(META_OBJ): $(SRCS)
 
 $(MDIR):
 	@mkdir -p $@
+
+script: $(SCRIPT_NAME)
+
+$(SCRIPT_NAME): | Makefile
+	@echo "$$COMP_SCRIPT" > compile.sh
+	@chmod a+x $@
+	@echo Created script compile.sh
 
 clean: clean_obj clean_mod clean_deps clean_backups
 
@@ -183,7 +292,8 @@ clean_backups:
 clean_src_mod:
 	/bin/rm -rf $(SDIR)/*.mod
 
-doc: documentation.md
+doc: documentation.md $(FORD)
+	source $(VENV)/bin/activate
 	ford $<
 
 .PHONEY: all all_objects exec install_exec tests lib install_lib clean \
