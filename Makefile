@@ -26,37 +26,40 @@ SYSTEM_INC := /usr/include  # Paths containing module/include files
 SHELL := /bin/bash
 
 # Directories
-SDIR := ./src
-TDIR := ./tests
-MDIR := ./mod
-LDIR := ./libs
+SDIR := src
+TDIR := tests
+MDIR := mod
+LDIR := libs
+
+# ISOFT path
+IDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # Included libraries
-FACT_DIR := $(LDIR)/factual
+FACT_DIR := $(IDIR)$(LDIR)/factual
 FACT_LIB := $(FACT_DIR)/libfactual.a
 FACT_INC := $(FACT_DIR)/mod
 
-FLOG_DIR := $(LDIR)/flogging
+FLOG_DIR := $(IDIR)$(LDIR)/flogging
 FLOG_LIB := $(FLOG_DIR)/build/libflogging.a
 FLOG_INC := $(FLOG_DIR)/build/include
 
-FACE_DIR := $(LDIR)/FACE
+FACE_DIR := $(IDIR)$(LDIR)/FACE
 FACE_LIB := $(FACE_DIR)/lib/libface.a
 FACE_INC := $(FACE_DIR)/lib/mod
 
-LA_DIR := $(LDIR)/lapack95
+LA_DIR := $(IDIR)$(LDIR)/lapack95
 LA_LIB := $(LA_DIR)/lapack95.a
 LA_INC := $(LA_DIR)/lapack95_modules 
 
-NIT_DIR := $(LDIR)/nitsol
+NIT_DIR := $(IDIR)$(LDIR)/nitsol
 NIT_LIB := $(NIT_DIR)/Nitsol/libnitsol.a
 NIT_INC := 
 
-PENF_DIR := $(LDIR)/PENF
+PENF_DIR := $(IDIR)$(LDIR)/PENF
 PENF_LIB := $(PENF_DIR)/static/penf.a
 PENF_INC := $(PENF_DIR)/static/mod
 
-PF_DIR := $(LDIR)/pFUnit
+PF_DIR := $(IDIR)$(LDIR)/pFUnit
 PF_LIB := $(PF_DIR)/install/lib/libpfunit.a
 PF_INC := $(PF_DIR)/install/mod
 PF_DRIVE := $(PF_DIR)/install/include/driver.F90
@@ -73,9 +76,6 @@ VENV := buildtools
 FYPP := $(VENV)/bin/fypp
 FOBIS := $(VENV)/bin/FoBiS.py
 FORD := $(VENV)/bin/ford
-
-# ISOFT path
-IDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # Output
 TEXEC := tests.x
@@ -104,9 +104,9 @@ else
 endif
 
 # Include paths
-INC_FLAGS := -I$(MDIR) -I$(FACT_INC) -I$(FLOG_INC) -I$(FACE_INC) \
+INC_FLAGS := -I$(FACT_INC) -I$(FLOG_INC) -I$(FACE_INC) \
 	   -I$(LA_INC) -I$(PENF_INC) -I$(PF_INC) $(SYSTEM_INC:%=-I%)
-FCFLAGS += $(INC_FLAGS)
+FCFLAGS += -I$(MDIR) $(INC_FLAGS)
 
 # Libraries for use at link-time
 LIBS := $(FACT_LIB) $(FLOG_LIB) $(FACE_LIB) $(LA_LIB) $(NIT_LIB) $(PENF_LIB)
@@ -120,13 +120,13 @@ define COMP_SCRIPT
 
 if [ "$$#" -gt 0 ]
 then
-    ifile=$1
+    ifile=$$1
 else
     ifile="main.f90"
 fi
 if [ "$$#" -gt 1 ]
 then
-    iexec=$2
+    iexec=$$2
 else
     iexec="isoft"
 fi
@@ -135,7 +135,7 @@ f90="$(F90)"
 idir="$(IDIR)"
 ilib="$${idir}/$(LIB)"
 
-flags="$(INC_FLAGS) $(LDFLAGS)"
+flags="-O3 -I$(IDIR)$(MDIR) $(INC_FLAGS) $(LDFLAGS)"
 
 command="$${f90} $${ifile} -o $${iexec} $${ilib} $${flags}"
 echo $$command

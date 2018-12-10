@@ -782,7 +782,7 @@ contains
 
     if (nkap > 0) allocate(this%kappa(nkap))
     do i = 1, nkap
-      write(fieldname , hdf_kappa), i
+      write(fieldname , hdf_kappa) i
       call this%kappa(i)%read_hdf(group_id, fieldname, error)
       if (error /= 0) then
         call logger%warning('ice_shelf%read_data','Error code '//        &
@@ -882,7 +882,7 @@ contains
     end if
 
     do i = 1, nkap
-      write(fieldname , hdf_kappa), i
+      write(fieldname , hdf_kappa) i
       call this%kappa(i)%write_hdf(group_id, trim(fieldname), error)
       if (error /= 0) then
         call logger%warning('ice_shelf%write_data','Error code '// &
