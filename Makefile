@@ -1,5 +1,3 @@
-SHELL := /bin/bash
-
 #  
 #  Copyright 2016 Christopher MacMackin <cmacmackin@gmail.com>
 #  
@@ -20,9 +18,12 @@ SHELL := /bin/bash
 #  
 
 # System-specific variables
-SYSTEM_LIB := /usr/lib $(HOME)/.local/lib     # Paths containing external libraries
-SYSTEM_INC := /usr/include  $(HOME)/.local/include # Paths containing module/include files
+SYSTEM_LIB := /usr/lib      # Paths containing external libraries
+SYSTEM_INC := /usr/include  # Paths containing module/include files
                             # for external libraries
+
+
+SHELL := /bin/bash
 
 # Directories
 SDIR := ./src
@@ -56,11 +57,12 @@ PENF_LIB := $(PENF_DIR)/static/penf.a
 PENF_INC := $(PENF_DIR)/static/mod
 
 PF_DIR := $(LDIR)/pFUnit
-PF_LIB := $(PF_DIR)/lib/libpfunit.a
-PF_INC := $(PF_DIR)/mod
+PF_LIB := $(PF_DIR)/install/lib/libpfunit.a
+PF_INC := $(PF_DIR)/install/mod
+PF_DRIVE := $(PF_DIR)/install/include/driver.F90
 
 # External libraries
-BLAS := openblas
+BLAS := blas
 LAPACK := lapack
 HDF5 := hdf5_fortran
 HDF5HL := hdf5hl_fortran
@@ -72,9 +74,13 @@ FYPP := $(VENV)/bin/fypp
 FOBIS := $(VENV)/bin/FoBiS.py
 FORD := $(VENV)/bin/ford
 
+# ISOFT path
+IDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 # Output
 TEXEC := tests.x
 LIB := libisoft.a
+SCRIPT_NAME := compile.sh
 
 # The compiler
 VENDOR ?= GNU
@@ -98,14 +104,44 @@ else
 endif
 
 # Include paths
-FCFLAGS += -I$(MDIR) -I$(FACT_INC) -I$(FLOG_INC) -I$(FACE_INC) \
-	   -I$(LA_INC) -I$(PENF_INC) $(SYSTEM_INC:%=-I%)
+INC_FLAGS := -I$(MDIR) -I$(FACT_INC) -I$(FLOG_INC) -I$(FACE_INC) \
+	   -I$(LA_INC) -I$(PENF_INC) -I$(PF_INC) $(SYSTEM_INC:%=-I%)
+FCFLAGS += $(INC_FLAGS)
 
 # Libraries for use at link-time
 LIBS := $(FACT_LIB) $(FLOG_LIB) $(FACE_LIB) $(LA_LIB) $(NIT_LIB) $(PENF_LIB)
 LIBDIRS := -L$(SYSTEM_LIB:%=-L%)
 EXT_LIBS := -l$(FFTW3) -l$(HDF5) -l$(HDF5HL) -l$(BLAS) -l$(LAPACK)
-LDFLAGS += $(LIBDIRS) $(LIBS)
+LDFLAGS += $(LIBS) $(LIBDIRS) $(EXT_LIBS)
+
+# Compile script
+define COMP_SCRIPT
+#!/bin/bash
+
+if [ "$$#" -gt 0 ]
+then
+    ifile=$1
+else
+    ifile="main.f90"
+fi
+if [ "$$#" -gt 1 ]
+then
+    iexec=$2
+else
+    iexec="isoft"
+fi
+
+f90="$(F90)"
+idir="$(IDIR)"
+ilib="$${idir}/$(LIB)"
+
+flags="$(INC_FLAGS) $(LDFLAGS)"
+
+command="$${f90} $${ifile} -o $${iexec} $${ilib} $${flags}"
+echo $$command
+$$($$command)
+endef
+export COMP_SCRIPT
 
 # A regular expression for names of modules provided by external libraries
 # and which won't be contained in the module directory of this codebase
@@ -132,15 +168,15 @@ META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)
 #OBJS := $(filter-out $(META_OBJ), $(OBJS))
 
 # "make" builds all
-all: exec
+all: lib
 
 all_objects: clean_src_mod $(OBJS)
 
 tests: $(TEXEC)
 	./$(TEXEC)
 
-$(TEXEC): $(LIB) $(LIBS) $(PF_LIB) $(TOBJS) 
-	$(F90) -I$(PF_INC) $(PF_INC)/driver.F90 $(COVFLAGS) \
+$(TEXEC): $(TOBJS) $(LIB) $(PF_LIB) | $(TDIR)/testSuites.inc
+	$(F90) -I$(TDIR) $(PF_DRIVE) $(COVFLAGS) \
 		$(FCFLAGS) $^ $(LDFLAGS) -o $@
 
 lib: $(LIB)
@@ -178,7 +214,7 @@ $(PENF_LIB): $(FOBIS)
 
 $(PF_LIB):
 	make -C $(PF_DIR) tests F90=$(F90) F90_VENDOR=GNU
-	make -C $(PF_DIR) install
+	make -C $(PF_DIR) install INSTALL_DIR=install
 
 $(FOBIS): $(VENV)
 	source $(VENV)/bin/activate
@@ -223,6 +259,13 @@ $(META_OBJ): $(SRCS)
 
 $(MDIR):
 	@mkdir -p $@
+
+script: $(SCRIPT_NAME)
+
+$(SCRIPT_NAME): | Makefile
+	@echo "$$COMP_SCRIPT" > compile.sh
+	@chmod a+x $@
+	@echo Created script compile.sh
 
 clean: clean_obj clean_mod clean_deps clean_backups
 
