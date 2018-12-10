@@ -114,8 +114,8 @@ contains
       !! The melting point of the ice. Defaults to 0.
     type(one_equation_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%coef1 = coef1!*(-1)
-    this%coef2 = coef2!*(-1)
+    this%coef1 = coef1
+    this%coef2 = coef2
     if (present(fresh_sal)) this%sal_forcing = -fresh_sal*coef2
     if (present(melt_temp)) this%melt_temp = melt_temp
   end function constructor

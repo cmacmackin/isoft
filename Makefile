@@ -160,7 +160,7 @@ EXT_PATTERN_SED := 's/([^ ]*)\.($(subst $(space),|,$(_F_EXT)))/\1.o/g;'
 # Objects to compile
 SRCS := $(shell find $(SDIR) -iregex $(EXT_PATTERN_GREP))
 OBJS := $(shell find $(SDIR) -iregex $(EXT_PATTERN_GREP) | sed -r $(EXT_PATTERN_SED))
-TOBJS := $(patsubst %.pf,%.o,$(wildcard $(TDIR)/*.pf))
+TOBJS := $(patsubst %.pf,%.o,$(wildcard $(TDIR)/*.pf)) $(patsubst %.f90,%.o,$(wildcard $(TDIR)/*.f90))
 
 META_FILE := $(SDIR)/meta_implementation.F90
 META_OBJ  := $(META_FILE:$(suffix $(META_FILE))=.o)

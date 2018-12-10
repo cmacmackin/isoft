@@ -49,8 +49,8 @@ module kochergin1987_entrainment_mod
     ! \(c_L\) is an entrainment coefficient, \(\vec{U}\) is the
     ! velocity of the plume, \(g'\) is the reduced gravity, and
     ! \(S_m\) is the turbulent Schmidt number. The latter-most can be
-    ! expressed as $$ S_m = \frac{\Ri}{0.0725(\Ri + 0.186 -
-    ! \sqrt{\Ri^2 - 0.316\Ri + 0.0346})} $$, where \(\Ri =
+    ! expressed as $$ S_m = \frac{Ri}{0.0725(Ri + 0.186 -
+    ! \sqrt{Ri^2 - 0.316Ri + 0.0346})} $$, where \(Ri =
     ! g'D/|\vec{U}|^2\) is the Richardson number.
     !
     private
@@ -89,9 +89,9 @@ contains
     ! Here, \(c_L\) is an entrainment coefficient, \(\vec{U}\) is the
     ! velocity of the plume, \(g'\) is the reduced gravity, and
     ! \(S_m\) is the turbulent Schmidt number. The Schmidt number is a
-    ! function of the Richardson number \(\Ri = g'D/|\vec{U}|^2\):
-    ! $$ S_m = \frac{\Ri}{0.0725(\Ri + 0.186 -
-    ! \sqrt{\Ri^2 - 0.316\Ri + 0.0346})}. $$
+    ! function of the Richardson number \(Ri = g'D/|\vec{U}|^2\):
+    ! $$ S_m = \frac{Ri}{0.0725(Ri + 0.186 -
+    ! \sqrt{Ri^2 - 0.316Ri + 0.0346})}. $$
     !
     class(kochergin1987_entrainment), intent(in) :: this
     class(vector_field), intent(in)            :: velocity

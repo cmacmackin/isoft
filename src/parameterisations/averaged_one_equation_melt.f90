@@ -132,8 +132,7 @@ contains
       !! direction. Defaults to 1.
     type(ave_one_equation_melt) :: this
       !! The newly created object representing the melt relationship.
-    this%coef1 = coef1!*(-1)
-    this%coef2 = coef2!*(-1)
+    this%coef1 = coef1
     if (present(fresh_sal)) this%sal_forcing = -fresh_sal*coef2
     if (present(melt_temp)) this%melt_temp = melt_temp
     if (present(a_UabsT)) this%a_UabsT = a_UabsT

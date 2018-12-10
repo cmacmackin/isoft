@@ -466,9 +466,9 @@ contains
     !  Date: August 2016
     !
     ! Returns the number of elements in the plume's state vector.
-    ! This is the size of the vector returned by [[plume(type):residual]]
-    ! and [[plume(type):state_vector]] and taken as an argument by 
-    ! [[plume(type):update]].
+    ! This is the size of the vector returned by
+    ! [[static_plume(type):state_vector]] and taken as an argument by
+    ! [[static_plume(type):update]].
     !
     class(static_plume), intent(in) :: this
     integer                  :: static_plume_data_size
