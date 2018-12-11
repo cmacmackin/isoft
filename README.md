@@ -75,7 +75,7 @@ default to `main.f90` and `isoft`, respectively.
 ## Documentation
 
 Information on how to install and use ISOFT is available on
-[GitHub Pages](https://cmacmackin.github.io/isoft). This includes
+[GitHub Pages](http://cmacmackin.github.io/isoft). This includes
 sections (taken from my thesis) on the numerical methods and code
 design choices which were made. A detailed description of the API
 is also provided. This documentation can be generated locally using the
