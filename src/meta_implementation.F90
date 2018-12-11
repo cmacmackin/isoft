@@ -34,7 +34,7 @@ submodule(meta_mod) meta_implementation_mod
   implicit none
   
   character(len=20), parameter :: compile_time_val = __DATE__//' '//__TIME__
-  character(len=5),  parameter :: version_num = '0.1.0'
+  character(len=5),  parameter :: version_num = '1.0.0'
 
 contains
 

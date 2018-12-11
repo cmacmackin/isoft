@@ -42,21 +42,21 @@ temperature are shown on a seperate set of axes, as these values can
 be quite different from those of the other variables.
 
 
-## scripts/[[ice-continuity.py]]
+## scripts/[[ice_continuity.py]]
 
 Produces a plot showing the value of each term in the continuity
 equation for the ice shelf
 ([equation 1](../2-numerics/1-equations.html#mjx-eqn-eqice-height-nd)).
 
 
-## scripts/[[layers.py]]
+## scripts/[[internal_layers.py]]
 
 Produces a contour plot showing the value of a Lagrangian tracer
 (indicating, e.g., the age of ice). Similar to the plot shown on the
 [previous page](./layers.html).
 
 
-## scripts/[[plume-momentum.py]]
+## scripts/[[plume_momentum.py]]
 
 Produces a plot showing the value of each term in the transverse
 momentum equation for the plume

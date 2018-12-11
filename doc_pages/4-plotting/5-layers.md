@@ -12,7 +12,7 @@ stored.
 
 Visualising this tracer data requires converting it to a 2-D form in
 _x_ and _z_. For this purpose, the plotting/[[layers.py]] module
-provides a routine called `computer layers`. This has the call
+provides a routine called `compute_layers`. This has the call
 signature
 ```python
 x, z, k = compute_layers(shelf, vertical_resolution=300)

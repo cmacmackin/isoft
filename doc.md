@@ -13,9 +13,9 @@ project_github: https://github.com/cmacmackin/isoft
 display: public
          protected
          private
-graph: false
-source: false
-search: false
+graph: true
+source: true
+search: true
 mathjax_config: mj-config.js
 extra_filetypes: py #
 exclude: __init__.py
