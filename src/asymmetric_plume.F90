@@ -371,12 +371,12 @@ contains
       !! \frac{\kappa_0}{x_0U_o}\). Defaults to 0.
     real(r8), optional, intent(in)       :: mu
       !! The dimensionless ratio \(\mu \equiv
-      !! \frac{\C_dx_0}{D_0}\). Defaults to 0.
+      !! \frac{C_dx_0}{D_0}\). Defaults to 0.
     real(r8), optional, intent(in)       :: r_val
       !! The dimensionless ratio of the water density to the ice shelf
       !! density, \( r = \rho_0/\rho_i. \) Defaults to 1.12.
     real(r8), optional, intent(in)       :: phi
-      !! The inverse Rossby number, \(\Phi \equif
+      !! The inverse Rossby number, \(\Phi \equiv
       !! \frac{fx_0}{U_0}\). Defaults to 0.
     real(r8), optional, intent(in)       :: dy
       !! The width over which the plume has been averaged. Defualts to 1.

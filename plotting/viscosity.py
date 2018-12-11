@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  viscosity.py
 #  This file is part of ISOFT.
@@ -43,13 +42,22 @@ class NewtonianViscosity(object):
 
 
 class GlensLaw(object):
-    '''A class representing Newtonian viscosity.
+    '''A class using Glen's Law to represent viscosity. It treats
+    viscosity as a power law for strain.
 
-    value
-        The viscosity value of the ice
+    size
+        The number of Chebyshev modes in the field
+    lower
+        The lower boundary of the field domain
+    upper
+        The upper boundary of the field domain
+    coef
+        The coefficient by which Glen's Law is scaled
+    index
+        The index of the power law
     '''
 
-    def __init__(this, size, lower=0.0, upper=1.0, coef=1.0, index=3,):
+    def __init__(this, size, lower=0.0, upper=1.0, coef=1.0, index=3):
         this.diff = calculus.Differentiator(size, lower, upper)
         this.coef = coef
         this.index = float(index)
@@ -58,6 +66,5 @@ class GlensLaw(object):
         if (uvec.ndim > 2):
             raise NotImplementedError('GlensLaw only implemented for 1-D '
                                       'velocity field.')
-        print uvec[0,:]
-        return 0.5*this.coef*abs(this.diff(uvec[0,:]))**(1./this.index - 1.)
+        return 0.5*this.coef*abs(this.diff(uvec[:,0]))**(1./this.index - 1.)
 

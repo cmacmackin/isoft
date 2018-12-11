@@ -18,6 +18,7 @@ source: false
 search: false
 mathjax_config: mj-config.js
 extra_filetypes: py #
+exclude: __init__.py
 extra_mods: factual_mod:https://cmacmackin.github.io/factual
             f95_lapack:http://www.netlib.org/lapack95/lug95/
 			logger_mod:https://cmacmackin.github.io/flogging/

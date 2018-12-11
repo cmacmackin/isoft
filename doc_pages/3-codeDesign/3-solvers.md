@@ -53,23 +53,23 @@ apply the forward operator to fields.
 ## Plume Solver: QLM
 
 The plume is solved using the
-[quasi-linearisation method](../2-numerics/4-shelf-solver.html) (QLM).
-As the QLM is an obscure
-algorithm, a custom implementation was written in modern Fortran for
-ISOFT. It takes as arguments functions representing the linear and
-nonlinear portions of the nonlinear system of ODEs being solved. It also
-requires a function which computes the product of the Jacobian of the
-nonlinear operator with an arbitrary state vector and, optionally, a
-preconditioner function. All of these operate on and return arrays of
-real data. The QLM requires solving a linear system at each iteration
-and this is done using a slightly modified version of the GMRES
-implementation in NITSOL. The modification allows the GMRES solver to
-use an initial guess of the solution to the linear system, rather than
-assume a good initial guess to be zero (as made sense in the context of
-NITSOL). An explicit interface was written to this FORTRAN77
-implementation, along with a wrapper which makes many of the arguments
-optional, automatically creates the necessary work arrays, and allows
-for less verbose definitions of the linear system.
+[quasi-linearisation method](../2-numerics/4-plume-solver.html) (QLM).
+As the QLM is an obscure algorithm, a custom implementation was
+written in modern Fortran for ISOFT. It takes as arguments functions
+representing the linear and nonlinear portions of the nonlinear system
+of ODEs being solved. It also requires a function which computes the
+product of the Jacobian of the nonlinear operator with an arbitrary
+state vector and, optionally, a preconditioner function. All of these
+operate on and return arrays of real data. The QLM requires solving a
+linear system at each iteration and this is done using a slightly
+modified version of the GMRES implementation in NITSOL. The
+modification allows the GMRES solver to use an initial guess of the
+solution to the linear system, rather than assume a good initial guess
+to be zero (as made sense in the context of NITSOL). An explicit
+interface was written to this FORTRAN77 implementation, along with a
+wrapper which makes many of the arguments optional, automatically
+creates the necessary work arrays, and allows for less verbose
+definitions of the linear system.
 
 Much as when solving for the state of the ice shelf, the linear and
 nonlinear plume operators take 1-D arrays of real values as arguments.

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  entrainment.py
 #  This file is part of ISOFT.
@@ -31,7 +30,7 @@ class LinearEos(object):
     '''A class representing a linearised equation of state. It uses the
     equation:
 
-    density = ref_density*[1 - beta_T*(T-T_ref) + beta_S*(S-S_ref)
+    density = ref_density*[1 - beta_T*(T-T_ref) + beta_S*(S-S_ref)]
     '''
 
     def __init__(this, ref_density, beta_T, beta_S, T_ref, S_ref):

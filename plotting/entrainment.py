@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  entrainment.py
 #  This file is part of ISOFT.

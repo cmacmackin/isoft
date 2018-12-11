@@ -2,6 +2,13 @@ Title: Compiling the Code
 Author: Chris MacMackin
 Date: November 2018 
 
+The easiest way to obtain ISOFT is by downloading it from GitHub:
+```
+make clone --recurse-submodules https://github.com/cmacmackin/isoft
+```
+This will download all libraries included in ISOFT as submodules
+(listed below).
+
 ## Dependencies
 
 ISOFT depends on a number of external pieces of software. Mostly these
@@ -35,7 +42,8 @@ top of the ISOFT directory.
 - [FoBiS.py](https://github.com/szaghi/FoBiS/wiki), a simple build system for Fortran
 - [FORD](https://github.com/Fortran-FOSS-Programmers/ford/wiki), a documentation tool for Fortran
 
-During the build process, the following libraries will automatically be built.
+The following libraries were downloaded with ISOFT as submodules and
+will automatically be compiled as part of the build process:
 
 - [FACE](https://szaghi.github.io/FACE/index.html)
 - [factual](https://github.com/cmacmackin/factual)

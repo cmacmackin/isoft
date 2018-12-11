@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  readers.py
 #  This file is part of ISOFT.
@@ -53,7 +52,7 @@ class Glacier(object):
 
     @property
     def uvec(self):
-        return self.data['velocity'][...]
+        return self.data['velocity'][...].T
 
     @property
     def u(self):

@@ -44,7 +44,7 @@ build ISOFT on an Ubuntu-like operating system using the commands
 below:
 ```
 sudo apt-get install libfftw3-dev libhdf5-dev libopenblas-dev liblapack-dev python-virtualenv gfortran-6
-git clone https://github.com/cmacmackin/isoft
+git clone --recurse-submodules https://github.com/cmacmackin/isoft
 cd isoft
 make lib            # Builds libisoft.a
 make tests          # Builds and runs unit tests

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  calculus.py
 #  This file is part of ISOFT.
