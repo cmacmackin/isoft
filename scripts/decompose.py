@@ -10,21 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-#c1 = ShelfPlumeCryosphere('nu+1.h5')
-#c31 = ShelfPlumeCryosphere('nu+5.h5')
-#c61 = ShelfPlumeCryosphere('nu+10.h5')
-#x = c1.grid
-#diff = Differentiator(x.size, x[-1], x[0])
-#print diff(c1.U)
-#print diff(c31.U)
-#print diff(c61.U)
-#plt.plot(c1.grid, c1.U, label='1')
-#plt.plot(c31.grid, c31.U, label='31')
-#plt.plot(c61.grid, c61.U, label='61')
-#plt.legend()
-#plt.show()
-#quit()
-
 if len(sys.argv) > 1:
     cryo = ShelfPlumeCryosphere(sys.argv[1])
 else:
@@ -49,19 +34,6 @@ T_a = 0.0
 S_a = 0.0
 rho = eos(T, S)
 rho_a = eos(T_a, S_a)
-
-plt.plot(x, D, label='D')
-plt.plot(x, U, label='U')
-plt.plot(x, T, label='T')
-plt.plot(x, S, label='S')
-plt.plot(x, cryo.b, label='b')
-plt.plot(x, diff(cryo.b), label='b_x')
-#plt.plot(x, np.sqrt(D*(rho_a-rho)), label='sqrt(B)')
-#plt.plot(x, Udal, label='U, Dal')
-plt.legend()
-if len(sys.argv) > 2:
-    plt.savefig(sys.argv[2])
-plt.show()
 
 plt.plot(x, diff(D*U), label=r'$(DU)_x$')
 plt.plot(x, ent, label=r'$e$')

@@ -7,7 +7,7 @@ for reading the HDF5 files which ISOFT produces. These can be found in
 the plotting/[[readers.py]] file. The class which you will mostly use
 is `ShelfPlumeCryosphere`, which loads files from simulations run with
 the [[ice_shelf(type)]] and [[plume(type)]] (or [[static_plume(type)]]
-or [[asymmetric_plume(type)]]) derived types.
+or [[asym_plume(type)]]) derived types.
 Readers of this type are created using the constructor
 ```python
 ShelfPlumeCryosphere(hdf_file)
