@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Plume Solver &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Plume Solver</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> December 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/2-numerics/index.html'>Numerical Methods</a></li>
+      
+         <li class="active">Plume Solver</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>For a one-dimensional domain,
+<a href="./1-equations.html#mjx-eqn-eqplume-cont">equations 8-12</a> become
+second order ODEs. If boundary conditions are applied only at the grounding
+line then this means that they can be solved using initial value
+problem methods such as Runge-Kutta integration. However, the
+diffusive terms in
+<a href="./1-equations.html#mjx-eqn-eqnplume-mom-x">equations 8-12</a> require two
+boundary conditions each for velocity, salinity, and temperature. The
+logical choice would use Dirichlet conditions at the grounding line
+and outflow conditions (setting the first derivative to zero) at the
+calving front. This turns the plume equations into a boundary
+value problem and makes it more difficult to solve.
+<script type="math/tex"> \def\bm#1{{\boldsymbol{#1}}}
+\setcounter{27}
+</script>
+</p>
+<p>One strategy for solving boundary value problems such as this is the
+shooting method
+<a href="../6-bibliog.html#Press2007">(see, e.g., Press et al.)</a>. With this
+technique, unknown boundary values are guessed at the grounding line
+to create an initial value problem. This initial value problem is then
+integrated and the difference between the values at the calving front
+and the required boundary conditions there is noted. A nonlinear
+solver is then used to change the guesses at the grounding line in
+order to get the correct boundary conditions at the calving
+front. However, the diffusion term in these equations leads to
+solutions involving exponential growth. If the guesses of grounding
+line conditions are not sufficiently good then these exponentials can
+lead to overflow and the failure of the solver. It was found that this
+made the shooting method unsuitable in practice.</p>
+<p>A relaxation method was also tried, wherein a time-dependent version
+of the plume model was evolved
+forward in time (using an explicit method) until it reached steady
+state. However, the weakness of the diffusion coefficient and nearly
+hyperbolic character of the time-dependent plume model means that
+significant waves often arise, and considerable time is needed to
+reach a steady state.</p>
+<p>Finally, an approach called the quasilinearisation method
+<a href="../6-bibliog.html#Mandelzweig2001">(Mandelzweig and Tabakin, 2001)</a>,
+or QLM, was tried. This is a technique, based
+on Newton's method, for solving boundary value problems. Though
+<a href="../6-bibliog.html#Mandelzweig2001">Mandelzweig and Tabakin (2001)</a>
+present the technique for single-variable
+problems, it is trivial to generalise it to the multivariate
+case. Consider the differential equation
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:qlm-equation}
+  L^{(n)}\bm{s}(x) = \bm{f}[\bm{s}(x),
+  \bm{s}^{(1)}(x), \ldots, \bm{s}^{(n-1)}(x), x], \qquad \bm{s}
+  \in \mathbb{R}^{m},
+\end{equation}</script>
+being solved on the domain <script type="math/tex">[0,b]</script>. Here, <script type="math/tex">L^{(n)}</script> is an <script type="math/tex">n^{\rm th}</script>
+order linear differential operator, <script type="math/tex">\bm{f}</script> is a nonlinear function,
+and <script type="math/tex">\bm{s}^{(i)}</script> is the <script type="math/tex">i^{\rm th}</script> derivative of
+<script type="math/tex">\bm{s}</script>. Boundary conditions are specified by
+<script type="math/tex; mode=display">\begin{align}
+  \label{eq:qlm-boundaries}
+  g_k[\bm{s}(0), \bm{s}^{(1)}(0), \ldots, \bm{s}^{(n-1)}(0)] &= 0,& k = 1, \ldots, l; \nonumber \\
+  g_k[\bm{s}(b), \bm{s}^{(1)}(b), \ldots, \bm{s}^{(n-1)}(b)] &= 0,& k = l+1, \ldots, mn;
+\end{align}</script>
+where <script type="math/tex">g_1, g_2, \ldots, g_{mn}</script> are (potentially) nonlinear
+functions. This can be solved iteratively for the <script type="math/tex">r+1</script> iterate
+<script type="math/tex">\bm{s}_{r+1}</script> using the equation
+<script type="math/tex; mode=display">\begin{multline}
+  \label{eq:qlm-iter}
+  L^{(n)}\bm{s}_{r+1}(x) = \bm{f}[\bm{s}_{r}(x),
+  \bm{s}^{(1)}_{r}(x), \ldots, \bm{s}^{n-1}_{r}(x), x] + \\
+  \sum_{i=0}^{n-1}\bm{f}_{\bm{s}^{(i)}}[\bm{s}_{r}(x),
+  \bm{s}^{(1)}_{r}(x), \ldots, \bm{s}^{n-1}_{r}(x),
+  x]\left[\bm{s}^{(i)}_{r+1}(x) - \bm{s}^{(i)}_{r}(x)\right],
+\end{multline}</script>
+with boundary conditions for each iteration set by
+<script type="math/tex; mode=display">\begin{align}
+  \label{eq:qlm-boundaries-iter}
+  \sum_{i=0}^{n-1}
+  g_{k,\bm{s}^{(s)}}[\bm{s}_r(0), \bm{s}^{(1)}_r(0), \ldots,
+  \bm{s}^{n-1}_r(0), x]\cdot[\bm{s}^{(i)}_{r+1}(0) -
+  \bm{s}^{(i)}_r(0)] &= 0,&  k=1,\ldots,l; \nonumber \\
+  \sum_{i=0}^{n-1}
+  g_{k,\bm{s}^{(i)}}[\bm{s}_r(b), \bm{s}^{(1)}_r(b), \ldots,
+  \bm{s}^{n-1}_r(b), x]\cdot[\bm{s}^{(i)}_{r+1}(b) -
+  \bm{s}^{(i)}_r(b)] &= 0,&  k=l+1,\ldots,mn.
+\end{align}</script>
+In these equations,
+<script type="math/tex">\bm{f}_{\bm{s}^{(i)}} = \partial \bm{f}/\partial \bm{s}^{(i)}</script> (i.e.\
+the Jacobian of <script type="math/tex">\bm{f}</script>) and
+<script type="math/tex">g_{k,\bm{s}^{(i)}} = \partial g_{k}/\partial \bm{s}^{(i)}</script>. Note
+that, for linear boundary conditions,
+<a href="#mjx-eqn-eqqlm-boundaries-iter">equation 31</a> reduces to the boundary
+conditions being constant across iterations.  This technique can be
+proven to give quadratic convergence to the solution given certain
+easily-satisfied assumptions
+<a href="../6-bibliog.html#Mandelzweig2001">(see Mandelzweig and Tabakin, 2001, for details)</a>.
+Furthermore, convergence is often monotonic.</p>
+<p>To apply this method to the plume model, new variables <script type="math/tex">U' = U_x</script>,
+<script type="math/tex">V' = V_x</script>, <script type="math/tex">S' = S_x</script>, and <script type="math/tex">T' = T_x</script> were introduced, where a
+subscript <script type="math/tex">x</script> denotes a derivative.
+<a href="./1-equations.html#mjx-eqn-eqplume-cont">Equation 8</a>
+was rewritten so that the left-hand-side is just <script type="math/tex">D_x</script>, while
+<a href="./1-equations.html#mjx-eqn-eqplume-mom-x}">equations 9-12</a> were rewritten
+such that the left hand sides are <script type="math/tex">U'_{x}</script>, <script type="math/tex">V'_{x}</script>, etc. This
+allowed a linear operator to be constructed with the form
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:L-form}
+  L{[D, U, U', S, S', T, T']}^T = {\left[\frac{d D}{d x}, 
+      \frac{d U}{d x} - U',
+      \frac{d U'}{d x},
+      \frac{d S}{d x} - S',
+      \frac{d S'}{d x},
+      \frac{d T}{d x} - T',
+      \frac{d T'}{d x}\right]}^T.
+\end{equation}</script>
+The nonlinear operator is zero for <script type="math/tex">U</script>, <script type="math/tex">S</script>, and <script type="math/tex">T</script> and elsewhere
+consists of the right-hand-side of the rearranged version of
+<a href="./1-equations.html#mjx-eqn-eqplume-cont">equations 8-12</a>.</p>
+<p>In order to find successive iterates, a linear equation must be
+solved, consisting of the linear operator and the Jacobian
+<script type="math/tex">\bm{f}_{\bm{s}^{(i)}} = \partial \bm{f}/\partial \bm{s}^{(i)}</script>. It
+is neither feasible nor efficient to explicitly evaluate the Jacobian,
+especially if the solver is to be agnostic to parameterisation
+choices. The iterative GMRES solver implemented in NITSOL (very
+slightly modified to accept an initial guess of the solution) was used
+because it can work knowing only the product of the Jacobian and the
+current iterate. Initially these products were calculated using the
+finite-difference approximation to the Jacobian
+<a href="./3-shelf-solver.html">described for the shelf solver</a>. While this
+was sufficiently accurate to run many simple simulations, it proved
+unreliable when the plume undergoes a sudden change or when nonlinear
+parameterisations are used.  To address this, automatic
+differentiation <a href="../6-bibliog.html#Neidinger2010">(Neidinger 2010)</a>
+was applied instead and this proved far more robust. This calculated
+the product of the Jacobian with a vector (i.e., the directional
+derivative) via operator overloading. See the
+<a href="../3-codeDesign/2-discretisation.html">code design section</a> for
+further details of the implementation. All results displayed in this
+chapter were obtained using automatic differentiation.</p>
+<p>The GMRES algorithm required preconditioning to work properly, as was
+the case with the ice shelf solver. The preconditioner was chosen to
+be <script type="math/tex">\bm{P}^{-1}=L^{-1}</script>, equivalent to finding the inverse of
+<a href="#mjx-eqn-eqL-form">equation 32</a>, which involves integration of the
+derivatives. Spectral integration was performed by reversing the steps
+for spectral differentiation described on the
+<a href="./2-spatial.html">Spatial Discretisation</a>. A similarly modified
+version of the NITSOL implementation of the biconjugate gradient
+stabilised method (BiCGSTAB) was also found to work when solving the
+preconditioned linear system, but it proved less robust.</p>
+<p>When solving the linear equation at each iteration, the initial guess
+was the previous iterate. The GMRES solver was expected to reduce the
+error in the linear system by a factor <script type="math/tex">\epsilon</script> compared to the
+initial guess. It was found that gradually decreasing the magnitude of
+<script type="math/tex">\epsilon</script> over each nonlinear iteration, the final answer could be
+determined with a residual norm smaller than <script type="math/tex">7N \times 10^{-9}</script>,
+where <script type="math/tex">N</script> is the number of grid points used and 7 indicates the number
+of plume variables being solved for. The QLM proved to be highly
+efficient, typically converging within a few iterations of
+<a href="#mjx-eqn-eqqlm-iter">equations 30 and 31</a>,
+although up to a few hundred iterations would often be needed by the
+GMRES solver to perform the necessary intermediate linear solves.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

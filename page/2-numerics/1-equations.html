@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Shelf/Plume Equations &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Shelf/Plume Equations</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> December 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/2-numerics/index.html'>Numerical Methods</a></li>
+      
+         <li class="active">Shelf/Plume Equations</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>The basic equations used in ISOFT to describe ice and plume dynamics
+are similar to those of
+<a href="../6-bibliog.html#Sergienko2013">Sergienko (2013)</a>, except that the
+plume is assumed to be in quasi-steady state.  All equations were
+nondimensionalised. Scales for this were chosen to be able to work
+with multiple choices of parameterisations. This requirement of
+flexibility sometimes resulted in otherwise suboptimal choices.</p>
+<h2>Ice Shelf Equations</h2>
+<p>After rescaling, the dimensionless ice shelf equations have the form
+<script type="math/tex; mode=display">\begin{equation}
+    h_{t} + \nabla\cdot(h\vec{u}) = -\lambda m, \label{eq:ice-height-nd}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    {\left[2\eta h\left(2u_x + v_y\right)\right]}_{x} + {\left[\eta
+    h\left(u_y + v_x\right)\right]}_{y} - \chi{\left(h^2\right)}_x = 0, \label{eq:ice-mom-x}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    {\left[\eta h\left(u_y + v_x\right)\right]}_{x} + {\left[2\eta
+    h\left(u_x + 2v_y\right)\right]}_{y} - \chi{\left(h^2\right)}_y = 0. \label{eq:ice-mom-y}
+\end{equation}</script>
+</p>
+<p>In these equations <script type="math/tex">h</script> is the ice thickness (scaled by reference
+thickness <script type="math/tex">h_0</script>), <script type="math/tex">\vec{u} = (u,v)</script> is the velocity at which the ice
+flows (scaled by reference <script type="math/tex">u_0</script>), <script type="math/tex">m</script> is the rate at which the ice
+shelf is melting (rescaled by reference <script type="math/tex">m_0</script>, defined below), and
+<script type="math/tex">\eta</script> is the rescaled ice viscosity. The dimensionless parameters
+<script type="math/tex; mode=display">\begin{equation}\label{eq:ice-parameters}
+  \lambda \equiv \frac{\rho_0 m_0 x_0}{\rho_i h_0 u_0},
+  \quad \chi \equiv \frac{\rho_i gh_0x_0}{2\eta_0 u_0}\left(1 - \frac{\rho_i}{\rho_0}\right)
+\end{equation}</script>
+represent the ratio of melt versus influx of ice and the stretching rate
+(ratio of gravitational stresses that drive stretching versus viscous
+stresses resisting), respectively. The ice density is <script type="math/tex">\rho_i</script>, while the reference density for
+ocean water is <script type="math/tex">\rho_0</script>. Otherwise, the subscript nought indicates a
+typical scale for a variable. The timescale for ice flow is given by
+<script type="math/tex">t_0 = x_0/u_0</script>. Gravitational acceleration is <script type="math/tex">g</script>. If viscosity is
+modelled as being Newtonian, then the dimensionless <script type="math/tex">\eta</script> is set to 1.
+Alternatively, Glen’s Law can be nondimensionalised to take the form
+<script type="math/tex; mode=display">\begin{equation}\label{eq:glens-nd}
+  \eta = \frac{1}{2}\xi D^{1/n - 1}_{2},
+  \end{equation}</script> where
+<script type="math/tex">D_2 = \sqrt{D_{i,j}D_{i,j}/2}</script> is the second invariant of the strain
+rate and the dimensionless coefficient
+<script type="math/tex; mode=display">\begin{equation}\label{eq:glens-coef-nd}
+  \xi \equiv \frac{B}{\eta_0} {\left(\frac{u_0}{x_0}\right)}^{1/n - 1}.
+  \end{equation}</script>
+Typically, <script type="math/tex">n=3</script>.</p>
+<h2>Plume Equations</h2>
+<p>The plume equations are scaled according to
+<script type="math/tex; mode=display">\begin{equation}\label{eq:scaling}
+  \begin{gathered}
+    U_0^2 = \frac{h_0g\Delta\rho}{\rho_0},
+    \quad e_0=m_0=\gamma_{T0}=\gamma_{S0} = \frac{D_0U_0}{x_0}, \\
+    \quad \Delta T_0 = \frac{\Gamma^{*}_T x_0}{D_0}(T_a - T_m),
+    \quad \Delta S_0 = \frac{c_0\rho_0\Delta T_0(S_a - S_m)}{\rho_i L}.
+  \end{gathered}
+\end{equation}</script>
+As before, the subscript nought indicates the typical
+scale for a variable. The exception to this is <script type="math/tex">\rho_0</script>, which is a
+representative value for the water density. Because the density
+difference is used in the plume equation and this difference is quite
+small, it was found useful to adopt a different scale, <script type="math/tex">\Delta\rho</script>, to
+use when nondimensionalising <script type="math/tex">\rho_a - \rho</script>, <script type="math/tex">\rho_x</script>, and <script type="math/tex">\rho_y</script>.
+Similarly, temperature and salinity were scaled according to typical
+differences rather than by their absolute values. An arbitrary point
+could be set to zero for these two variables and it proved convenient to
+choose the ambient values as the zero-point. The basal depth, <script type="math/tex">b</script>, is
+scaled by <script type="math/tex">h_0</script>. Note that the scale <script type="math/tex">m_0</script> does not correspond to
+typical physical values of melting but is chosen because it is
+convenient to have it equal to those of the other variables; as a
+result, <script type="math/tex">m \ll 1</script>. This yields the dimensionless system
+<script type="math/tex; mode=display">\begin{equation}
+    \nabla\cdot\left(D\vec{U}\right) = e + m, \label{eq:plume-cont}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    \nabla\cdot\left(D\vec{U}U\right) = D(\rho_a - \rho)\left(b_x -
+                                        \delta D_x\right) +
+                                        \frac{\delta D^2}{2}\rho_x +
+                                        \nu\nabla\cdot\left(D\nabla
+                                        U\right) -
+                                        \mu|\vec{U}|U, \label{eq:plume-mom-x}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    \nabla\cdot\left(D\vec{U}V\right) = D(\rho_a - \rho)\left(b_y -
+                                        \delta D_y\right) +
+                                        \frac{\delta D^2}{2}\rho_y +
+                                        \nu\nabla\cdot\left(D\nabla
+                                        V\right) -
+                                        \mu|\vec{U}|V, \label{eq:plume-mom-y}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    \nabla\cdot\left(D\vec{U}S\right) = eS_a
+                                        + \nu\nabla\cdot\left(D\nabla S\right) + mS_m -
+                                        \gamma_S(S-S_m), \label{eq:plume-salt}
+\end{equation}</script>
+<script type="math/tex; mode=display">\begin{equation}
+    \nabla\cdot\left(D\vec{U}T\right) = eT_a
+                                        + \nu\nabla\cdot\left(D\nabla T\right) + mT_m -
+                                        \gamma_T(T-T_m). \label{eq:plume-temp}
+\end{equation}</script>
+</p>
+<p>These equations were constructed
+without making any assumptions about the form of <script type="math/tex">m</script>, <script type="math/tex">e</script>, or <script type="math/tex">\rho</script>.
+For this reason different, more generic, scales are adopted for these
+values. The velocity scale depends on the density scale, rather than on
+buoyancy input from subglacial discharge. Instead of scaling the
+salinity in terms of buoyancy input, its scale is based the level of
+melt-water input, which is the dominant source of salinity forcing
+across most of the domain.</p>
+<p>The dimensionless parameters
+<script type="math/tex; mode=display">\begin{equation}\label{eq:plume-parameters}
+  \delta \equiv \frac{D_0}{h_0},
+  \quad r = \frac{\rho_0}{\rho_i},
+  \quad \nu \equiv \frac{\kappa}{x_0U_0},
+  \quad \mu \equiv \frac{C_dx_0}{D_0}
+\end{equation}</script>
+represent the dimensionless
+buoyancy correction, density ratio, turbulent eddy diffusivity, and
+turbulent drag coefficient, respectively. The latter two depend on the
+dimensional eddy diffusivity <script type="math/tex">\kappa</script>, which is assumed to be equal to
+the eddy viscosity,
+and the unscaled turbulent drag coefficient <script type="math/tex">C_d</script>.</p>
+<p>The simple entrainment parameterisation of <a href="../6-bibliog.html#Jenkins1991">Jenkins (1991)</a> can
+be nondimensionalised to have the form
+<script type="math/tex; mode=display">\begin{equation}
+\label{eq:entrainment-jenkins-nd}
+  e = \frac{E_0}{\delta}|\nabla b||\vec{U}|,
+  \end{equation}</script>
+suggesting it is
+convenient to take <script type="math/tex">\delta = E_0</script> (or equivalently, <script type="math/tex">D_0 = E_0 h</script>). The more complex parameterisation of
+<a href="../6-bibliog.html#Kochergin1987">Kochergin (1987)</a> nondimensionalises to
+<script type="math/tex; mode=display">\begin{equation}
+\label{eq:entrainment-koch-nd}
+  e = \frac{K}{S_m}\sqrt{|\vec{U}|^2 + \frac{\delta(\rho_a - \rho)D}{S_m}},
+  \end{equation}</script>
+with the dimensionless coefficient
+<script type="math/tex; mode=display">\begin{equation}\label{eq:ent-koch-coef-nd}
+  K = \frac{c_L^2 x_0}{D_0}.
+\end{equation}</script>
+The turbulent Schmidt number, <script type="math/tex">S_m</script>,
+depends on the Richardson number:
+<script type="math/tex; mode=display"> S_m = \frac{Ri}{0.0725(Ri + 0.186 - \sqrt{Ri^2 - 0.316Ri 0.0346})}. </script>
+With these scales, the Richardson number is given by
+<script type="math/tex">Ri = \delta(\rho_a - \rho)D/|\vec{U}|^2</script>. The simplified melt rate
+parameterisation taken from
+<a href="../6-bibliog.html#Dallaston2015">Dallaston, Hewitt, and Wells (2015)</a>,
+has the dimensionless form
+<script type="math/tex; mode=display">\begin{equation}\label{eq:melt-nondim}
+  m = \zeta_1\zeta_2|\vec{U}|(T - T_m),
+\end{equation}</script>
+where
+<script type="math/tex; mode=display">\begin{equation}\label{eq:thermal-zetas}
+  \zeta_1 = \frac{\Gamma^{*}_T x_0}{D_0}, \quad \zeta_2 =
+  \frac{c\Delta T_0}{L}.
+\end{equation}</script>
+</p>
+<p>Due to the low efficiency of thermal transfer
+to the ice shelf, compared to the high rate of entrainment,
+<script type="math/tex">\zeta_1 \ll 1</script>. The large latent heat of ice results in
+<script type="math/tex">\zeta_2 \ll 1</script>, as well. Together, these results mean <script type="math/tex">m \ll e \sim 1</script>,
+so that the mass gain by meltwater input is much smaller than by
+entrainment. It can be seen that the thermal transfer coefficient
+nondimensionalises to give
+<script type="math/tex; mode=display">\begin{equation}\label{eq:therm-trans-nondim}
+  \gamma_T = \zeta_1 |\vec{U}|.
+  \end{equation}</script>
+</p>
+<p>The water density is set using a linear equation of state of the form
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:lin-eos}
+  \rho_w = \rho_{\rm ref}[1 + \beta_S(S-S_{\rm ref})-\beta_T(T-T_{\rm ref})].
+\end{equation}</script>
+Here, <script type="math/tex">\beta_S</script> is the haline contraction coefficient,
+<script type="math/tex">\beta_T</script> is the thermal expansion coefficient, and <script type="math/tex">S_{\rm ref}</script>,
+<script type="math/tex">T_{\rm ref}</script>, and <script type="math/tex">\rho_{\rm ref}</script> are reference values for salinity,
+temperature, and density about which the relation has been
+linearised.</p>
+<h2>Typical Scales and Parameter Values</h2>
+<p>Typical scales and values for ice shelf and plume properties are
+listed in the table below, along with the values of non-dimensional
+parameters which result. “Repr.  val.” stands for “representative
+value”. [J11] refers to <a href="../6-bibliog.html#Jenkins2011">Jenkins (2011)</a>,
+[B11] to <a href="../6-bibliog.html#Bindschadler2011">Bindschadler, Vaughan, and Vornberger (2011)</a>,
+[D15] to <a href="../6-bibliog.html#Dallaston2015">Dallaston, Hewitt, and Wells (2015)</a>,
+[J91] to  <a href="../6-bibliog.html#Jenkins1991">Jenkins (1991)</a>,
+[J96] to <a href="../6-bibliog.html#Jacobs1996">Jacobs, Hellmer, and Jenkins (1996)</a>,
+[K87] to <a href="../6-bibliog.html#Kochergin1987">Kochergin (1987)</a>, and
+[S13] to <a href="../6-bibliog.html#Sergienko2013">Sergienko (2013)</a>.
+Scales in the third column are chosen to be comparable
+to the conditions of the PIG ice shelf and come from the indicated
+source. Where a scaling is unconstrained it was chosen to provide
+convenient parameter values (e.g. <script type="math/tex">x_0</script> fixed by <script type="math/tex">\chi</script>). The value of
+<script type="math/tex">c_L</script> was chosen so that its entrainment parameterisation resulted
+in a similar melt rate as that of
+<a href="../6-bibliog.html#Jenkins1991">Jenkins (1991)</a>. Due to an error,
+<script type="math/tex">\zeta_2</script> is a factor of <script type="math/tex">r</script> too large.
+<script type="math/tex">\newcommand{\unit}[1]{{\rm\thinspace #1}}
+\newcommand{\m}{\unit{m}}
+\newcommand{\km}{\unit{km}}
+\newcommand{\kg}{\unit{kg}}
+\newcommand{\s}{\unit{s}}
+\newcommand{\yr}{\unit{yr}}
+\newcommand{\J}{\unit{J}}
+\newcommand{\K}{\unit{K}}
+\newcommand{\Pa}{\unit{Pa}}
+\newcommand{\hPa}{\unit{hPa}}
+\newcommand{\kPa}{\unit{kPa}}
+\newcommand{\rad}{\unit{rad}}
+\newcommand{\psu}{\unit{psu}}
+\newcommand{\mps}{\m\s^{-1}}
+\newcommand{\mpss}{\m\s^{-2}}
+\newcommand{\mpyr}{\m\yr^{-1}}
+\newcommand{\kmpyr}{\km\yr^{-1}}
+\newcommand{\C}{\rm ^{\circ}\thinspace C}
+\newcommand{\kgpmc}{\kg\m^{-3}}
+\newcommand{\ppsu}{\psu^{-1}}
+\newcommand{\msps}{\m^{2}\s^{-1}}
+\newcommand{\Pas}{\Pa\s}
+\newcommand{\Jpkg}{\J\kg^{-1}}
+\newcommand{\JpkgpK}{\Jpkg\K^{-1}}</script>
+</p>
+<table class='table table-sm table-striped'>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<script type="math/tex">\rho_0</script>
+</td>
+<td>Reference water density</td>
+<td>
+<script type="math/tex">1030\kgpmc</script>
+</td>
+<td>Common</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\rho_i</script>
+</td>
+<td>Ice density</td>
+<td>
+<script type="math/tex">916\kgpmc</script>
+</td>
+<td>Common</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">g</script>
+</td>
+<td>Acceleration due to gravity</td>
+<td>
+<script type="math/tex">9.8\mpss</script>
+</td>
+<td>Common</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">L</script>
+</td>
+<td>Latent heat of fusion</td>
+<td>
+<script type="math/tex">3.35\times 10^{5}\Jpkg</script>
+</td>
+<td>Common</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">c</script>
+</td>
+<td>Specific heat of water</td>
+<td>
+<script type="math/tex">3.98\times 10^{3}\JpkgpK</script>
+</td>
+<td>Common</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">E_0</script>
+</td>
+<td>Entrainment coefficient (J91)</td>
+<td>0.036</td>
+<td>[J11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">c_L</script>
+</td>
+<td>Entrainment coefficient (K87)</td>
+<td>0.1059</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\beta_S</script>
+</td>
+<td>Haline contraction coefficient</td>
+<td>
+<script type="math/tex">7.86\times 10^{-4}\psu^{-1}</script>
+</td>
+<td>[J11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\beta_T</script>
+</td>
+<td>Thermal contraction coefficient</td>
+<td>
+<script type="math/tex">3.87\times 10^{-5}\K^{-1}</script>
+</td>
+<td>[J11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">C_d</script>
+</td>
+<td>Turbulent drag coefficient</td>
+<td>
+<script type="math/tex">2.5\times 10^{-3}</script>
+</td>
+<td>[J11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\Gamma^{*}_T</script>
+</td>
+<td>Thermal transfer coefficient</td>
+<td>
+<script type="math/tex">5.7\times 10^{-5}</script>
+</td>
+<td>[D15]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\kappa</script>
+</td>
+<td>Turbulent diffusivity/viscosity</td>
+<td>
+<script type="math/tex">10</script>–<script type="math/tex">100\m^2\s^{-1}</script>
+</td>
+<td>Repr. val.</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\eta_0</script>
+</td>
+<td>Ice viscosity</td>
+<td>
+<script type="math/tex">2.6\times 10^{13}\Pa\s</script>
+</td>
+<td>Repr. val.</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">B</script>
+</td>
+<td>Glen’s Law coefficient</td>
+<td>
+<script type="math/tex">1.6\times 10^{8}\Pa\s^{1/3}</script>
+</td>
+<td>[S13]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">S_g</script>
+</td>
+<td>Subglacial discharge salinity</td>
+<td>
+<script type="math/tex">0\psu</script>
+</td>
+<td>Repr. val.</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">S_a</script>
+</td>
+<td>Ambient salinity</td>
+<td>
+<script type="math/tex">34.6\psu</script>
+</td>
+<td>[J96]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">T_a - T_m</script>
+</td>
+<td>Thermal Forcing</td>
+<td>
+<script type="math/tex">2\C</script>
+</td>
+<td>[J96]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">u_0</script>
+</td>
+<td>Ice velocity scale</td>
+<td>
+<script type="math/tex">2.5\kmpyr</script>
+</td>
+<td>[B11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">h_0</script>
+</td>
+<td>Ice thickness scale</td>
+<td>
+<script type="math/tex">1200\m</script>
+</td>
+<td>[B11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">x_0</script>
+</td>
+<td>Length scale</td>
+<td>
+<script type="math/tex">13.8\km</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">t_0</script>
+</td>
+<td>Time scale</td>
+<td>
+<script type="math/tex">5.5\yr</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">m_0</script>
+</td>
+<td>Melt scale</td>
+<td>
+<script type="math/tex">1.94\times 10^{4} \mpyr</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">X</script>
+</td>
+<td>Dimensionless domain length</td>
+<td>
+<script type="math/tex">6</script>
+</td>
+<td>[B11]</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">Q_g</script>
+</td>
+<td>Subglacial discharge</td>
+<td>
+<script type="math/tex">8.5\times 10^{-3}\m^2\s^{-1}</script>
+</td>
+<td>Repr. val.</td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">D_0</script>
+</td>
+<td>Plume thickness scale</td>
+<td>
+<script type="math/tex">43.2\m</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">U_0</script>
+</td>
+<td>Plume velocity scale</td>
+<td>
+<script type="math/tex">0.196\mps</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\Delta T_0</script>
+</td>
+<td>Temperature scale</td>
+<td>
+<script type="math/tex">0.0364\K</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\Delta S_0</script>
+</td>
+<td>Salinity scale</td>
+<td>
+<script type="math/tex">0.0170\psu</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\Delta\rho</script>
+</td>
+<td>Density variation scale</td>
+<td>
+<script type="math/tex">3.38\times 10^{-3}\kgpmc</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\chi</script>
+</td>
+<td>Dimensionless stretching rate</td>
+<td>
+<script type="math/tex">4</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\xi</script>
+</td>
+<td>Dimensionless Glen’s coefficient</td>
+<td>
+<script type="math/tex">1.919</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\lambda</script>
+</td>
+<td>Dimensionless melt rate</td>
+<td>
+<script type="math/tex">100</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">r</script>
+</td>
+<td>Density ratio</td>
+<td>
+<script type="math/tex">1.12</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\nu</script>
+</td>
+<td>Dimensionless eddy diffusivity</td>
+<td>
+<script type="math/tex">3.69\times 10^{-2}</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\mu</script>
+</td>
+<td>Dimensionless drag coefficient</td>
+<td>
+<script type="math/tex">0.799</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\delta</script>
+</td>
+<td>Buoyancy correction</td>
+<td>
+<script type="math/tex">0.036</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">K</script>
+</td>
+<td>Dimensionless K87 coefficient</td>
+<td>
+<script type="math/tex">3.58</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\zeta_1</script>
+</td>
+<td>Dimensionless transfer coefficient</td>
+<td>
+<script type="math/tex">0.0182</script>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>
+<script type="math/tex">\zeta_2</script>
+</td>
+<td>Dimensionless melt coefficient</td>
+<td>
+<script type="math/tex">4.86\times 10^{-4}</script>
+</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation" class="disabled">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

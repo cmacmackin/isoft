@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>ode_solvers_mod &ndash; ISOFT</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>ode_solvers_mod 
+    <small>Module</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Christopher MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> March 2017</li>
+     
+     
+    <li><i class="fa fa-legal"></i> GPLv3</li>
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 2.0% of total for modules and submodules.">197 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/ode_solvers.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/ode_solvers.f90.html'>ode_solvers.f90</a></li>
+    
+  
+     <li class="active">ode_solvers_mod</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#absints-0">Abstract Interfaces</a></h3></div>
+  <div id="absints-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-l_intr">L_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-f_intr">f_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-jac_intr">jac_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-diff_intr">diff_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-pre_intr">pre_intr</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-0">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-0" class="panel-collapse collapse">
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#proc-quasilinear_solve">quasilinear_solve</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <p>Provides routines to solve systems of ODEs.</p>
+      <br>
+    
+  
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Uses</h3>
+      </div>
+      <ul class="list-group">
+      
+      <li class="list-group-item">
+  <ul class="list-inline">
+    
+    <li><a href="http://fortranwiki.org/fortran/show/ISO_FORTRAN_ENV">iso_fortran_env</a></li>
+    
+    <li><a href='../module/nitsol_mod.html'>nitsol_mod</a></li>
+    
+    <li><a href="https://cmacmackin.github.io/flogging/">logger_mod</a></li>
+    
+    <li><a href="http://szaghi.github.io/PENF/index.html">penf</a></li>
+    
+  </ul>
+      </li>
+      
+      
+      
+      <li class="list-group-item">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: module~~ode_solvers_mod~~UsesGraph Pages: 1 -->
+<svg id="moduleode_solvers_modUsesGraph" width="336pt" height="129pt"
+ viewBox="0.00 0.00 336.00 128.94" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~ode_solvers_mod~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 124.941)">
+<title>module~~ode_solvers_mod~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-124.941 332,-124.941 332,4 -4,4"/>
+<!-- module~ode_solvers_mod -->
+<g id="module~~ode_solvers_mod~~UsesGraph_node1" class="node"><title>module~ode_solvers_mod</title>
+<polygon fill="none" stroke="black" points="327.5,-57.9409 230.5,-57.9409 230.5,-33.9409 327.5,-33.9409 327.5,-57.9409"/>
+<text text-anchor="middle" x="279" y="-43.5409" font-family="Helvetica,sans-Serif" font-size="10.50">ode_solvers_mod</text>
+</g>
+<!-- penf -->
+<g id="module~~ode_solvers_mod~~UsesGraph_node2" class="node"><title>penf</title>
+<g id="a_module~~ode_solvers_mod~~UsesGraph_node2"><a xlink:href="http://szaghi.github.io/PENF/index.html" xlink:title="penf">
+<polygon fill="#337ab7" stroke="#337ab7" points="186,-120.941 132,-120.941 132,-96.9409 186,-96.9409 186,-120.941"/>
+<text text-anchor="middle" x="159" y="-106.541" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">penf</text>
+</a>
+</g>
+</g>
+<!-- module~ode_solvers_mod&#45;&gt;penf -->
+<g id="module~~ode_solvers_mod~~UsesGraph_edge1" class="edge"><title>module~ode_solvers_mod&#45;&gt;penf</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M255.248,-58.0879C237.21,-67.7186 211.791,-81.2897 191.749,-91.9903"/>
+<polygon fill="#000000" stroke="#000000" points="189.855,-89.0338 182.682,-96.8312 193.152,-95.2089 189.855,-89.0338"/>
+</g>
+<!-- module~nitsol_mod -->
+<g id="module~~ode_solvers_mod~~UsesGraph_node3" class="node"><title>module~nitsol_mod</title>
+<g id="a_module~~ode_solvers_mod~~UsesGraph_node3"><a xlink:href=".././module/nitsol_mod.html" xlink:title="nitsol_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="191,-78.9409 127,-78.9409 127,-54.9409 191,-54.9409 191,-78.9409"/>
+<text text-anchor="middle" x="159" y="-64.5409" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">nitsol_mod</text>
+</a>
+</g>
+</g>
+<!-- module~ode_solvers_mod&#45;&gt;module~nitsol_mod -->
+<g id="module~~ode_solvers_mod~~UsesGraph_edge2" class="edge"><title>module~ode_solvers_mod&#45;&gt;module~nitsol_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M230.345,-54.4219C220.669,-56.144 210.569,-57.9414 201.141,-59.6192"/>
+<polygon fill="#000000" stroke="#000000" points="200.458,-56.1856 191.226,-61.3837 201.685,-63.0773 200.458,-56.1856"/>
+</g>
+<!-- logger_mod -->
+<g id="module~~ode_solvers_mod~~UsesGraph_node4" class="node"><title>logger_mod</title>
+<g id="a_module~~ode_solvers_mod~~UsesGraph_node4"><a xlink:href="https://cmacmackin.github.io/flogging/" xlink:title="logger_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="194,-36.9409 124,-36.9409 124,-12.9409 194,-12.9409 194,-36.9409"/>
+<text text-anchor="middle" x="159" y="-22.5409" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">logger_mod</text>
+</a>
+</g>
+</g>
+<!-- module~ode_solvers_mod&#45;&gt;logger_mod -->
+<g id="module~~ode_solvers_mod~~UsesGraph_edge3" class="edge"><title>module~ode_solvers_mod&#45;&gt;logger_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M230.345,-37.4599C221.61,-35.9054 212.53,-34.2895 203.911,-32.7556"/>
+<polygon fill="#000000" stroke="#000000" points="204.511,-29.3075 194.053,-31.0011 203.285,-36.1992 204.511,-29.3075"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="module~~ode_solvers_mod~~UsesGraph_node5" class="node"><title>iso_fortran_env</title>
+<g id="a_module~~ode_solvers_mod~~UsesGraph_node5"><a xlink:href="http://fortranwiki.org/fortran/show/ISO_FORTRAN_ENV" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="87.5,-37.9409 0.5,-37.9409 0.5,-13.9409 87.5,-13.9409 87.5,-37.9409"/>
+<text text-anchor="middle" x="44" y="-23.5409" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~ode_solvers_mod&#45;&gt;iso_fortran_env -->
+<g id="module~~ode_solvers_mod~~UsesGraph_edge4" class="edge"><title>module~ode_solvers_mod&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M259.939,-33.7985C243.541,-23.555 218.279,-9.67236 194,-3.94091 158.675,4.39828 117.851,-2.77398 87.8775,-11.0882"/>
+<polygon fill="#000000" stroke="#000000" points="86.7686,-7.76577 78.1521,-13.9308 88.7325,-14.4847 86.7686,-7.76577"/>
+</g>
+<!-- module~nitsol_mod&#45;&gt;iso_fortran_env -->
+<g id="module~~ode_solvers_mod~~UsesGraph_edge5" class="edge"><title>module~nitsol_mod&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M126.823,-55.629C114.85,-51.2847 100.964,-46.2464 88.0685,-41.5675"/>
+<polygon fill="#000000" stroke="#000000" points="89.0428,-38.1978 78.4487,-38.0772 86.6552,-44.7781 89.0428,-38.1978"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="489pt" height="32pt"
+ viewBox="0.00 0.00 489.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 485,-28 485,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="139.25,-24 72.75,-24 72.75,-0 139.25,-0 139.25,-24"/>
+<text text-anchor="middle" x="106" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="222,-24 158,-24 158,-0 222,-0 222,-24"/>
+<text text-anchor="middle" x="190" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="294,-24 240,-24 240,-0 294,-0 294,-24"/>
+<text text-anchor="middle" x="267" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="366,-24 312,-24 312,-0 366,-0 366,-24"/>
+<text text-anchor="middle" x="339" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="481.25,-24 384.75,-24 384.75,-0 481.25,-0 481.25,-24"/>
+<text text-anchor="middle" x="433" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+      </li>
+      
+      </ul>
+    </div>
+    
+
+    
+    
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Used by</h3>
+      </div>
+      <ul class="list-group">
+  
+  
+  <li class="list-group-item">
+    <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: module~~ode_solvers_mod~~UsedByGraph Pages: 1 -->
+<svg id="moduleode_solvers_modUsedByGraph" width="272pt" height="116pt"
+ viewBox="0.00 0.00 272.00 116.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~ode_solvers_mod~~UsedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 112)">
+<title>module~~ode_solvers_mod~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-112 268,-112 268,4 -4,4"/>
+<!-- module~ode_solvers_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_node1" class="node"><title>module~ode_solvers_mod</title>
+<polygon fill="none" stroke="black" points="97.5,-66 0.5,-66 0.5,-42 97.5,-42 97.5,-66"/>
+<text text-anchor="middle" x="49" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50">ode_solvers_mod</text>
+</g>
+<!-- module~asymmetric_plume_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_node2" class="node"><title>module~asymmetric_plume_mod</title>
+<g id="a_module~~ode_solvers_mod~~UsedByGraph_node2"><a xlink:href=".././module/asymmetric_plume_mod.html" xlink:title="asymmetric_plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="264,-108 134,-108 134,-84 264,-84 264,-108"/>
+<text text-anchor="middle" x="199" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">asymmetric_plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~asymmetric_plume_mod&#45;&gt;module~ode_solvers_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_edge1" class="edge"><title>module~asymmetric_plume_mod&#45;&gt;module~ode_solvers_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M155.589,-83.9645C139.023,-79.2634 119.858,-73.8245 102.439,-68.8812"/>
+<polygon fill="#000000" stroke="#000000" points="102.993,-65.4003 92.4171,-66.0373 101.082,-72.1344 102.993,-65.4003"/>
+</g>
+<!-- module~static_plume_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_node3" class="node"><title>module~static_plume_mod</title>
+<g id="a_module~~ode_solvers_mod~~UsedByGraph_node3"><a xlink:href=".././module/static_plume_mod.html" xlink:title="static_plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="249,-66 149,-66 149,-42 249,-42 249,-66"/>
+<text text-anchor="middle" x="199" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">static_plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~static_plume_mod&#45;&gt;module~ode_solvers_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_edge2" class="edge"><title>module~static_plume_mod&#45;&gt;module~ode_solvers_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M148.718,-54C135.585,-54 121.277,-54 107.735,-54"/>
+<polygon fill="#000000" stroke="#000000" points="107.56,-50.5001 97.5599,-54 107.56,-57.5001 107.56,-50.5001"/>
+</g>
+<!-- module~plume_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_node4" class="node"><title>module~plume_mod</title>
+<g id="a_module~~ode_solvers_mod~~UsedByGraph_node4"><a xlink:href=".././module/plume_mod.html" xlink:title="plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="233.5,-24 164.5,-24 164.5,-0 233.5,-0 233.5,-24"/>
+<text text-anchor="middle" x="199" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~plume_mod&#45;&gt;module~ode_solvers_mod -->
+<g id="module~~ode_solvers_mod~~UsedByGraph_edge3" class="edge"><title>module~plume_mod&#45;&gt;module~ode_solvers_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M164.417,-21.5305C146.093,-26.7302 123.001,-33.2834 102.369,-39.1385"/>
+<polygon fill="#000000" stroke="#000000" points="101.134,-35.8506 92.4697,-41.9478 103.045,-42.5847 101.134,-35.8506"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="489pt" height="32pt"
+ viewBox="0.00 0.00 489.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 485,-28 485,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="139.25,-24 72.75,-24 72.75,-0 139.25,-0 139.25,-24"/>
+<text text-anchor="middle" x="106" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="222,-24 158,-24 158,-0 222,-0 222,-24"/>
+<text text-anchor="middle" x="190" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="294,-24 240,-24 240,-0 294,-0 294,-24"/>
+<text text-anchor="middle" x="267" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="366,-24 312,-24 312,-0 366,-0 366,-24"/>
+<text text-anchor="middle" x="339" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="481.25,-24 384.75,-24 384.75,-0 481.25,-0 481.25,-24"/>
+<text text-anchor="middle" x="433" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+  </li>
+  
+      </ul>
+    </div>
+    
+
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#absints-1">Abstract Interfaces</a></h3></div>
+  <div id="absints-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-l_intr">L_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-f_intr">f_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-jac_intr">jac_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-diff_intr">diff_intr</a>
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#interface-pre_intr">pre_intr</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-1">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-1" class="panel-collapse collapse">
+      
+      <a class="list-group-item" href="../module/ode_solvers_mod.html#proc-quasilinear_solve">quasilinear_solve</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    <section>
+     <h2>Abstract Interfaces</h2>
+   
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-l_intr"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+public function L_intr(u)
+    
+    
+   
+</h3>
+    
+
+
+
+<p>An interface for the (linear) left-hand-side of an ODE
+ being solved by quasilinearisation.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>The state vector for the system of differential equations</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=r8),
+  dimension(size(u))</small></h4>
+  
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-f_intr"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+public function f_intr(u)
+    
+    
+   
+</h3>
+    
+
+
+
+<p>An interface for the (nonlinear) right-hand-side of an ODE
+ being solved by quasilinearisation.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>The state vector for the system of differential equations,
+ and its derivatives. Column <script type="math/tex">i</script> represents the <script type="math/tex">i-1</script>
+ derivative.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=r8),
+  dimension(size(u,1))</small></h4>
+  
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-jac_intr"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+public function jac_intr(u, du)
+    
+    
+   
+</h3>
+    
+
+
+
+<p>An interface for the product of the Jacobian of the
+ (nonlinear) right-hand-side of an ODE and another vector.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>The state vector for the system of differential equations,
+ and its derivatives, for which the Jacobian should be
+ evaluated. Column <script type="math/tex">i</script> represents the <script type="math/tex">i-1</script> derivative.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>du</strong></td><td><p>The state vector for the system of differential equations,
+ and its derivatives, which the Jacobian operates on. Column
+ <script type="math/tex">i</script> represents the <script type="math/tex">i-1</script> derivative.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=r8),
+  dimension(size(u,1))</small></h4>
+  
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-diff_intr"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+public function diff_intr(u, n)
+    
+    
+   
+</h3>
+    
+
+
+
+<p>An interface for a function evaluating the derivative of the
+ state vector.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>The state vector for the system of differential equations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>n</strong></td><td><p>The order of the derivative to take</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=r8),
+  dimension(size(u))</small></h4>
+  
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-pre_intr"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+public function pre_intr(v, u, L, f, fcur, rhs)
+    
+    
+   
+</h3>
+    
+
+
+
+<p>An interface for a preconditioner to be used with the
+ quasilinearisation ODE solver.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>v</strong></td><td><p>The vector to be preconditioned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>The current state vector for the system of differential
+ equations, and its derivatives. Column <script type="math/tex">i</script> represents the
+ <script type="math/tex">i-1</script> derivative.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/l_intr.html'>L_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>L</strong></td><td><p>The linear, left-hand-side of the ODE being solved.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/f_intr.html'>f_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>f</strong></td><td><p>The nonlinear, right-hand-side of the ODE being solved.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>fcur</strong></td><td><p>The result of <code>f(u)</code></p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear system being
+ preconditioned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=r8),
+  dimension(size(v))</small></h4>
+  <p>The result of applying the preconditioner.</p>
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+    </section>
+  <br>
+    
+    
+    
+    
+    
+
+    
+    <section>
+    <h2>Subroutines</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-quasilinear_solve"></span><h3>
+public subroutine <a href='../proc/quasilinear_solve.html'>quasilinear_solve</a>(L, f, jac_prod, solution, order, resid_norm, flag, info, tol, precond, differentiate, iter_max, gmres_iter_max, krylov_dim)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>This is an iterative method to solve nonlinear systems of
+ ODEs. Consider <script type="math/tex; mode=display"> L^{(n)}\vec{u}(x) = \vec{f}(\vec{u}(x),
+ \vec{u}^{(1)}(x), \ldots, \vec{u}^{n-1}(x), x), \qquad \vec{u}
+ \in \mathbb{R}^{m}. </script> For a domain from <script type="math/tex"> (0,b) </script>, boundary
+ conditions are specified by <script type="math/tex; mode=display"> g_k(\vec{u}(0) = 0,
+ \vec{u}^{(1)}(0), \ldots, \vec{u}^{n-1}(0)), \qquad k = 1,
+ \ldots, l </script>
+<script type="math/tex; mode=display"> g_k(\vec{u}(b), \vec{u}^{(1)}(b), \ldots,
+ \vec{u}^{n-1}(b)) = 0, \qquad k = l+1, \ldots, mn. </script> Here,
+ <script type="math/tex">L^{(n)}</script> is an <script type="math/tex">n</script>th order ordinary differential operator,
+ and <script type="math/tex">\vec{f}, g_1, g_2, \ldots, g_{nm}</script> are nonlinear
+ functions of <script type="math/tex">\vec{u}(x)</script> and its first <script type="math/tex">n-1</script> derivatives.</p><a href="../proc/quasilinear_solve.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/l_intr.html'>L_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>L</strong></td><td><p>A function providing the linear, left-hand-side of the ODE
+ being solved.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/f_intr.html'>f_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>f</strong></td><td><p>A function providing the nonlinear, right-hand-side of the
+ ODE being solved.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/jac_intr.html'>jac_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>jac_prod</strong></td><td><p>A function providing the product of the Jacobian of the
+ nonlinear, right-hand-side of the ODE being solved and
+ another vector.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>solution</strong></td><td><p>On input, an estimate of the solution to the ODE. On output,
+ the actual solution.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>order</strong></td><td><p>The order of the derivative taken by <code>L</code></p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>resid_norm</strong></td><td><p>Norm of the residual of the final solution.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>flag</strong></td><td><p>Status flag indicating whether the iterations ended succesfully.</p><a href="None" class="pull-right"><emph>Read more&hellip;</emph></a></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out),</td>
+  <td>optional</td>
+  
+  <td>dimension(5)</td><td>::</td>
+  <td><strong>info</strong></td><td><p>Array containing various outputs; see above</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>tol</strong></td><td><p>The required reduction in the solution residual. Default is
+ <code>size(solution) * 1e-8</code>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/pre_intr.html'>pre_intr</a>),</td>
+  <td></td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>precond</strong></td><td><p>A right-preconditioner which may be used to improve
+ convergence of the solution.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/diff_intr.html'>diff_intr</a>),</td>
+  <td></td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>differentiate</strong></td><td><p>A procedure which will evaluate the <code>n</code>th derivative of the
+ state vector, when <code>n</code> is less than <code>order</code>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>iter_max</strong></td><td><p>Maximum allowable number of quasilinearised
+ iterations. Default is 15.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>gmres_iter_max</strong></td><td><p>Maximum allowable number of GMRES iterations. Default is
+ 1000.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>krylov_dim</strong></td><td><p>Maximum Krylov subspace dimension; default 10. Larger values
+ will allow for faster convergence (and in some cases be the
+ difference between whether or not convergence is possible),
+ but require more memory.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  </div>
+  </div>
+
+    
+    </section>    
+    <br>
+    
+    
+    
+    </div>
+  </div>
+
+  
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

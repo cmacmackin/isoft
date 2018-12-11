@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>upstream_plume_boundary &ndash; ISOFT </title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>upstream_plume_boundary
+    <small>Derived Type</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> July 2017</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="<p> 3.1% of total for derived types.</p>Including implementation: 211 statements,  3.5% of total for derived types.">21 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/upstream_plume.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/upstream_plume.f90.html'>upstream_plume.F90</a></li>
+    
+     <li><a href='../module/upstream_plume_mod.html'>upstream_plume_mod</a></li>
+    
+  
+     <li class="active">upstream_plume_boundary</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-get_boundaries%7E2">get_boundaries</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-distance">distance</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-thickness%7E9">thickness</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-velocity%7E7">velocity</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-temperature%7E7">temperature</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-salinity%7E6">salinity</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-boundary_time">boundary_time</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-thresholds">thresholds</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-0">Constructor</a></h3></div>
+  <div id="cons-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#interface-upstream_plume_boundary">upstream_plume_boundary</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-0">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-set_time%7E3">set_time</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-thickness_bound_info%7E4">thickness_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-velocity_bound_info%7E4">velocity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-temperature_bound_info%7E4">temperature_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-salinity_bound_info%7E4">salinity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-thickness_bound%7E4">thickness_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-velocity_bound%7E4">velocity_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-temperature_bound%7E4">temperature_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-salinity_bound%7E4">salinity_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-calculate">calculate</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/upstream_plume_boundary.html#src">upstream_plume_boundary</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+      <h2>type, public, extends(<a href='../type/plume_boundary.html'>plume_boundary</a>) :: upstream_plume_boundary</h2>
+    <p>A type with procedures for getting the boundary conditions of
+ the plume model. For given boundary conditions, it integrates
+ the plume upstream slightly and then returns these when asked
+ for boundary values. This allows boundary layers, which can
+ cause numerical difficulties, to be avoided. Inflow boundaries
+ must be Dirichlet, while outflow boundaries for velocity,
+ salinity, and temperature are set to have a gradient of zero.</p>
+<p></p><div class="alert alert-warning" role="alert"><h4>Warning</h4><p>The <code>calculate</code> method <strong>must</strong> be called prior to use.</p></div>
+    <br>
+    
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Inherits</h3>
+      </div>
+      <div class="panel-body">
+    <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: type~~upstream_plume_boundary~~InheritsGraph Pages: 1 -->
+<svg id="typeupstream_plume_boundaryInheritsGraph" width="282pt" height="32pt"
+ viewBox="0.00 0.00 282.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="type~~upstream_plume_boundary~~InheritsGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>type~~upstream_plume_boundary~~InheritsGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 278,-28 278,4 -4,4"/>
+<!-- type~upstream_plume_boundary -->
+<g id="type~~upstream_plume_boundary~~InheritsGraph_node1" class="node"><title>type~upstream_plume_boundary</title>
+<polygon fill="none" stroke="black" points="274,-24 130,-24 130,-0 274,-0 274,-24"/>
+<text text-anchor="middle" x="202" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">upstream_plume_boundary</text>
+</g>
+<!-- type~plume_boundary -->
+<g id="type~~upstream_plume_boundary~~InheritsGraph_node2" class="node"><title>type~plume_boundary</title>
+<g id="a_type~~upstream_plume_boundary~~InheritsGraph_node2"><a xlink:href=".././type/plume_boundary.html" xlink:title="plume_boundary">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="93.5,-24 0.5,-24 0.5,-0 93.5,-0 93.5,-24"/>
+<text text-anchor="middle" x="47" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">plume_boundary</text>
+</a>
+</g>
+</g>
+<!-- type~upstream_plume_boundary&#45;&gt;type~plume_boundary -->
+<g id="type~~upstream_plume_boundary~~InheritsGraph_edge1" class="edge"><title>type~upstream_plume_boundary&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" d="M129.875,-12C121.109,-12 112.249,-12 103.757,-12"/>
+<polygon fill="#000000" stroke="#000000" points="103.614,-8.5001 93.6137,-12 103.614,-15.5001 103.614,-8.5001"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="177pt" height="32pt"
+ viewBox="0.00 0.00 177.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 173,-28 173,4 -4,4"/>
+<!-- Type -->
+<g id="node1" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="169.25,-24 72.75,-24 72.75,-0 169.25,-0 169.25,-24"/>
+<text text-anchor="middle" x="121" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a derived type to the parent type which it
+    extends. Dashed arrows point from a derived type to the other
+    types it contains as a components, with a label listing the name(s) of
+    said component(s).
+    </p>
+    </div></div></div></div>
+      </div>
+    </div>
+    
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-get_boundaries%7E2">get_boundaries</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-distance">distance</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-thickness%7E9">thickness</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-velocity%7E7">velocity</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-temperature%7E7">temperature</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-salinity%7E6">salinity</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-boundary_time">boundary_time</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#variable-thresholds">thresholds</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-1">Constructor</a></h3></div>
+  <div id="cons-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#interface-upstream_plume_boundary">upstream_plume_boundary</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-1">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-set_time%7E3">set_time</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-thickness_bound_info%7E4">thickness_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-velocity_bound_info%7E4">velocity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-temperature_bound_info%7E4">temperature_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-salinity_bound_info%7E4">salinity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-thickness_bound%7E4">thickness_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-velocity_bound%7E4">velocity_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-temperature_bound%7E4">temperature_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-salinity_bound%7E4">salinity_bound</a>
+      
+      <a class="list-group-item" href="../type/upstream_plume_boundary.html#boundprocedure-calculate">calculate</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/upstream_plume_boundary.html#src">upstream_plume_boundary</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+    <section>
+    <h2>Components</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-get_boundaries%7E2"></span>procedure(<a href='../interface/bound_vals.html'>bound_vals</a>),</td>
+  
+  <td>private,</td>
+  <td>nopass, pointer</td><td>::</td>
+  <td><strong>get_boundaries</strong></td><td>=> </td><td>null()</td><td><p>Calculate the "actual" boundary values, used to initiate the
+ integration, for the specified time.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-distance"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>distance</strong></td><td> =</td><td>0.05_r8</td><td><p>The distance upstream which the plume should be integrated</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-thickness%7E9"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>thickness</strong></td><td> =</td><td>0.1_r8</td><td><p>The thickness of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-velocity%7E7"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>velocity</strong></td><td></td><td></td><td><p>The velocity of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-temperature%7E7"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>temperature</strong></td><td> =</td><td>0.0_r8</td><td><p>The tempreature of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-salinity%7E6"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>salinity</strong></td><td> =</td><td>1.0_r8</td><td><p>The salinity of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-boundary_time"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>boundary_time</strong></td><td></td><td></td><td><p>The time at which the boundaries were most recently
+ calculated</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-thresholds"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>thresholds</strong></td><td></td><td></td><td><p>Thresholds to use when calculating error in the integration.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+   <section>
+   <h2>Constructor</h2>
+     
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-upstream_plume_boundary"></span><h3>public interface <a href='../interface/upstream_plume_boundary.html'>upstream_plume_boundary</a>
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+  
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+private pure function <a href='../proc/constructor%7E16.html'>constructor</a>(bound_calculator, distance, thresholds) result(this)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Constructs a boundary condition object which integrates an IVP
+ from actual boundary values to calculate the staet of the plume
+ a little upstream. This can be used to avoid boundary layers.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/bound_vals.html'>bound_vals</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_calculator</strong></td><td><p>Calculates the "actual" inflow boundary conditions, used to
+ initiate the integration to find the values to use in the
+ simulation.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>distance</strong></td><td><p>The distance upstream which the plume should be integrated.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>thresholds</strong></td><td><p>The thresholds to use when evaluating the error of the
+ integration. This is done according to the formula
+ <code>abs(e) / max(magnitude_y, THRESHOLDS) &lt;= TOLERANCE</code>.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>)
+  </small></h4>
+  
+    
+
+    </li>
+  
+  
+  </ul>
+</div>
+
+     
+   </section>
+   <br>
+    
+    
+    
+    
+     
+    <section>
+    <h2>Type-Bound Procedures</h2>
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-set_time%7E3"></span><h3>procedure, public :: <strong>set_time</strong>  
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Specifies the time at which to calculate the boundary
+ conditions.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/set_time.html'>set_time</a>(this, time)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>May 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Sets the time at which boundary conditions are to be calculated.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>time</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-thickness_bound_info%7E4"></span><h3>procedure, public :: <strong>thickness_bound_info</strong>  => <a href='../proc/upstream_thickness_info.html'>upstream_thickness_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/upstream_thickness_info.html'>upstream_thickness_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is free.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-velocity_bound_info%7E4"></span><h3>procedure, public :: <strong>velocity_bound_info</strong>  => <a href='../proc/upstream_info.html'>upstream_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/upstream_info.html'>upstream_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is Neumann.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-temperature_bound_info%7E4"></span><h3>procedure, public :: <strong>temperature_bound_info</strong>  => <a href='../proc/upstream_info.html'>upstream_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/upstream_info.html'>upstream_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is Neumann.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-salinity_bound_info%7E4"></span><h3>procedure, public :: <strong>salinity_bound_info</strong>  => <a href='../proc/upstream_info.html'>upstream_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/upstream_info.html'>upstream_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is Neumann.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-thickness_bound%7E4"></span><h3>procedure, public :: <strong>thickness_bound</strong>  => <a href='../proc/upstream_thickness_bound.html'>upstream_thickness_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ thickness at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/upstream_thickness_bound.html'>upstream_thickness_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the thickness boundary values for the
+ specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-velocity_bound%7E4"></span><h3>procedure, public :: <strong>velocity_bound</strong>  => <a href='../proc/upstream_velocity_bound.html'>upstream_velocity_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ velocity at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/upstream_velocity_bound.html'>upstream_velocity_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the velocity boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(vector_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-temperature_bound%7E4"></span><h3>procedure, public :: <strong>temperature_bound</strong>  => <a href='../proc/upstream_temperature_bound.html'>upstream_temperature_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ temperature at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/upstream_temperature_bound.html'>upstream_temperature_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the temperature boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-salinity_bound%7E4"></span><h3>procedure, public :: <strong>salinity_bound</strong>  => <a href='../proc/upstream_salinity_bound.html'>upstream_salinity_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ salinity at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/upstream_salinity_bound.html'>upstream_salinity_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the salinity boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-calculate"></span><h3>procedure, public :: <strong>calculate</strong>  => <a href='../proc/upstream_calculate.html'>upstream_calculate</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Calculates the upstreamed boundary conditions for the given
+ time and ice thickness.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/upstream_calculate.html'>upstream_calculate</a>(this, t, func, b)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Calculates the boundary values to use at the current time with
+ the current ice thickness.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>t</strong></td><td><p>The time at which to calculate the boundary values.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/non_diff.html'>non_diff</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>func</strong></td><td><p>A function which returns the non-diffusive, non-inertial
+ components of the ODEs describing the plume.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>b</strong></td><td><p>The depth of the ice shelf base.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+    </section>
+    
+    
+    
+    <section>
+    <h3><span class="anchor" id="src"></span>Source Code</h3>
+    <div class="highlight"><pre><span></span>  <span class="k">type</span><span class="p">,</span> <span class="k">extends</span><span class="p">(</span><span class="n">plume_boundary</span><span class="p">),</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">upstream_plume_boundary</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: July 2017</span>
+    <span class="c">!</span>
+    <span class="c">! A type with procedures for getting the boundary conditions of</span>
+    <span class="c">! the plume model. For given boundary conditions, it integrates</span>
+    <span class="c">! the plume upstream slightly and then returns these when asked</span>
+    <span class="c">! for boundary values. This allows boundary layers, which can</span>
+    <span class="c">! cause numerical difficulties, to be avoided. Inflow boundaries</span>
+    <span class="c">! must be Dirichlet, while outflow boundaries for velocity,</span>
+    <span class="c">! salinity, and temperature are set to have a gradient of zero.</span>
+    <span class="c">!</span>
+    <span class="c">! @Warning The `calculate` method __must__ be called prior to use.</span>
+    <span class="c">!</span>
+    <span class="k">private</span>
+<span class="k">    procedure</span><span class="p">(</span><span class="n">bound_vals</span><span class="p">),</span> <span class="k">nopass</span><span class="p">,</span> <span class="k">pointer</span> <span class="kd">::</span> <span class="n">get_boundaries</span> <span class="o">=&gt;</span> <span class="nb">null</span><span class="p">()</span>
+      <span class="c">!! Calculate the &quot;actual&quot; boundary values, used to initiate the</span>
+      <span class="c">!! integration, for the specified time.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">distance</span> <span class="o">=</span> <span class="mf">0.05_r8</span>
+      <span class="c">!! The distance upstream which the plume should be integrated</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">thickness</span> <span class="o">=</span> <span class="mf">0.1_r8</span>
+      <span class="c">!! The thickness of the plume at the inflowing boundary</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">velocity</span>
+      <span class="c">!! The velocity of the plume at the inflowing boundary</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">temperature</span> <span class="o">=</span> <span class="mf">0.0_r8</span>
+      <span class="c">!! The tempreature of the plume at the inflowing boundary</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">salinity</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! The salinity of the plume at the inflowing boundary</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">boundary_time</span>
+      <span class="c">!! The time at which the boundaries were most recently</span>
+      <span class="c">!! calculated</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">thresholds</span>
+      <span class="c">!! Thresholds to use when calculating error in the integration.</span>
+  <span class="k">contains</span>
+<span class="k">    procedure</span> <span class="kd">::</span> <span class="n">thickness_bound_info</span> <span class="o">=&gt;</span> <span class="n">upstream_thickness_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">velocity_bound_info</span> <span class="o">=&gt;</span> <span class="n">upstream_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">temperature_bound_info</span> <span class="o">=&gt;</span> <span class="n">upstream_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">salinity_bound_info</span> <span class="o">=&gt;</span> <span class="n">upstream_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">thickness_bound</span> <span class="o">=&gt;</span> <span class="n">upstream_thickness_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! thickness at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">velocity_bound</span> <span class="o">=&gt;</span> <span class="n">upstream_velocity_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! velocity at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">temperature_bound</span> <span class="o">=&gt;</span> <span class="n">upstream_temperature_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! temperature at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">salinity_bound</span> <span class="o">=&gt;</span> <span class="n">upstream_salinity_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! salinity at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">calculate</span> <span class="o">=&gt;</span> <span class="n">upstream_calculate</span>
+      <span class="c">!! Calculates the upstreamed boundary conditions for the given</span>
+      <span class="c">!! time and ice thickness.</span>
+  <span class="k">end type </span><span class="n">upstream_plume_boundary</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>nittfq2 &ndash; ISOFT</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>nittfq2
+   <small>Interface</small>
+    
+    </h1>
+    
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 1.1% of total for procedures.">123 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/nitsol.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/nitsol.f90.html'>nitsol.f90</a></li>
+    
+     <li><a href='../module/nitsol_mod.html'>nitsol_mod</a></li>
+    
+  
+     <li class="active">nittfq2</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<em>None</em>
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    
+    
+      <h2>interface <br>
+      
+public subroutine nittfq2(n, xcur, fcur, step, eta, f, jacv, rpar, ipar, ijacv, irpre, iksmax, ifdord, nfe, njve, nrpre, nli, r, rcgs, rtil, d, p, q, u, v, y, rwork1, rwork2, rsnrm, dinpr, dnorm, itrmks)
+    
+    
+   
+</h2>    
+    
+
+    
+  
+
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-n%7E17"></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>n</strong></td><td><p>Dimension of the problem</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-xcur%7E11"></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>xcur</strong></td><td><p>Array of length <code>n</code> containing the current <script type="math/tex">x</script> value</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-fcur%7E10"></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>fcur</strong></td><td><p>Array of length <code>n</code> containing current approximate solution</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-step%7E5"></span>real(kind=r8),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>step</strong></td><td><p>Vector of of length <code>n</code> containing trial step</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-eta%7E6"></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>eta</strong></td><td><p>Relative residual reduction factor</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f%7E8"></span>procedure(<a href='../interface/f_intr%7E2.html'>f_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>f</strong></td><td><p>User-supplied subroutine for evaluating the function
+ the zero of which is sought.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-jacv%7E6"></span>procedure(<a href='../interface/jacv_intr.html'>jacv_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>jacv</strong></td><td><p>User-supplied subroutine for optionally evaluating
+ <script type="math/tex">J\vec{v}</script> or <script type="math/tex">P^{-1}\vec{v}</script>, where <script type="math/tex">J</script> is the Jacobian
+ of <script type="math/tex">f</script> and <script type="math/tex">P</script> is a right preconditioning operator. If
+ neither analytic <script type="math/tex">J\vec{v}</script> evaluations nor right
+ preconditioning is used, this can be a dummy subroutine;
+ if right preconditioning is used but not analytic
+ <script type="math/tex">J\vec{v}</script> evaluations, this need only evaluate
+ <script type="math/tex">P^{-1}\vec{v}</script>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rpar%7E14"></span>real(kind=r8),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(*)</td><td>::</td>
+  <td><strong>rpar</strong></td><td><p>Parameter/work array passed to the <code>f</code> and <code>jacv</code> routines</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ipar%7E14"></span>integer,</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(*)</td><td>::</td>
+  <td><strong>ipar</strong></td><td><p>Parameter/work array passed to the <code>f</code> and <code>jacv</code> routines</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ijacv%7E5"></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>ijacv</strong></td><td><p>Flag for determining method of <script type="math/tex">J\vec{v}</script> evaluation. 0
+ (default) indicates finite-difference evaluation, while 1
+ indicates analytic evaluation.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-irpre%7E5"></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>irpre</strong></td><td><p>Flag for right preconditioning. 0 indicates no
+ preconditioning, while 1 inidcates right preconditioning.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-iksmax%7E5"></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>iksmax</strong></td><td><p>Maximum allowable number of TFQMR iterations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ifdord%7E5"></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>ifdord</strong></td><td><p>Order of the finite-difference formula used in TFQMR
+ when J*v products are evaluated using finite-differences. 
+ When ijacv = 0 on input to nitsol, ifdord is set to 1, 2, or 
+ 4 in nitsol; otherwise, it is irrelevant. When ijacv = 0 on 
+ input to this subroutine, ifdord determines the order of the 
+ finite-difference formula used at each TFQMR iteration 
+ (default 1). In this case, ijacv is set to -1 below to 
+ signal to nitjv that the order of the finite-difference 
+ formula is to be determined by ifdord. The original value 
+ ijacv = 0 is restored on return.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nfe%7E5"></span>integer,</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>nfe</strong></td><td><p>Number of function evaluations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-njve%7E5"></span>integer,</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>njve</strong></td><td><p>Number of <script type="math/tex">J\vec{v}</script> evaluations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nrpre%7E8"></span>integer,</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>nrpre</strong></td><td><p>Number of <script type="math/tex">P^{-1}\vec{v}</script> evaluations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nli%7E8"></span>integer,</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>nli</strong></td><td><p>Number of linear iterations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-r%7E5"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>r</strong></td><td><p>Residual vector (for the QMR process)</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rcgs%7E2"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>rcgs</strong></td><td><p>Residual vector (of the underlying CGS process)</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rtil%7E3"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>rtil</strong></td><td><p>'Shadow' residual vector used in bi-orthogonalization</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-d%7E2"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>d</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-p%7E4"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>p</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-q%7E2"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>q</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u%7E7"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>u</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-v%7E7"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>v</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-y%7E7"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>y</strong></td><td><p>Vector used in TFQMR</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rwork1%7E3"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>rwork1</strong></td><td><p>Work vector, passed on to nitjv</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rwork2%7E3"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(n)</td><td>::</td>
+  <td><strong>rwork2</strong></td><td><p>Work vector, passed on to nitjv</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rsnrm%7E5"></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rsnrm</strong></td><td><p>TFQMR residual norm on return</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-dinpr%7E6"></span>procedure(<a href='../interface/dinpr_intr.html'>dinpr_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>dinpr</strong></td><td><p>Inner-product routine, either user-supplied or BLAS <code>ddot</code>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-dnorm%7E6"></span>procedure(<a href='../interface/dnorm_intr.html'>dnorm_intr</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>dnorm</strong></td><td><p>Norm routine, either user supplied or BLAS dnrm2.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-itrmks%7E5"></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>itrmks</strong></td><td><p>Termination flag. Values have the following meanings:</p>
+<dl>
+<dt>0</dt>
+<dd>normal termination: acceptable step found</dd>
+<dt>1</dt>
+<dd>
+<script type="math/tex">J\vec{v}</script>  failure in <code>nitjv</code></dd>
+<dt>2</dt>
+<dd>
+<script type="math/tex">P^{-1}\vec{v}</script> failure in <code>nitjv</code></dd>
+<dt>3</dt>
+<dd>Acceptable step not found in <code>iksmax</code> TFQMR iterations</dd>
+<dt>4</dt>
+<dd>TFQMR breakdown</dd>
+<dt>5</dt>
+<dd>Floating point error (the underlying CGS iteration
+ has probably blown up)</dd>
+</dl></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    <h3>Description</h3>
+    <p>An interface to my modified versino of the
+ <a href="http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf">nitsol</a>
+ implementation of the transpose-free quasi-minimal residual
+ method
+ (<a href="https://epubs.siam.org/doi/pdf/10.1137/0914029">TFQMR</a>) for
+ iteratively solving linear systems. It has been modified so
+ that the user provides a non-zero initial guess of the
+ solution.</p>
+    
+    <br>
+
+ </div>
+</div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

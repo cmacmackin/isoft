@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>
+All Abstract Interfaces &ndash; ISOFT
+</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+      <div class="row">
+        <div class="col-lg-12" id='text'>
+			 <h1>Abstract Interfaces</h1>
+			 <table class="table table-striped nostretched">
+			 <thead>
+			 <tr><th>Abstract Interface</th><th>Location</th><th>Description</th></tr>
+			 </thead><tbody>
+			 
+			   <tr><td><a href='../interface/assign_ice.html'>assign_ice</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bound_vals.html'>bound_vals</a></td><td><a href='../module/upstream_plume_mod.html'>upstream_plume_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/diff_intr.html'>diff_intr</a></td><td><a href='../module/ode_solvers_mod.html'>ode_solvers_mod</a></td><td><p>An interface for a function evaluating the derivative of the
+ state vector.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/dinpr_intr.html'>dinpr_intr</a></td><td><a href='../module/nitsol_mod.html'>nitsol_mod</a></td><td><p>Interface for function which calculates vector inner products.
+ This has the same interace as the BLAS routine
+ <a href="http://www.netlib.org/lapack/explore-html/de/da4/group__double__blas__level1_ga75066c4825cb6ff1c8ec4403ef8c843a.html">ddot</a>.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/dnorm_intr.html'>dnorm_intr</a></td><td><a href='../module/nitsol_mod.html'>nitsol_mod</a></td><td><p>Interface for function which calculates vector norms. This
+ has the same interface as the BLAS routine dnrm2.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/f_intr.html'>f_intr</a></td><td><a href='../module/ode_solvers_mod.html'>ode_solvers_mod</a></td><td><p>An interface for the (nonlinear) right-hand-side of an ODE
+ being solved by quasilinearisation.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/f_intr%7E2.html'>f_intr</a></td><td><a href='../module/nitsol_mod.html'>nitsol_mod</a></td><td><p>Interface for a subroutine which evaluates the function
+ the zero of which is sought.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/get_coef.html'>get_coef</a></td><td><a href='../module/equation_of_state_mod.html'>equation_of_state_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_entrainment.html'>get_entrainment</a></td><td><a href='../module/entrainment_mod.html'>entrainment_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_i.html'>get_i</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_i%7E2.html'>get_i</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_property.html'>get_property</a></td><td><a href='../module/ambient_mod.html'>ambient_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_property%7E2.html'>get_property</a></td><td><a href='../module/equation_of_state_mod.html'>equation_of_state_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_property_dx.html'>get_property_dx</a></td><td><a href='../module/equation_of_state_mod.html'>equation_of_state_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_r8.html'>get_r8</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_r81d.html'>get_r81d</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_r81d%7E2.html'>get_r81d</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_real.html'>get_real</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_residual.html'>get_residual</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_scalar.html'>get_scalar</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_scalar%7E2.html'>get_scalar</a></td><td><a href='../module/melt_relationship_mod.html'>melt_relationship_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_scalar%7E3.html'>get_scalar</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_viscosity.html'>get_viscosity</a></td><td><a href='../module/viscosity_mod.html'>viscosity_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/has_terms.html'>has_terms</a></td><td><a href='../module/melt_relationship_mod.html'>melt_relationship_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/jac_intr.html'>jac_intr</a></td><td><a href='../module/ode_solvers_mod.html'>ode_solvers_mod</a></td><td><p>An interface for the product of the Jacobian of the
+ (nonlinear) right-hand-side of an ODE and another vector.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/jacv_intr.html'>jacv_intr</a></td><td><a href='../module/nitsol_mod.html'>nitsol_mod</a></td><td><p>Interface for a subroutine which optionally evaluates
+ <script type="math/tex">J\vec{v}</script> or <script type="math/tex">P^{-1}\vec{v}</script>, where <script type="math/tex">J</script> is the Jacobian
+ of <script type="math/tex">f</script> and <script type="math/tex">P</script> is a right preconditioning operator.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/kappa_init_func.html'>kappa_init_func</a></td><td><a href='../module/ice_shelf_mod.html'>ice_shelf_mod</a></td><td><p>Abstract interface for function providing the Taylor
+ coefficients describing the distribution of internal
+ reflectors within an ice shelf.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/l_intr.html'>L_intr</a></td><td><a href='../module/ode_solvers_mod.html'>ode_solvers_mod</a></td><td><p>An interface for the (linear) left-hand-side of an ODE
+ being solved by quasilinearisation.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/mat_mult.html'>mat_mult</a></td><td><a href='../module/nitsol_mod.html'>nitsol_mod</a></td><td><p>Interface for operations representing the multiplication of a
+ vector by a matrix, such as that for a linear operator or a
+ preconditioner.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/non_diff.html'>non_diff</a></td><td><a href='../module/upstream_plume_mod.html'>upstream_plume_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pre_intr.html'>pre_intr</a></td><td><a href='../module/ode_solvers_mod.html'>ode_solvers_mod</a></td><td><p>An interface for a preconditioner to be used with the
+ quasilinearisation ODE solver.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/precond.html'>precond</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/read_dat.html'>read_dat</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/read_dat%7E2.html'>read_dat</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/scalar_func.html'>scalar_func</a></td><td><a href='../module/asymmetric_plume_mod.html'>asymmetric_plume_mod</a></td><td><p>Abstract interface for function providing the initial values
+ for the scalar properties of an <a href="../type/asym_plume.html">asym_plume</a> object
+ when it is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/scalar_func%7E2.html'>scalar_func</a></td><td><a href='../module/static_plume_mod.html'>static_plume_mod</a></td><td><p>Abstract interface for function providing the initial values
+ for the scalar properties of a <a href="../type/static_plume.html">static_plume</a> object when it
+ is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/scalar_func%7E3.html'>scalar_func</a></td><td><a href='../module/plume_mod.html'>plume_mod</a></td><td><p>Abstract interface for function providing the initial values
+ for the scalar properties of a <a href="../type/plume.html">plume</a> object when it
+ is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/setter.html'>setter</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/setter%7E2.html'>setter</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/solve.html'>solve</a></td><td><a href='../module/melt_relationship_mod.html'>melt_relationship_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/solve_vel.html'>solve_vel</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/surface_solve.html'>surface_solve</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/t_step.html'>t_step</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/thickness_func.html'>thickness_func</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td><p>Abstract interface for function providing the <a href="../type/glacier.html">glacier</a> thickness
+ when a concrete object is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/time_setter.html'>time_setter</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/time_setter%7E2.html'>time_setter</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/velocity_func%7E3.html'>velocity_func</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td><p>Abstract interface for function providing the <a href="../type/glacier.html">glacier</a> velocity
+ when a concrete object is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/velocity_func.html'>velocity_func</a></td><td><a href='../module/asymmetric_plume_mod.html'>asymmetric_plume_mod</a></td><td><p>Abstract interface for function providing the
+ <a href="../type/asym_plume.html">asym_plume</a> velocity when an object is being
+ instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/velocity_func%7E2.html'>velocity_func</a></td><td><a href='../module/static_plume_mod.html'>static_plume_mod</a></td><td><p>Abstract interface for function providing the <a href="../type/plume.html">plume</a> velocity
+ when an object is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/velocity_func%7E4.html'>velocity_func</a></td><td><a href='../module/plume_mod.html'>plume_mod</a></td><td><p>Abstract interface for function providing the <a href="../type/plume.html">plume</a> velocity
+ when an object is being instantiated.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/write_dat.html'>write_dat</a></td><td><a href='../module/glacier_mod.html'>glacier_mod</a></td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/write_dat%7E2.html'>write_dat</a></td><td><a href='../module/basal_surface_mod.html'>basal_surface_mod</a></td><td></td></tr>
+			 
+			 </tbody></table>
+        </div>
+      </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>fin_diff_block &ndash; ISOFT </title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>fin_diff_block
+    <small>Derived Type</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> December 2016</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="<p> 2.9% of total for derived types.</p>Including implementation: 309 statements,  5.1% of total for derived types.">19 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/finite_difference_block.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/finite_difference_block.f90.html'>finite_difference_block.F90</a></li>
+    
+     <li><a href='../module/finite_difference_block_mod.html'>finite_difference_block_mod</a></li>
+    
+  
+     <li class="active">fin_diff_block</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-diagonal%7E2">diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-super_diagonal%7E2">super_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-sub_diagonal%7E2">sub_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-l_multipliers%7E2">l_multipliers</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_diagonal%7E2">u_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_superdiagonal1%7E2">u_superdiagonal1</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_superdiagonal2%7E2">u_superdiagonal2</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-pivots%7E3">pivots</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-boundary_locs%7E2">boundary_locs</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-boundary_types%7E2">boundary_types</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-had_offset">had_offset</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-0">Constructor</a></h3></div>
+  <div id="cons-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/fin_diff_block.html#interface-fin_diff_block">fin_diff_block</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-0">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_scalar">fin_diff_block_solve_scalar</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_vector">fin_diff_block_solve_vector</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-solve_for%7E2">solve_for</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/fin_diff_block.html#src">fin_diff_block</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+      <h2>type, public :: fin_diff_block</h2>
+    <p>A data type representing a matrix finite difference operator. It
+ can be useful when preconditioning systems which use a spectral
+ discretisation. It is inherently 1-D in its implementation. Note
+ that multiplication of a field will simply call that field's
+ differentiation operator, which may or may not use a finite
+ difference method.</p>
+<p>When constructing an instance of this type, a template field
+ must be passed which has the same grid as any other fields which
+ will be operated upon. Additionally, types and locations of
+ boundary conditions must be passed.</p>
+    
+    
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-diagonal%7E2">diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-super_diagonal%7E2">super_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-sub_diagonal%7E2">sub_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-l_multipliers%7E2">l_multipliers</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_diagonal%7E2">u_diagonal</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_superdiagonal1%7E2">u_superdiagonal1</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-u_superdiagonal2%7E2">u_superdiagonal2</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-pivots%7E3">pivots</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-boundary_locs%7E2">boundary_locs</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-boundary_types%7E2">boundary_types</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#variable-had_offset">had_offset</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-1">Constructor</a></h3></div>
+  <div id="cons-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/fin_diff_block.html#interface-fin_diff_block">fin_diff_block</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-1">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_scalar">fin_diff_block_solve_scalar</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_vector">fin_diff_block_solve_vector</a>
+      
+      <a class="list-group-item" href="../type/fin_diff_block.html#boundprocedure-solve_for%7E2">solve_for</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/fin_diff_block.html#src">fin_diff_block</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+    <section>
+    <h2>Components</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-diagonal%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>diagonal</strong></td><td></td><td></td><td><p>The diagonal of the tridiagonal matrix representation of this
+ block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-super_diagonal%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>super_diagonal</strong></td><td></td><td></td><td><p>The super-diagonal of the tridiagonal matrix representation
+ of this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-sub_diagonal%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>sub_diagonal</strong></td><td></td><td></td><td><p>The sub-diagonal of the tridiagonal matrix representation of
+ this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-l_multipliers%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>l_multipliers</strong></td><td></td><td></td><td><p>Multipliers defining the L matrix in the LU factorisation of
+ the tridiagonal matrix representation of this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u_diagonal%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>u_diagonal</strong></td><td></td><td></td><td><p>The diagonal of the U matrix in the LU factorisation of
+ the tridiagonal matrix representation of this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u_superdiagonal1%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>u_superdiagonal1</strong></td><td></td><td></td><td><p>The first superdiagonal of the U matrix in the LU
+ factorisation of the tridiagonal matrix representation of
+ this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u_superdiagonal2%7E2"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>u_superdiagonal2</strong></td><td></td><td></td><td><p>The second superdiagonal of the U matrix in the LU
+ factorisation of the tridiagonal matrix representation of
+ this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-pivots%7E3"></span>integer,</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>pivots</strong></td><td></td><td></td><td><p>Pivot indicies from the LU factorisation of the tridiagonal
+ matrix representation of this block.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-boundary_locs%7E2"></span>integer,</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>boundary_locs</strong></td><td></td><td></td><td><p>Locations in the raw arrays which are used to specify
+ boundary conditions.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-boundary_types%7E2"></span>integer,</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>boundary_types</strong></td><td></td><td></td><td><p>The types of boundary conditions, specified using the
+ parameters found in <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-had_offset"></span>logical,</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>had_offset</strong></td><td> =</td><td>.true.</td><td><p>True if the factorisation was computed from a tridiagonal
+ system in which an offset was added to the diagonal.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+   <section>
+   <h2>Constructor</h2>
+     
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-fin_diff_block"></span><h3>public interface <a href='../interface/fin_diff_block.html'>fin_diff_block</a>
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+  
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+private function <a href='../proc/constructor%7E11.html'>constructor</a>(template, boundary_locs, boundary_types) result(this)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Build a tridiagonal matrix block for finite differences. See the
+ end of the documentation of the <a href="../type/fin_diff_block.html">fin_diff_block</a> type
+ for a description of how boundary conditions are treated.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(abstract_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>template</strong></td><td><p>A scalar field with the same grid as any fields passed as
+ arguments to the <a href="../type/fin_diff_block.html#boundprocedure-solve_for%7E2">solve_for</a> method.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>boundary_locs</strong></td><td><p>The locations in the raw representation of <code>rhs</code> for which
+ boundary conditions are specified. Defaults to there being
+ none.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>boundary_types</strong></td><td><p>Integers specifying the type of boundary condition. The type
+ of boundary condition corresponding to a given integer is
+ specified in <a href="../module/boundary_types_mod.html">boundary_types_mod</a>. Only Dirichlet and
+ Neumann conditions are supported. Defaults to Dirichlet. The
+ order in which they are stored must match that of
+ <code>boundary_locs</code>.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/fin_diff_block.html'>fin_diff_block</a>)
+  </small></h4>
+  <p>A new finite difference operator</p>
+    
+
+    </li>
+  
+  
+  </ul>
+</div>
+
+     
+   </section>
+   <br>
+    
+    
+    
+    
+     
+    <section>
+    <h2>Type-Bound Procedures</h2>
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-fin_diff_block_solve_scalar"></span><h3>procedure, private :: <strong>fin_diff_block_solve_scalar</strong>  
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/fin_diff_block_solve_scalar.html'>fin_diff_block_solve_scalar</a>(this, rhs, offset) result(solution)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Solves the linear(ised) system represented by this finite
+ difference block, for a given right hand side state vector
+ (represented by a scalar field). Optionally, the differential
+ operator can be augmented by adding an offset, i.e. a scalar
+ field which is added to the operator.</p><a href="../proc/fin_diff_block_solve_scalar.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/fin_diff_block.html'>fin_diff_block</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear(ised) system.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>offset</strong></td><td><p>An offset to add to the differential operator</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-fin_diff_block_solve_vector"></span><h3>procedure, private :: <strong>fin_diff_block_solve_vector</strong>  
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/fin_diff_block_solve_vector.html'>fin_diff_block_solve_vector</a>(this, rhs, offset) result(solution)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Solves the linear(ised) system represented by this finite
+ difference block, for a given right hand side state vector
+ (represented by a vector field). Optionally, the differential
+ operator can be augmented by adding an offset, i.e. a vector
+ field which is added to the operator.</p><a href="../proc/fin_diff_block_solve_vector.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/fin_diff_block.html'>fin_diff_block</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(cheb1d_vector_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear(ised) system.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(cheb1d_vector_field),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>offset</strong></td><td><p>An offset to add to the differential operator</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(vector_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-solve_for%7E2"></span><h3>generic, public :: <strong>solve_for</strong>  => <a href='../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_scalar'>fin_diff_block_solve_scalar</a>, <a href='../type/fin_diff_block.html#boundprocedure-fin_diff_block_solve_vector'>fin_diff_block_solve_vector</a> 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+         
+            
+    
+    <h3>
+private function <a href='../proc/fin_diff_block_solve_scalar.html'>fin_diff_block_solve_scalar</a>(this, rhs, offset) result(solution)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Solves the linear(ised) system represented by this finite
+ difference block, for a given right hand side state vector
+ (represented by a scalar field). Optionally, the differential
+ operator can be augmented by adding an offset, i.e. a scalar
+ field which is added to the operator.</p><a href="../proc/fin_diff_block_solve_scalar.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/fin_diff_block.html'>fin_diff_block</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear(ised) system.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>offset</strong></td><td><p>An offset to add to the differential operator</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+         
+      
+      </li>
+    
+      <li class="list-group-item">
+      
+         
+            
+    
+    <h3>
+private function <a href='../proc/fin_diff_block_solve_vector.html'>fin_diff_block_solve_vector</a>(this, rhs, offset) result(solution)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Solves the linear(ised) system represented by this finite
+ difference block, for a given right hand side state vector
+ (represented by a vector field). Optionally, the differential
+ operator can be augmented by adding an offset, i.e. a vector
+ field which is added to the operator.</p><a href="../proc/fin_diff_block_solve_vector.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/fin_diff_block.html'>fin_diff_block</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(cheb1d_vector_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear(ised) system.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(cheb1d_vector_field),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>offset</strong></td><td><p>An offset to add to the differential operator</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(vector_field),
+  pointer</small></h4>
+  
+    
+
+         
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+    </section>
+    
+    
+    
+    <section>
+    <h3><span class="anchor" id="src"></span>Source Code</h3>
+    <div class="highlight"><pre><span></span>  <span class="k">type</span><span class="p">,</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">fin_diff_block</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: December 2016</span>
+    <span class="c">!</span>
+    <span class="c">! A data type representing a matrix finite difference operator. It</span>
+    <span class="c">! can be useful when preconditioning systems which use a spectral</span>
+    <span class="c">! discretisation. It is inherently 1-D in its implementation. Note</span>
+    <span class="c">! that multiplication of a field will simply call that field&#39;s</span>
+    <span class="c">! differentiation operator, which may or may not use a finite</span>
+    <span class="c">! difference method.</span>
+    <span class="c">!</span>
+    <span class="c">! When constructing an instance of this type, a template field</span>
+    <span class="c">! must be passed which has the same grid as any other fields which</span>
+    <span class="c">! will be operated upon. Additionally, types and locations of</span>
+    <span class="c">! boundary conditions must be passed.</span>
+    <span class="c">!</span>
+    <span class="k">private</span>
+<span class="k">    </span><span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">diagonal</span>
+      <span class="c">!! The diagonal of the tridiagonal matrix representation of this</span>
+      <span class="c">!! block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">super_diagonal</span>
+      <span class="c">!! The super-diagonal of the tridiagonal matrix representation</span>
+      <span class="c">!! of this block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">sub_diagonal</span>
+      <span class="c">!! The sub-diagonal of the tridiagonal matrix representation of</span>
+      <span class="c">!! this block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">l_multipliers</span>
+      <span class="c">!! Multipliers defining the L matrix in the LU factorisation of</span>
+      <span class="c">!! the tridiagonal matrix representation of this block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">u_diagonal</span>
+      <span class="c">!! The diagonal of the U matrix in the LU factorisation of</span>
+      <span class="c">!! the tridiagonal matrix representation of this block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">u_superdiagonal1</span>
+      <span class="c">!! The first superdiagonal of the U matrix in the LU</span>
+      <span class="c">!! factorisation of the tridiagonal matrix representation of</span>
+      <span class="c">!! this block.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">u_superdiagonal2</span>
+      <span class="c">!! The second superdiagonal of the U matrix in the LU</span>
+      <span class="c">!! factorisation of the tridiagonal matrix representation of</span>
+      <span class="c">!! this block.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span>  <span class="kd">::</span> <span class="n">pivots</span>
+      <span class="c">!! Pivot indicies from the LU factorisation of the tridiagonal</span>
+      <span class="c">!! matrix representation of this block.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span>  <span class="kd">::</span> <span class="n">boundary_locs</span>
+      <span class="c">!! Locations in the raw arrays which are used to specify</span>
+      <span class="c">!! boundary conditions.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span>  <span class="kd">::</span> <span class="n">boundary_types</span>
+      <span class="c">!! The types of boundary conditions, specified using the</span>
+      <span class="c">!! parameters found in [[boundary_types_mod]].</span>
+    <span class="kt">logical</span>                             <span class="kd">::</span> <span class="n">had_offset</span> <span class="o">=</span> <span class="p">.</span><span class="n">true</span><span class="p">.</span>
+      <span class="c">!! True if the factorisation was computed from a tridiagonal</span>
+      <span class="c">!! system in which an offset was added to the diagonal.</span>
+<span class="c">!    real(r8)                            :: magnitude</span>
+<span class="c">!      !! The norm of the superdiagonal of the matrix. If an iterative</span>
+<span class="c">!      !! method is used, this is needed to decide how to do so.</span>
+  <span class="k">contains</span>
+<span class="k">    private</span>
+<span class="k">    procedure</span> <span class="kd">::</span> <span class="n">fin_diff_block_solve_scalar</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">fin_diff_block_solve_vector</span>
+    <span class="k">generic</span><span class="p">,</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">solve_for</span> <span class="o">=&gt;</span> <span class="n">fin_diff_block_solve_scalar</span><span class="p">,</span> <span class="p">&amp;</span>
+                                    <span class="n">fin_diff_block_solve_vector</span>
+  <span class="k">end type </span><span class="n">fin_diff_block</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>bicgstab_solve &ndash; ISOFT</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>bicgstab_solve
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> March 2017</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 0.9% of total for procedures.">100 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/nitsol.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/nitsol.f90.html'>nitsol.f90</a></li>
+    
+     <li><a href='../module/nitsol_mod.html'>nitsol_mod</a></li>
+    
+  
+     <li class="active">bicgstab_solve</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/bicgstab_solve.html#src">bicgstab_solve</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+public subroutine bicgstab_solve(solution, lhs, rhs, resid_norm, flag, nlhs, nrpre, nli, tol, precond, rpar, ipar, resid_update, iter_max, krylov_dim, inner_prod, norm)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+    <p>A wraper for the
+ <a href="http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf">nitsol</a>
+ implementation of the biconjugate gradient stabilized method
+ (<a href="https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method">BiCGSTAB</a>)
+ for iteratively solving linear systems. This provides a more
+ general interface not specifically intended for use with Newton
+ iteration. It also uses Fortran 90 features to provide a more
+ convenient call signature.</p>
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-solution%7E7"></span>real(kind=r8),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>solution</strong></td><td><p>On input, an initial guess of the solution to the linear
+ system. On output, the iteratively determined solution.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-lhs%7E3"></span>procedure(<a href='../interface/mat_mult.html'>mat_mult</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>lhs</strong></td><td><p>The linear operator on the left hand side of the linear
+ system.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rhs%7E19"></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>rhs</strong></td><td><p>The right hand side of the linear system being solved</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-resid_norm%7E4"></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>resid_norm</strong></td><td><p>BiCGSTAB residual norm on return</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-flag%7E7"></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>flag</strong></td><td><p>Termination flag. Values have the following meanings:</p>
+<dl>
+<dt>0</dt>
+<dd>normal termination: acceptable step found</dd>
+<dt>1</dt>
+<dd>
+<script type="math/tex">J\vec{v}</script>  failure in <code>nitjv</code></dd>
+<dt>2</dt>
+<dd>
+<script type="math/tex">P^{-1}\vec{v}</script> failure in <code>nitjv</code></dd>
+<dt>3</dt>
+<dd>Acceptable step not found in <code>iksmax</code> BiCGSTAB iterations</dd>
+<dt>4</dt>
+<dd>BiCGSTAB breakdown</dd>
+</dl></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nlhs%7E3"></span>integer,</td>
+  <td>intent(out),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>nlhs</strong></td><td><p>Number of evaluations of the left hand side of the system</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nrpre%7E6"></span>integer,</td>
+  <td>intent(out),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>nrpre</strong></td><td><p>Number of evaluations of the right-preconditioner</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nli%7E6"></span>integer,</td>
+  <td>intent(out),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>nli</strong></td><td><p>Number of iterations</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-tol%7E6"></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>tol</strong></td><td><p>The tolerance for the solution. Default is <code>size(solution) * 1e-8</code>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-precond%7E7"></span>procedure(<a href='../interface/mat_mult.html'>mat_mult</a>),</td>
+  <td></td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>precond</strong></td><td><p>A right-preconditioner which may be used to improve
+ convergence of the solution.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rpar%7E11"></span>real(kind=r8),</td>
+  <td>intent(inout),</td>
+  <td>optional</td>
+  
+  <td>dimension(*)</td><td>::</td>
+  <td><strong>rpar</strong></td><td><p>Parameter/work array passed to the <code>lhs</code> and <code>precond</code> routines.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ipar%7E11"></span>integer,</td>
+  <td>intent(inout),</td>
+  <td>optional</td>
+  
+  <td>dimension(*)</td><td>::</td>
+  <td><strong>ipar</strong></td><td><p>Parameter/work array passed to the <code>lhs</code> and <code>precond</code> routines</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-resid_update%7E3"></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>resid_update</strong></td><td><p>Residual update flag. On GMRES restarts, the residual can be
+ updated using a linear combination (<code>iresup == 0</code>) or by
+ direct evaluation (<code>iresup == 1</code>). The first is cheap (one
+ n-vector saxpy) but may lose accuracy with extreme residual
+ reduction; the second retains accuracy better but costs one
+ <script type="math/tex">J\vec{v}</script> product. Meaningless in this routine, but kept
+ for consistent interface.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-iter_max%7E4"></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>iter_max</strong></td><td><p>Maximum allowable number of TFQMR iterations. Default is
+ 1000.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-krylov_dim%7E4"></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>krylov_dim</strong></td><td><p>Maximum Krylov subspace dimension; default 10.    </p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-inner_prod%7E3"></span>procedure(<a href='../interface/dinpr_intr.html'>dinpr_intr</a>),</td>
+  <td></td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>inner_prod</strong></td><td><p>Inner-product routine, either user-supplied or BLAS <code>ddot</code>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-norm%7E3"></span>procedure(<a href='../interface/dnorm_intr.html'>dnorm_intr</a>),</td>
+  <td></td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>norm</strong></td><td><p>Norm routine, either user supplied or BLAS dnrm2.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/bicgstab_solve.html#src">bicgstab_solve</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">bicgstab_solve</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">resid_norm</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">nlhs</span><span class="p">,</span> <span class="n">nrpre</span><span class="p">,</span> <span class="p">&amp;</span>
+                            <span class="n">nli</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> <span class="n">precond</span><span class="p">,</span> <span class="n">rpar</span><span class="p">,</span> <span class="n">ipar</span><span class="p">,</span> <span class="n">resid_update</span><span class="p">,</span>       <span class="p">&amp;</span>
+                            <span class="n">iter_max</span><span class="p">,</span> <span class="n">krylov_dim</span><span class="p">,</span> <span class="n">inner_prod</span><span class="p">,</span> <span class="n">norm</span><span class="p">)</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: March 2017</span>
+    <span class="c">!</span>
+    <span class="c">! A wraper for the</span>
+    <span class="c">! [nitsol](http://users.wpi.edu/~walker/Papers/nitsol,SISC_19,1998,302-318.pdf)</span>
+    <span class="c">! implementation of the biconjugate gradient stabilized method</span>
+    <span class="c">! ([BiCGSTAB](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method))</span>
+    <span class="c">! for iteratively solving linear systems. This provides a more</span>
+    <span class="c">! general interface not specifically intended for use with Newton</span>
+    <span class="c">! iteration. It also uses Fortran 90 features to provide a more</span>
+    <span class="c">! convenient call signature.</span>
+    <span class="c">!</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span>           <span class="kd">::</span> <span class="n">solution</span>
+      <span class="c">!! On input, an initial guess of the solution to the linear</span>
+      <span class="c">!! system. On output, the iteratively determined solution.</span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">mat_mult</span><span class="p">)</span>                             <span class="kd">::</span> <span class="n">lhs</span>
+      <span class="c">!! The linear operator on the left hand side of the linear</span>
+      <span class="c">!! system.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>              <span class="kd">::</span> <span class="n">rhs</span>
+      <span class="c">!! The right hand side of the linear system being solved</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>                           <span class="kd">::</span> <span class="n">resid_norm</span>
+      <span class="c">!! BiCGSTAB residual norm on return</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>                            <span class="kd">::</span> <span class="n">flag</span>
+      <span class="c">!! Termination flag. Values have the following meanings:</span>
+      <span class="c">!!</span>
+      <span class="c">!!0</span>
+      <span class="c">!!:    normal termination: acceptable step found</span>
+      <span class="c">!!</span>
+      <span class="c">!!1</span>
+      <span class="c">!!:    \(J\vec{v}\)  failure in `nitjv`</span>
+      <span class="c">!!</span>
+      <span class="c">!!2</span>
+      <span class="c">!!:    \(P^{-1}\vec{v}\) failure in `nitjv`</span>
+      <span class="c">!!</span>
+      <span class="c">!!3</span>
+      <span class="c">!!:    Acceptable step not found in `iksmax` BiCGSTAB iterations</span>
+      <span class="c">!!</span>
+      <span class="c">!!4</span>
+      <span class="c">!!:    BiCGSTAB breakdown</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span> <span class="k">optional</span>                  <span class="kd">::</span> <span class="n">tol</span>
+      <span class="c">!! The tolerance for the solution. Default is `size(solution) * 1e-8`.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="k">optional</span>                  <span class="kd">::</span> <span class="n">nlhs</span>
+        <span class="c">!! Number of evaluations of the left hand side of the system</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="k">optional</span>                  <span class="kd">::</span> <span class="n">nrpre</span>
+        <span class="c">!! Number of evaluations of the right-preconditioner</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="k">optional</span>                  <span class="kd">::</span> <span class="n">nli</span>
+        <span class="c">!! Number of iterations</span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">mat_mult</span><span class="p">),</span> <span class="k">optional</span>                   <span class="kd">::</span> <span class="n">precond</span>
+      <span class="c">!! A right-preconditioner which may be used to improve</span>
+      <span class="c">!! convergence of the solution.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span> <span class="k">optional</span> <span class="kd">::</span> <span class="n">rpar</span>
+      <span class="c">!! Parameter/work array passed to the `lhs` and `precond` routines.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span> <span class="k">optional</span>  <span class="kd">::</span> <span class="n">ipar</span>
+      <span class="c">!! Parameter/work array passed to the `lhs` and `precond` routines</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span> <span class="k">optional</span>                   <span class="kd">::</span> <span class="n">resid_update</span>
+      <span class="c">!! Residual update flag. On GMRES restarts, the residual can be</span>
+      <span class="c">!! updated using a linear combination (`iresup == 0`) or by</span>
+      <span class="c">!! direct evaluation (`iresup == 1`). The first is cheap (one</span>
+      <span class="c">!! n-vector saxpy) but may lose accuracy with extreme residual</span>
+      <span class="c">!! reduction; the second retains accuracy better but costs one</span>
+      <span class="c">!! \(J\vec{v}\) product. Meaningless in this routine, but kept</span>
+      <span class="c">!! for consistent interface.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span> <span class="k">optional</span>                   <span class="kd">::</span> <span class="n">iter_max</span>
+      <span class="c">!! Maximum allowable number of TFQMR iterations. Default is</span>
+      <span class="c">!! 1000.</span>
+    <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span> <span class="k">optional</span>                   <span class="kd">::</span> <span class="n">krylov_dim</span>
+      <span class="c">!! Maximum Krylov subspace dimension; default 10.    </span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">dinpr_intr</span><span class="p">),</span> <span class="k">optional</span>                 <span class="kd">::</span> <span class="n">inner_prod</span>
+      <span class="c">!! Inner-product routine, either user-supplied or BLAS `ddot`.</span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">dnorm_intr</span><span class="p">),</span> <span class="k">optional</span>                 <span class="kd">::</span> <span class="n">norm</span>
+      <span class="c">!! Norm routine, either user supplied or BLAS dnrm2.</span>
+    
+    <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">npoints</span><span class="p">,</span> <span class="n">preflag</span><span class="p">,</span> <span class="n">resup</span><span class="p">,</span> <span class="n">itmax</span><span class="p">,</span> <span class="n">kdim</span><span class="p">,</span> <span class="n">nfe</span><span class="p">,</span> <span class="n">lnlhs</span><span class="p">,</span> <span class="n">lnrpre</span><span class="p">,</span> <span class="n">lnli</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">eta</span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">dinpr_intr</span><span class="p">),</span> <span class="k">pointer</span> <span class="kd">::</span> <span class="n">dinpr</span>
+    <span class="k">procedure</span><span class="p">(</span><span class="n">dnorm_intr</span><span class="p">),</span> <span class="k">pointer</span> <span class="kd">::</span> <span class="n">dnorm</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">save</span> <span class="kd">::</span> <span class="n">xcur</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:,:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">save</span> <span class="kd">::</span> <span class="n">workers</span>
+
+    <span class="n">lnlhs</span>  <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">lnrpre</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">lnli</span>   <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">npoints</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">precond</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">       </span><span class="n">preflag</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span>
+<span class="k">       </span><span class="n">preflag</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">tol</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">eta</span> <span class="o">=</span> <span class="n">tol</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">eta</span> <span class="o">=</span> <span class="mf">1.e-8_r8</span> <span class="o">*</span> <span class="n">npoints</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">resid_update</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">resup</span> <span class="o">=</span> <span class="n">resid_update</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">resup</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">iter_max</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">itmax</span> <span class="o">=</span> <span class="n">iter_max</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">itmax</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">krylov_dim</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">kdim</span> <span class="o">=</span> <span class="n">krylov_dim</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">kdim</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">inner_prod</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">dinpr</span> <span class="o">=&gt;</span> <span class="n">inner_prod</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">dinpr</span> <span class="o">=&gt;</span> <span class="n">ddot</span>
+    <span class="k">end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">norm</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">dnorm</span> <span class="o">=&gt;</span> <span class="n">norm</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">dnorm</span> <span class="o">=&gt;</span> <span class="n">dnrm2</span>
+    <span class="k">end if</span>
+
+<span class="k">    </span><span class="n">xcur</span> <span class="o">=</span> <span class="n">solution</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nb">allocated</span><span class="p">(</span><span class="n">workers</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      if</span> <span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="n">workers</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">/=</span> <span class="n">npoints</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        deallocate</span><span class="p">(</span><span class="n">workers</span><span class="p">)</span>
+        <span class="k">allocate</span><span class="p">(</span><span class="n">workers</span><span class="p">(</span><span class="n">npoints</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+      <span class="k">end if</span>
+<span class="k">    else</span>
+<span class="k">        allocate</span><span class="p">(</span><span class="n">workers</span><span class="p">(</span><span class="n">npoints</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="k">end if</span>
+
+<span class="k">    call </span><span class="n">nitstb2</span><span class="p">(</span><span class="n">npoints</span><span class="p">,</span> <span class="n">xcur</span><span class="p">,</span> <span class="o">-</span><span class="n">rhs</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">dummy_f</span><span class="p">,</span> <span class="n">jacv</span><span class="p">,</span>    <span class="p">&amp;</span>
+                 <span class="n">rpar</span><span class="p">,</span> <span class="n">ipar</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">preflag</span><span class="p">,</span> <span class="n">itmax</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nfe</span><span class="p">,</span> <span class="n">lnlhs</span><span class="p">,</span> <span class="n">lnrpre</span><span class="p">,</span> <span class="p">&amp;</span>
+                 <span class="n">lnli</span><span class="p">,</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">1</span><span class="p">),</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">2</span><span class="p">),</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">3</span><span class="p">),</span>       <span class="p">&amp;</span>
+                 <span class="n">workers</span><span class="p">(:,</span><span class="mi">4</span><span class="p">),</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">5</span><span class="p">),</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">6</span><span class="p">),</span>             <span class="p">&amp;</span>
+                 <span class="n">workers</span><span class="p">(:,</span><span class="mi">6</span><span class="p">),</span> <span class="n">workers</span><span class="p">(:,</span><span class="mi">8</span><span class="p">),</span> <span class="n">resid_norm</span><span class="p">,</span> <span class="n">dinpr</span><span class="p">,</span>      <span class="p">&amp;</span>
+                 <span class="n">dnorm</span><span class="p">,</span> <span class="n">flag</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">nlhs</span><span class="p">))</span>  <span class="n">nlhs</span>  <span class="o">=</span> <span class="n">lnlhs</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">nrpre</span><span class="p">))</span> <span class="n">nrpre</span> <span class="o">=</span> <span class="n">lnrpre</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">nli</span><span class="p">))</span>   <span class="n">nli</span>   <span class="o">=</span> <span class="n">lnli</span>
+
+  <span class="k">contains</span>
+<span class="k">    </span>
+<span class="k">    subroutine </span><span class="n">jacv</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">xcur</span><span class="p">,</span> <span class="n">fcur</span><span class="p">,</span> <span class="n">ijob</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">rpar</span><span class="p">,</span> <span class="n">ipar</span><span class="p">,</span> <span class="n">itrmjv</span><span class="p">)</span>
+      <span class="c">!! A wrapper on the user-provided routines for the linear</span>
+      <span class="c">!! operator and preconditioner, to put them in the form NITSOL</span>
+      <span class="c">!! expects.</span>
+      <span class="c">!! </span>
+      <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>                   <span class="kd">::</span> <span class="n">n</span>
+        <span class="c">! Dimension of the problem</span>
+      <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>    <span class="kd">::</span> <span class="n">xcur</span>
+        <span class="c">! Array of length `n` containing the current \(x\) value</span>
+      <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>    <span class="kd">::</span> <span class="n">fcur</span>
+        <span class="c">! Array of length `n` containing the current \(f(x)\) value</span>
+      <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>                   <span class="kd">::</span> <span class="n">ijob</span>
+        <span class="c">! Integer flag indicating which product is desired. 0</span>
+        <span class="c">! indicates \(z = J\vec{v}\). 1 indicates \(z = P^{-1}\vec{v}\).</span>
+      <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>    <span class="kd">::</span> <span class="n">v</span>
+        <span class="c">! An array of length `n` to be multiplied</span>
+      <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">z</span>
+        <span class="c">! An array of length n containing the desired product on</span>
+        <span class="c">! output.</span>
+      <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span> <span class="kd">::</span> <span class="n">rpar</span>
+        <span class="c">! Parameter/work array </span>
+      <span class="kt">integer</span><span class="p">,</span> <span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span>  <span class="kd">::</span> <span class="n">ipar</span>
+        <span class="c">! Parameter/work array</span>
+      <span class="kt">integer</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>                  <span class="kd">::</span> <span class="n">itrmjv</span>
+        <span class="c">! Termination flag. 0 indcates normal termination, 1</span>
+        <span class="c">! indicatesfailure to prodce \(J\vec{v}\), and 2 indicates</span>
+        <span class="c">! failure to produce \(P^{-1}\vec{v}\)</span>
+      <span class="kt">logical</span> <span class="kd">::</span> <span class="n">success</span>
+      <span class="n">itrmjv</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">ijob</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        </span><span class="n">z</span> <span class="o">=</span> <span class="n">lhs</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">xcur</span><span class="p">,</span> <span class="n">fcur</span><span class="p">,</span> <span class="n">rpar</span><span class="p">,</span> <span class="n">ipar</span><span class="p">,</span> <span class="n">success</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(.</span><span class="nb">not</span><span class="p">.</span> <span class="n">success</span><span class="p">)</span> <span class="n">itrmjv</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="k">else if</span> <span class="p">(</span><span class="n">ijob</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        </span><span class="n">z</span> <span class="o">=</span> <span class="n">precond</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">xcur</span><span class="p">,</span> <span class="n">fcur</span><span class="p">,</span> <span class="n">rpar</span><span class="p">,</span> <span class="n">ipar</span><span class="p">,</span> <span class="n">success</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(.</span><span class="nb">not</span><span class="p">.</span> <span class="n">success</span><span class="p">)</span> <span class="n">itrmjv</span> <span class="o">=</span> <span class="mi">2</span>
+      <span class="k">else</span>
+<span class="k">        </span><span class="n">error</span> <span class="k">stop</span> <span class="p">(</span><span class="s1">&#39;`ijob` not equal to 0 or 1.&#39;</span><span class="p">)</span>
+      <span class="k">end if</span>
+<span class="k">    end subroutine </span><span class="n">jacv</span>
+
+  <span class="k">end subroutine </span><span class="n">bicgstab_solve</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

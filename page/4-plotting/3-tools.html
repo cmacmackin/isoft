@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>General Plotting Tools &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>General Plotting Tools</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> November 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a></li>
+      
+         <li class="active">General Plotting Tools</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>For convenience, a number of additional tools are provided for
+analysing ISOFT output. These are organised into a series of
+additional Python modules.</p>
+<h2 id="differentiate">plotting/<a href="../../sourcefile/calculus.py.html">calculus.py</a></h2>
+<p>Provides a <code>Differentiator</code> class which can be used to calculate
+derivatives of ISOFT output using the
+<a href="../2-numerics/2-spatial.html">Chebyshev pseudospectral</a>
+method. Rather than the previously described algorithm using the FFT,
+a differentiation matrix is used here
+<a href="../6-bibliog.html#Trefethen2000">(Trefethen, 2000)</a>. The constructor
+for this object is</p>
+<div class="codehilite"><pre><span></span><span class="n">Differentiator</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>size</code> is the number of Chebyshev pseudo-spectral nodes in the
+data to be differentiated, <code>lower</code> is the lower bound of the domain,
+and <code>upper</code> is the upper bound. The differentiator object is applied
+by calling it like a function, with the array to be differentiated
+passed as an argument.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">plotting.readers</span> <span class="kn">import</span> <span class="n">ShelfPlumeCryosphere</span>
+<span class="kn">from</span> <span class="nn">plotting.calculus</span> <span class="kn">import</span> <span class="n">Differentiator</span>
+
+<span class="n">cryo</span> <span class="o">=</span> <span class="n">ShelfPlumeCryosphere</span><span class="p">(</span><span class="s1">&#39;isoft-0000.h5&#39;</span><span class="p">)</span>
+<span class="n">diff</span> <span class="o">=</span> <span class="n">Differentiator</span><span class="p">(</span><span class="n">cryo</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cryo</span><span class="o">.</span><span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">cryo</span><span class="o">.</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">dh_dx</span> <span class="o">=</span> <span class="n">diff</span><span class="p">(</span><span class="n">cryo</span><span class="o">.</span><span class="n">h</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>plotting/<a href="../../sourcefile/dimensionless_nums.py.html">dimensionless_nums.py</a></h2>
+<p>This module provides routines to calculate dimensionless numbers used
+in fluid dynamics. To date, only the
+<a href="https://en.wikipedia.org/wiki/Froude_number">Froude number</a> has been
+implemented. This has routine</p>
+<div class="codehilite"><pre><span></span><span class="n">froude</span><span class="p">(</span><span class="n">coef</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">drho</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>coef</code> is a dimensionless coefficient <script type="math/tex">1/\sqrt{\delta}</script>, <code>U =
+ShelfPlumeCryosphere.Uvec</code> is the vector velocity, <code>drho</code> is a
+density difference causing buoyant forcing, and <code>D</code> is thickness of
+the fluid layer.</p>
+<h2>plotting/<a href="../../sourcefile/entrainment.py.html">entrainment.py</a></h2>
+<p>This provides classes which can calculate the entrainment rate for a
+subglacial plume. Two such classes are provided: one for the
+parameterisation of <a href="../6-bibliog.html#Jenkins1991">Jenkins (1991)</a>
+and another for that of
+<a href="../6-bibliog.html#Kochergin1987">Kochergin (1987)</a>. The constructor
+for the first has the form</p>
+<div class="codehilite"><pre><span></span><span class="n">Jenkins1991Entrainment</span><span class="p">(</span><span class="n">coefficient</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>coefficient</code> is the dimensionless entrainment coefficient
+<script type="math/tex">E_0/\delta</script> (typically with value 1) and the remaining arguments
+have the same meaning as those in the constructor for the
+<a href="#differentiate">Differentiator type</a>. The constructor for the latter
+has the form</p>
+<div class="codehilite"><pre><span></span><span class="n">Kochergin1987Entrainment</span><span class="p">(</span><span class="n">coefficient</span><span class="p">,</span> <span class="n">delta</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>coefficient</code> is <script type="math/tex">K = c_L^2 x_0/D_0</script>, as described in
+<a href="../2-numerics/1-equations.html#mjx-eqn-eqent-koch-coef-nd">equation 16</a>,
+and <code>delta</code> is the buoyancy correction <script type="math/tex">\delta</script>.</p>
+<p>For both of these classes, the entrainment is calculated by calling
+the object like a function. For an entrainment object named <code>ent</code>, the
+call signature is</p>
+<div class="codehilite"><pre><span></span><span class="n">ent</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">rho_diff</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>U</code> is the vector velocity of the plume, <code>D</code> is the plume
+thickness, <code>b</code> is the basal depth of the ice shelf, and <code>rho_diff</code> is
+the density difference between the ambient ocean and the plume. The
+last argument is not used and may be omitted for the
+<code>Jenkins1991Entrainment</code> class.</p>
+<h2>plotting/<a href="../../sourcefile/eos.py.html">eos.py</a></h2>
+<p>This provides a class, <code>LinearEos</code>, for calculating the plume density
+according to the linearisation in
+<a href="../2-numerics/1-equations.html#mjx-eqn-eqlin-eos">equation 20</a>. The
+constructor for this class</p>
+<div class="codehilite"><pre><span></span><span class="n">LinearEos</span><span class="p">(</span><span class="n">ref_density</span><span class="p">,</span> <span class="n">beta_T</span><span class="p">,</span> <span class="n">beta_S</span><span class="p">,</span> <span class="n">T_ref</span><span class="p">,</span> <span class="n">S_ref</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where the arguments are the reference density, thermal contraction
+coefficient, haline contraction coefficient, reference temperature,
+and reference salinity. All quantities should be scaled to be in
+nondimensional units. The resulting object (called, say, <code>eos</code>) is
+called like a function:</p>
+<div class="codehilite"><pre><span></span><span class="n">eos</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>T</code> is the plume temperature and <code>S</code> is the plume salinity.</p>
+<h2>plotting/<a href="../../sourcefile/melt.py.html">melt.py</a></h2>
+<p>This module provides classes which can calculate the melt rate of the
+ice shelf and melt contributions to the plume's salinity and heat
+equations. The first class is <code>Dallaston2015Melt</code> which calculates the
+melt rate in the same manner as the <a href="../../type/dallaston2015_melt.html">dallaston2015_melt</a>
+derived type. It has constructor</p>
+<div class="codehilite"><pre><span></span><span class="n">Dallaston2015Melt</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">epsilon_g</span><span class="p">,</span> <span class="n">epsilon_m</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>beta</code> is the inverse Stefan number, <code>epsilon_g</code> is the ratio of
+subglacial flux to entrained flux, and <code>epsilon_g</code> is the ratio of
+subshelf melt and entrained flux. The other class is <code>OneEquationMelt</code>,
+which calculates the melt rate in the manner of the
+<a href="../../type/one_equation_melt.html">one_equation_melt</a> derived type. It has constructor</p>
+<div class="codehilite"><pre><span></span><span class="n">OneEquationMelt</span><span class="p">(</span><span class="n">coef1</span><span class="p">,</span> <span class="n">coef2</span><span class="p">,</span> <span class="n">fresh_sal</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">melt_temp</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>coef1</code> and <code>coef2</code> correspond to <script type="math/tex">\zeta_1</script> and <script type="math/tex">\zeta_2</script> in
+<a href="../2-numerics/1-equations.html#mjx-eqn-eqtherm-trans-nondim">equation 18</a>,
+<code>fresh_sal</code> is the salinity value which is designated as "fresh", and
+<code>melt_temp</code> is the temperature at which melting occurs (scale analysis
+shows that it often makes sense for these to be non-zero).</p>
+<p>For both classes, the melt rate is calculated by calling the melt
+object (here named <code>m</code>) like a function. Additionally, there are
+methods <code>thermal_forcing</code> and <code>saline_forcing</code> to calculate the
+contribution of melting to the plume heat and salinity equations,
+respectively. These can be called as follows:</p>
+<div class="codehilite"><pre><span></span><span class="n">m</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">thermal_forcing</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">saline_forcing</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+</pre></div>
+
+
+<p>In each case, <code>U</code> refers to the plume vector velocity, <code>p</code> to the
+pressure at the base of the ice shelf, <code>T</code> to the plume temperature,
+<code>S</code> to the plume salinity, and <code>D</code> to the plume thickness.</p>
+<h2>plotting/<a href="../../sourcefile/viscosity.py.html">viscosity.py</a></h2>
+<p>Finally, this module provides two classes which can calculate the
+viscosity of the glacier: <code>NewtonianViscosity</code> and <code>GlensLaw</code>. The
+first of these is a trivial implementation with a constructor</p>
+<div class="codehilite"><pre><span></span><span class="n">NewtonianViscosity</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Making calls to objects of this type will return an array filled with
+the value with which the viscosity object was initialised. The
+second implementation is <code>GlensLaw</code>, which treats viscosity as a
+power law of strain
+<a href="../2-numerics/1-equations.html#mjx-eqn-eqglens-nd">(equation 5)</a>. It
+has constructor</p>
+<div class="codehilite"><pre><span></span><span class="n">GlensLaw</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<p>The first 3 arguments have the same meaning as in the constructor for
+the <a href="#differentiate">Differentiator class</a>. The argument <code>coef</code>
+corresponds to <script type="math/tex">\xi</script>, as defined in
+<a href="../2-numerics/1-equations.html#mjx-eqn-eqglens-coef-nd">equation 6</a>
+and <code>index</code> is the value of <script type="math/tex">n</script> in the equation for Glen's Law.</p>
+<p>Both viscosity classes are called like functions and (if an instance
+of them is named <code>visc</code>) have the call signature</p>
+<div class="codehilite"><pre><span></span><span class="n">visc</span><span class="p">(</span><span class="n">uvec</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=-</span><span class="mf">15.0</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+
+<p>where <code>uvec</code> is the vector ice velocity, <code>temperature</code> is the
+temperature of the ice, and <code>time</code> is the time during the simulation
+at which the calculation is being performed. The latter two arguments
+are not used in either implementation of viscosity.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

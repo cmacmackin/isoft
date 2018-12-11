@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Horizontally-Integrated Plume Equations &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Horizontally-Integrated Plume Equations</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> December 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/2-numerics/index.html'>Numerical Methods</a></li>
+      
+         <li class="active">Horizontally-Integrated Plume Equations</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>The <a href="./4-plume-solver.html">plume solver</a> described earlier assumed
+that the plume is uniform in the transverse direction, with no
+transverse velocity component. While this is a reasonable
+approximation for narrow ice shelves, past modelling has shown that
+the Coriolis force steers plume flow within subglacial cavities of
+wide ice shelves Although 2-D plume models have been developed and
+applied before
+<a href="../6-bibliog.html#Sergienko2013">(e.g. Sergienko, 2013)</a>, they are
+computationally expensive. Instead, ISOFT implements a
+"horizontally_integrated" 1-D model, containing information on the
+transverse flow. In addition to its computational simplicity, the
+horizontally-integrated model provides a conceptual tool which can be
+useful in understanding of the results of observations and more
+complex simulations. The full derivation of this model can be found in
+Chapter 4 of <a href="../6-bibliog.html#MacMackin2019">MacMackin (2019)</a>. What
+follows is an overview of the results.</p>
+<p><img alt="A 3-D cartoon diagram of the horizontally-integrated
+plume." height="250px" src="../../media/horizontal_integration.svg">
+<img alt="A planar view of the horizontally-integrated plume." height="250px" src="../../media/horizontal_integration_planar.svg"></p>
+<p>In this model, illustrated in figures above,
+the plume variables are averaged over both the thickness of the plume
+and also some lateral width <script type="math/tex">\setcounter{37} \Delta y</script> across the shelf. At the lower limit of
+this domain in y is a sidewall of the subglacial cavity, through which
+there can be no plume flow. The location of the upper limit is a
+parameter which can be adjusted, but it is assumed to be an open
+boundary through which transverse outflow is allowed. In order for
+transverse flow to begin there must be something to break the
+horizontal symmetry in the plume equations. This naturally arises due
+to the Coriolis force. Simulations indicate that, in a rotational
+plume such as this, there would be a narrow longitudinal boundary
+current on the opposite side of the cavity. The presence of such a
+boundary current is assumed here, rather than being explicitly
+modelled; this current would act to drain the transverse flux of water
+out from under the ice shelf.</p>
+<p>The plume variables are assumed to be separable in <script type="math/tex">x</script> and <script type="math/tex">y</script>, with the forms
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:plume-var-sep}
+  D(x,y) = \hat{D}(x)f_D(y), \quad U(x,y) = \hat{U}(x)f_U(y), \quad\ldots
+\end{equation}</script>
+and similar for <script type="math/tex">V</script>, <script type="math/tex">T</script>, and <script type="math/tex">S</script>.  A width-averaging operator,
+represented by an over-bar, is defined according to
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:averaging}
+  \overline{G} = \frac{1}{\Delta y}\int^{y_2}_{y_1}G(y)dy,
+\end{equation}</script>
+where <script type="math/tex">G</script> is an arbitrary <em>y</em>-dependent variable and  <script type="math/tex">\Delta y = y_2 - y_1</script>.
+The shape functions <script type="math/tex">f(y)</script> are defined such that
+<script type="math/tex; mode=display"> \overline{f_D} = 1, \quad \overline{f_U} = 1, \quad\ldots </script>
+There is no general way to relate
+<script type="math/tex">\widehat{|\vec{U}|}(x)</script> to <script type="math/tex">\hat{U}(x)</script> and <script type="math/tex">\hat{V}(x)</script>, so instead
+it is treated as an independent variable with its own shape function:
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:Ubar-sep}
+  |\vec{U}(x,y)| = \widehat{|\vec{U}|}(x)f_{|\vec{U}|}(y).
+\end{equation}</script>
+However, <script type="math/tex">\widehat{|\vec{U}|} = \sqrt{\hat{U}^2 + \hat{V}^2}</script> is
+exactly true if <script type="math/tex">f_U(y) = f_V(y)</script> or approximately true if <script type="math/tex">U \gg V</script>
+or <script type="math/tex">V \gg U</script>.</p>
+<p>With these definitions in mind, the horizontally-integrated plume equations can be written as
+  <script type="math/tex; mode=display">\begin{align}
+    \alpha_{DU}\frac{d}{d x}\left(DU\right) +
+    \left.\frac{f_D f_V}{\Delta y}\right\rvert^{y_2}_{y_1}DV &=
+                                                               \overline{e} + \overline{m}, \label{eq:plume-cont-int} \\
+    \alpha_{DU^2}\frac{d}{d x}\left(DU^2\right) +
+    \left.\frac{f_D f_U f_V}{\Delta y}\right\rvert^{y_2}_{y_1}DUV &=
+                                                                    D\rho_a\frac{d}{d x}\left(b - \delta\alpha_{D^2} D\right)\label{eq:plume-mom-x-int}\\ \nonumber
+                                                             &- D\left(\overline{\rho}\frac{d b}{d x}
+                                                               - \delta\alpha_{D^2}\tilde{\rho}\frac{d D}{d x}\right) \\ \nonumber
+                                                             &+ \nu\alpha_{DU}\frac{d}{dx}\left(D\frac{dU}{dx}\right)
+                                                               + \left.\nu\frac{DU}{\Delta
+                                                               y}f_{D}f'_{U}\right\rvert^{y_2}_{y_1} \\ \nonumber
+                                                             &- \mu\alpha_{|\vec{U}|U}|\vec{U}|U
+                                                               + \frac{\delta\alpha_{D^2} D^2}{2}\frac{d\tilde{\rho}}{d x}
+                                                               + \Phi\alpha_{DV}DV, \\
+    \alpha_{DUV}\frac{d}{d x}\left(DUV\right) +
+    \left.\frac{f_D f_V^2}{\Delta y}\right\rvert^{y_2}_{y_1}DV^2 &=
+                                                                   \nu\alpha_{DV}\frac{d}{dx}\left(D\frac{dV}{dx}\right) 
+                                                                   + \left.\nu\frac{DV}{\Delta y}f_{D}f'_{V}\right\rvert^{y_2}_{y_1} \label{eq:plume-mom-y-int}\\ \nonumber
+                                                             &-\mu\alpha_{|\vec{U}|V}|\vec{U}|V - \left.\frac{\delta D^2}{2\Delta y}f_D^2[\rho_a
+                                                               - \rho(x,y)]\right\rvert^{y_2}_{y_1}\\ \nonumber
+                                                             &- \Phi\alpha_{DU}DU,
+  \end{align}</script>
+<script type="math/tex; mode=display">\begin{align}
+    \alpha_{DUS}\frac{d}{d x}\left(DUS\right) +
+    \left.\frac{f_D f_S f_V}{\Delta y}\right\rvert^{y_2}_{y_1}DSV &= \overline{e}S_a
+                                                                    + \nu\alpha_{DS}\frac{d}{dx}\left(D\frac{dS}{dx}\right) \label{eq:plume-salt-int}\\ \nonumber
+                                                                  &+ \left.\nu\frac{DS}{\Delta y}f_{D}f'_{S}\right\rvert^{y_2}_{y_1}
+                                                                    + \overline{m}S_m - \overline{\gamma_S(S-S_m)}, \\
+    \alpha_{DUT}\frac{d}{d x}\left(DUT\right) +
+    \left.\frac{f_D f_T f_V}{\Delta y}\right\rvert^{y_2}_{y_1}DTV &= \overline{e}T_a
+                                                                    + \nu\alpha_{DT}\frac{d}{d x}\left(D\frac{d T}{d x}\right) \label{eq:plume-temp-int}\\ \nonumber
+                                                                  &+ \left.\nu\frac{DT}{\Delta y}f_{D}f'_{T}\right\rvert^{y_2}_{y_1}
+                                                                    + \overline{m}T_m - \overline{\gamma_T(T-T_m)}.
+  \end{align}</script>
+</p>
+<p>The constants involving <script type="math/tex">\alpha</script> are defined below. This result
+assumes a linear equation of state, for which
+<script type="math/tex; mode=display">\begin{equation}
+  \overline{\rho} = \rho_{\rm ref}[1 + \beta_S(\alpha_{DS}S-S_{\rm
+    ref}) - \beta_T(\alpha_{DT}T-T_{\rm ref})],\label{eq:rho-bar}
+\end{equation}</script>
+and
+<script type="math/tex; mode=display">\begin{equation}
+  \tilde{\rho} = \rho_{\rm ref}[1 + \beta_S(\tilde{\alpha}_{DS}S-S_{\rm
+    ref}) - \beta_T(\tilde{\alpha}_{DT}T-T_{\rm ref})].\label{eq:rho-tilde}
+\end{equation}</script>
+The entrainment parameterisation in
+<a href="./1-equations.html#mjx-eqn-eqentrainment-jenkins-nd">equation 14</a> is unchanged. The one-equation
+melt formulation of <a href="./1-equations.html#mjx-eqn-eqmelt-nondim">equation 17</a> becomes
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:horz-melt}
+  \overline{m} = \zeta_1\zeta_2|\vec{U}|(\alpha_{|\vec{U}|T}T - T_m),
+\end{equation}</script>
+when horizontally integrated. The ice is assumed to be impermeable to
+salt, meaning <script type="math/tex">\overline{\gamma_S(S - S_m)} = \overline{m}S_m =
+0</script>. After horizontal integration, the thermal transfer term becomes
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:horz-therm-trans}
+  \overline{\gamma_T(T-T_m)} = \zeta_1|\vec{U}|(\alpha_{|\vec{U}|T}T - T_m).
+\end{equation}</script>
+</p>
+<p>The <script type="math/tex">\alpha</script>
+coefficients in these equations contain information on the transverse
+shape of the plume variables and are defined as
+<script type="math/tex; mode=display">\begin{align}
+\newcommand{\horzint}[1]{\frac{1}{\Delta{}y}\int^{y_2}_{y_1}#1 dy}
+  \nonumber
+  \alpha_{DU} &= \overline{f_{D}f_{U}}, &
+                                          \alpha_{DU^2} &= \overline{f_{D}f_{U}^2}, &
+                                                                                      \alpha_{D^2} &= \overline{f_{D}^2},\\
+  \nonumber
+  \alpha_{DV} &= \overline{f_{D}f_{V}}, &
+                                          \alpha_{DUV} &= \overline{f_{D}f_{U}f_{V}}, &
+                                                                                        \alpha_{|\vec{U}|V} &= \overline{f_{|\vec{U}|}f_{V}},\\
+  \label{eq:shape-coefs}
+  \alpha_{|\vec{U}|U} &= \overline{f_{|\vec{U}|}f_{U}}, &
+                                                          \alpha_{DUS} &= \overline{f_{D}f_{U}f_{S}}, &
+                                                                                                        \alpha_{DUT} &= \overline{f_{D}f_{U}f_{T}},\\
+  \nonumber
+  \alpha_{|\vec{U}|T} &= \overline{f_{|\vec{U}|}f_{T}}, &
+                                                          \quad\alpha_{DS} &= \overline{f_{D}f_{S}}, &
+                                                                                                       \alpha_{DT} &= \overline{f_{D}f_{T}},\\
+  \nonumber
+  \tilde{\alpha}_{DS} &= \frac{\overline{f^2_D f_S}}{\alpha_{D^2}}, &
+                                                                      \tilde{\alpha}_{DT} &= \frac{\overline{f_{D}^2f_{T}}}{\alpha_{D^2}}. &
+\end{align}</script>
+</p>
+<p>The same <a href="4-plume-solver.html">numerical methods</a> used to solve the
+original set of plume equations could be used to solve
+<a href="#mjx-eqn-eqplume-cont-int">equations 41-45</a>.  The linear
+operator for the plume solver, defined in
+<a href="./4-plume-solver.html#mjx-eqn-eqL-form">equation 32</a>, was
+modified to contain the Coriolis forcing terms, becoming
+<script type="math/tex; mode=display">\begin{multline}
+  \label{eq:L-form-horzint}
+  L{[D, U, U', S, S', T, T']}^T = \left[\frac{d D}{d x}, 
+    \frac{d U}{d x} - U',
+    \frac{d U'}{d x} - \frac{\Phi\alpha_{DV}}{\nu\alpha_{DU}} V,
+    \frac{d V}{d x} - V',\right.\\\left.
+    \frac{d V'}{d x} + \frac{\Phi\alpha_{DU}}{\nu\alpha_{DV}} U,
+    \frac{d S}{d x} - S',
+    \frac{d S'}{d x},
+    \frac{d T}{d x} - T',
+    \frac{d T'}{d x}\right]^T.
+\end{multline}</script>
+Shape coefficients, drainage terms, and the equation for <em>y</em>-momentum
+were added to the nonlinear operator. It was found that the existing
+preconditioner was adequate to solve the modified equations. The
+solver was tested first by running it in the trivial case with
+<script type="math/tex">\Phi = 0</script> and <script type="math/tex">V=0</script> throughout the domain, with uniform thickness in
+<script type="math/tex">y</script>, to ensure that it converged to the solutions used for
+<a href="./5-benchmarking.html">benchmarking</a>. It was then further tested by checking
+that the values of each variable at the end of the domain agreed with
+the asymptotic predictions described in
+<a href="../6-bibliog.html#MacMackin2019">MacMackin (2019)</a> when
+<script type="math/tex">\Phi \ne 0</script> and <script type="math/tex">b_x</script> was constant.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

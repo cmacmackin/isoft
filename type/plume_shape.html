@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>plume_shape &ndash; ISOFT </title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>plume_shape
+    <small>Derived Type</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Christopher MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> August 2018</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="<p> 3.9% of total for derived types.</p>Including implementation: 30 statements,  0.5% of total for derived types.">30 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/asymmetric_plume.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/asymmetric_plume.f90.html'>asymmetric_plume.F90</a></li>
+    
+     <li><a href='../module/asymmetric_plume_mod.html'>asymmetric_plume_mod</a></li>
+    
+  
+     <li class="active">plume_shape</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_d1">f_D1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_d2">f_D2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_u1">f_U1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_u2">f_U2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_v1">f_V1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_v2">f_V2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_s1">f_S1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_s2">f_S2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_t1">f_T1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_t2">f_T2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_up">f_Up</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_vp">f_Vp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_sp">f_Sp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_tp">f_Tp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_du">a_DU</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dv">a_DV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_du2">a_DU2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_duv">a_DUV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_d2">a_D2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabsu">a_UabsU</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabsv">a_UabsV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dus">a_DUS</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dut">a_DUT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabst">a_UabsT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_ds">a_DS</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dt">a_DT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_ds_t">a_DS_t</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dt_t">a_DT_t</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/plume_shape.html#src">plume_shape</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+      <h2>type, public :: plume_shape</h2>
+    <p>A type containing the data necessary to specify the transverse
+ shape of the plume. All variables in the plume are assumed to be
+ seperable with the form <script type="math/tex">D(x,y) = f_D2(y)\hat{D}(x)</script>, <script type="math/tex">U(x,y)
+ = f_U2(y)\hat{U}(x)</script>, etc. The magnitude of the velocity does
+ not necessary take the form <script type="math/tex">|\vec{U}| = \sqrt{U^2 + V^2}</script> and
+ is treated as an independent seperable variable <script type="math/tex">|\vec{U}| =
+ f_{|\vec{U}|}(y)\widehat{|\vec{U}|}(x)</script>. The transverse
+ functions <script type="math/tex">f_{D}(y)</script>, <script type="math/tex">f_U2(y)</script>, etc. have all been
+ normalised over the integration width <script type="math/tex">y_1</script> to <script type="math/tex">y_2</script>.</p>
+<p></p><div class="alert alert-info" role="alert"><h4>Note</h4><p>that a number of variables are definied using the
+ averaging operator <script type="math/tex; mode=display"> \overline{A} = \frac{1}{y_2 - y_1}
+ \int^{y_2}_{y_1} A(y) dy. </script></p></div>
+    <br>
+    
+    
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Inherited by</h3>
+      </div>
+      <div class="panel-body">
+     <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: type~~plume_shape~~InheritedByGraph Pages: 1 -->
+<svg id="typeplume_shapeInheritedByGraph" width="222pt" height="32pt"
+ viewBox="0.00 0.00 222.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="type~~plume_shape~~InheritedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>type~~plume_shape~~InheritedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 218,-28 218,4 -4,4"/>
+<!-- type~plume_shape -->
+<g id="type~~plume_shape~~InheritedByGraph_node1" class="node"><title>type~plume_shape</title>
+<polygon fill="none" stroke="black" points="77.5,-24 0.5,-24 0.5,-0 77.5,-0 77.5,-24"/>
+<text text-anchor="middle" x="39" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">plume_shape</text>
+</g>
+<!-- type~asym_plume -->
+<g id="type~~plume_shape~~InheritedByGraph_node2" class="node"><title>type~asym_plume</title>
+<g id="a_type~~plume_shape~~InheritedByGraph_node2"><a xlink:href=".././type/asym_plume.html" xlink:title="asym_plume">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="213.5,-24 140.5,-24 140.5,-0 213.5,-0 213.5,-24"/>
+<text text-anchor="middle" x="177" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">asym_plume</text>
+</a>
+</g>
+</g>
+<!-- type~asym_plume&#45;&gt;type~plume_shape -->
+<g id="type~~plume_shape~~InheritedByGraph_edge1" class="edge"><title>type~asym_plume&#45;&gt;type~plume_shape</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M140.268,-12C124.365,-12 105.398,-12 88.2617,-12"/>
+<polygon fill="#000000" stroke="#000000" points="87.8723,-8.5001 77.8723,-12 87.8723,-15.5001 87.8723,-8.5001"/>
+<text text-anchor="middle" x="109" y="-14.4" font-family="Helvetica,sans-Serif" font-size="9.50">shape</text>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="177pt" height="32pt"
+ viewBox="0.00 0.00 177.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 173,-28 173,4 -4,4"/>
+<!-- Type -->
+<g id="node1" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="169.25,-24 72.75,-24 72.75,-0 169.25,-0 169.25,-24"/>
+<text text-anchor="middle" x="121" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a derived type to the parent type which it
+    extends. Dashed arrows point from a derived type to the other
+    types it contains as a components, with a label listing the name(s) of
+    said component(s).
+    </p>
+    </div></div></div></div>
+      </div>
+    </div>
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_d1">f_D1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_d2">f_D2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_u1">f_U1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_u2">f_U2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_v1">f_V1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_v2">f_V2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_s1">f_S1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_s2">f_S2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_t1">f_T1</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_t2">f_T2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_up">f_Up</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_vp">f_Vp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_sp">f_Sp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-f_tp">f_Tp</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_du">a_DU</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dv">a_DV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_du2">a_DU2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_duv">a_DUV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_d2">a_D2</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabsu">a_UabsU</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabsv">a_UabsV</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dus">a_DUS</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dut">a_DUT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_uabst">a_UabsT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_ds">a_DS</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dt">a_DT</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_ds_t">a_DS_t</a>
+      
+      <a class="list-group-item" href="../type/plume_shape.html#variable-a_dt_t">a_DT_t</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/plume_shape.html#src">plume_shape</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+    <section>
+    <h2>Components</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_d1"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_D1</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_D2(y_1)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_d2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_D2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_D2(y_2)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_u1"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_U1</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_U2(y_1)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_u2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_U2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_U2(y_2)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_v1"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_V1</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_V2(y_1)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_v2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_V2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_V2(y_2)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_s1"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_S1</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_S2(y_1)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_s2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_S2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_S2(y_2)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_t1"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_T1</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_T2(y_1)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_t2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_T2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">f_T2(y_2)</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_up"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_Up</strong></td><td> =</td><td>0.0_r8</td><td><p>
+<script type="math/tex">df_U2(y_2)/dy</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_vp"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_Vp</strong></td><td> =</td><td>0.0_r8</td><td><p>
+<script type="math/tex">df_V2(y_2)/dy</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_sp"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_Sp</strong></td><td> =</td><td>0.0_r8</td><td><p>
+<script type="math/tex">df_S2(y_2)/dy</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f_tp"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>f_Tp</strong></td><td> =</td><td>0.0_r8</td><td><p>
+<script type="math/tex">df_T2(y_2)/dy</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_du"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DU</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DU} = \overline{f_D2 f_U2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_dv"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DV</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DV} = \overline{f_D2 f_V2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_du2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DU2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DU^2} = \overline{f_D2 f_U2^2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_duv"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DUV</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DUV} = \overline{f_D2 f_U2 f_V2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_d2"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_D2</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{D^2} = \overline{f_D2^2}</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_uabsu"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_UabsU</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{|\vec{U}|U} = \overline{f_{|\vec{U}|} f_U2</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_uabsv"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_UabsV</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{|\vec{U}|V} = \overline{f_{|\vec{U}|} f_V2</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_dus"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DUS</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DUS} = \overline{f_D2 f_U2 f_S2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_dut"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DUT</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DUT} = \overline{f_D2 f_U2 f_T2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_uabst"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_UabsT</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{|\vec{U}|T} = \overline{f_{|\vec{U}|} f_T2</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_ds"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DS</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DS} = \overline{f_D2 f_S2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_dt"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DT</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\alpha_{DT} = \overline{f_D2 f_T2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_ds_t"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DS_t</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\tilde{\alpha}_{DS} = \overline{f_D2 f_S2}/\alpha_{D^2} </script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a_dt_t"></span>real(kind=r8),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>a_DT_t</strong></td><td> =</td><td>1.0_r8</td><td><p>
+<script type="math/tex">\tilde{\alpha}_{DT} = \overline{f_D2 f_T2}/\alpha_{D^2} </script>
+</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <section>
+    <h3><span class="anchor" id="src"></span>Source Code</h3>
+    <div class="highlight"><pre><span></span>  <span class="k">type</span><span class="p">,</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">plume_shape</span>
+    <span class="c">!* Author: Christopher MacMackin</span>
+    <span class="c">!  Date: August 2018</span>
+    <span class="c">!</span>
+    <span class="c">! A type containing the data necessary to specify the transverse</span>
+    <span class="c">! shape of the plume. All variables in the plume are assumed to be</span>
+    <span class="c">! seperable with the form \(D(x,y) = f_D2(y)\hat{D}(x)\), \(U(x,y)</span>
+    <span class="c">! = f_U2(y)\hat{U}(x)\), etc. The magnitude of the velocity does</span>
+    <span class="c">! not necessary take the form \(|\vec{U}| = \sqrt{U^2 + V^2}\) and</span>
+    <span class="c">! is treated as an independent seperable variable \(|\vec{U}| =</span>
+    <span class="c">! f_{|\vec{U}|}(y)\widehat{|\vec{U}|}(x)\). The transverse</span>
+    <span class="c">! functions \(f_{D}(y)\), \(f_U2(y)\), etc. have all been</span>
+    <span class="c">! normalised over the integration width \(y_1\) to \(y_2\).</span>
+    <span class="c">!</span>
+    <span class="c">! @Note that a number of variables are definied using the</span>
+    <span class="c">! averaging operator $$ \overline{A} = \frac{1}{y_2 - y_1}</span>
+    <span class="c">! \int^{y_2}_{y_1} A(y) dy. $$</span>
+    <span class="c">! </span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_D1</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_D2(y_1)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_D2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_D2(y_2)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_U1</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_U2(y_1)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_U2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_U2(y_2)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_V1</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_V2(y_1)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_V2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_V2(y_2)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_S1</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_S2(y_1)\) </span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_S2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_S2(y_2)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_T1</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_T2(y_1)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_T2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(f_T2(y_2)\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_Up</span> <span class="o">=</span> <span class="mf">0.0_r8</span>
+      <span class="c">!! \(df_U2(y_2)/dy\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_Vp</span> <span class="o">=</span> <span class="mf">0.0_r8</span>
+      <span class="c">!! \(df_V2(y_2)/dy\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_Sp</span> <span class="o">=</span> <span class="mf">0.0_r8</span>
+      <span class="c">!! \(df_S2(y_2)/dy\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">f_Tp</span> <span class="o">=</span> <span class="mf">0.0_r8</span>
+      <span class="c">!! \(df_T2(y_2)/dy\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DU</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DU} = \overline{f_D2 f_U2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DV</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DV} = \overline{f_D2 f_V2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DU2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DU^2} = \overline{f_D2 f_U2^2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DUV</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DUV} = \overline{f_D2 f_U2 f_V2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_D2</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{D^2} = \overline{f_D2^2}\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_UabsU</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{|\vec{U}|U} = \overline{f_{|\vec{U}|} f_U2\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_UabsV</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{|\vec{U}|V} = \overline{f_{|\vec{U}|} f_V2\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DUS</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DUS} = \overline{f_D2 f_U2 f_S2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DUT</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DUT} = \overline{f_D2 f_U2 f_T2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_UabsT</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{|\vec{U}|T} = \overline{f_{|\vec{U}|} f_T2\)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DS</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DS} = \overline{f_D2 f_S2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DT</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\alpha_{DT} = \overline{f_D2 f_T2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DS_t</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\tilde{\alpha}_{DS} = \overline{f_D2 f_S2}/\alpha_{D^2} \)</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">a_DT_t</span> <span class="o">=</span> <span class="mf">1.0_r8</span>
+      <span class="c">!! \(\tilde{\alpha}_{DT} = \overline{f_D2 f_T2}/\alpha_{D^2} \)</span>
+  <span class="k">end type </span><span class="n">plume_shape</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

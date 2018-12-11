@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Compiling the Code &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Compiling the Code</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> November 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/1-running/index.html'>Using ISOFT</a></li>
+      
+         <li class="active">Compiling the Code</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>The easiest way to obtain ISOFT is by downloading it from GitHub:</p>
+<div class="codehilite"><pre><span></span>make clone --recurse-submodules https://github.com/cmacmackin/isoft
+</pre></div>
+
+
+<p>This will download all libraries included in ISOFT as submodules
+(listed below).</p>
+<h2>Dependencies</h2>
+<p>ISOFT depends on a number of external pieces of software. Mostly these
+are libraries which it uses, although there are also a few programs
+which are used at build-time. Except for the compiler, the latter are
+all Python-based and the Makefile will automatically install them in a
+virtual environment. Of the libraries, those which are widely used
+must be installed on your system prior to building ISOFT. The
+remainder are distributed with ISOFT and will automatically be
+compiled as part of the build process.  Builds have been tested with
+the <code>gfortran</code> compiler and are known to work with v6.2. In principle,
+subsequent releases of <code>gfortran</code> should also work, barring any
+regressions.</p>
+<p>The following libraries and programs must be installed on your operating system
+prior to starting the build process. The corresponding package name in
+Ubuntu is given in parentheses.</p>
+<ul>
+<li><a href="http://www.fftw.org/">FFTW3</a> (libfftw3-dev)</li>
+<li><a href="https://www.hdfgroup.org/solutions/hdf5/">HDF5</a> (libhdf5-dev)</li>
+<li>An implementation of <a href="http://www.netlib.org/blas/">BLAS</a> (e.g., libopenblas-dev)</li>
+<li><a href="http://www.netlib.org/lapack/">LAPACK</a> (liblapack-dev)</li>
+<li><a href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> (python-virtualenv)</li>
+<li><a href="https://gcc.gnu.org/wiki/GFortran">gfortran</a> (gfortran-6)</li>
+</ul>
+<p>The following programs are required during the build process. They
+will be installed in a virtual environment called <code>buildtools</code> in the
+top of the ISOFT directory.</p>
+<ul>
+<li><a href="https://fypp.readthedocs.io/en/stable/fypp.html">fypp</a>, a preprocessor for Fortran</li>
+<li><a href="https://github.com/szaghi/FoBiS/wiki">FoBiS.py</a>, a simple build system for Fortran</li>
+<li><a href="https://github.com/Fortran-FOSS-Programmers/ford/wiki">FORD</a>, a documentation tool for Fortran</li>
+</ul>
+<p>The following libraries were downloaded with ISOFT as submodules and
+will automatically be compiled as part of the build process:</p>
+<ul>
+<li><a href="https://szaghi.github.io/FACE/index.html">FACE</a></li>
+<li><a href="https://github.com/cmacmackin/factual">factual</a></li>
+<li><a href="https://cmacmackin.github.io/flogging/">flogging</a></li>
+<li><a href="http://www.netlib.org/lapack95/">lapack95</a></li>
+<li><a href="https://www.osti.gov/biblio/433349">nitsol</a></li>
+<li><a href="http://szaghi.github.io/PENF/index.html">PENF</a></li>
+<li><a href="http://pfunit.sourceforge.net/">pFUnit</a></li>
+</ul>
+<h2>The Makefile</h2>
+<p>A Makefile is provided which can handle the build process on Unix-like
+operating systems in most cases. It features the following build
+targets:</p>
+<ul>
+<li><strong>all</strong>: alias for <strong>lib</strong> (default)</li>
+<li><strong>all_objects</strong>: rebuilds all object files for the library</li>
+<li><strong>clean</strong>: deletes object files, module files, dependency files, and Emacs backup files</li>
+<li><strong>doc</strong>: generates HTML documentation for ISOFT</li>
+<li><strong>script</strong>: writes a script for compiling and linking programs which use the ISOFT library</li>
+<li><strong>tests</strong>: builds and runs the unit tests</li>
+<li><strong>lib</strong>: builds the static library of ISOFT routines and derived types</li>
+</ul>
+<p>At the top of the Makefile are two definitions used for finding
+libraries installed on your system. These are</p>
+<div class="codehilite"><pre><span></span><span class="nv">SYSTEM_LIB</span> <span class="o">:=</span> /usr/lib       <span class="c1"># Paths containing external libraries</span>
+<span class="nv">SYSTEM_INC</span> <span class="o">:=</span> /usr/include   <span class="c1"># Paths containing module/include files</span>
+<span class="c">                             # for external libraries</span>
+</pre></div>
+
+
+<p>These defaults should work on Ubuntu-like operating systems. 
+They may be overridden if necessary. Multiple paths may also be
+provided, separated by white-space.</p>
+<h2>Building</h2>
+<p>After having amended the Makefile as described above, building ISOFT
+should be straightforward. Simply run</p>
+<div class="codehilite"><pre><span></span>make lib
+</pre></div>
+
+
+<p>to compile the necessary dependencies and create the <code>libisoft.a</code> file.
+Then run</p>
+<div class="codehilite"><pre><span></span>make script
+</pre></div>
+
+
+<p>to generate a script which can <a href="./3-compile.html">compile and link programs</a>
+using ISOFT.</p>
+<h2>Unit Tests</h2>
+<p>An extensive set of unit tests has been written, using the
+<a href="http://pfunit.sourceforge.net/">pFUnit</a> framework. These ensure that
+methods behave as expected and, where possible, test that simulations
+converge to analytically-predicted solutions. These tests can be built
+and run with the command</p>
+<div class="codehilite"><pre><span></span>make tests
+</pre></div>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation" class="disabled">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

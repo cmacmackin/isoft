@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Testing and Benchmarking &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Testing and Benchmarking</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> December 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/2-numerics/index.html'>Numerical Methods</a></li>
+      
+         <li class="active">Testing and Benchmarking</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <h2>Ice Shelf</h2>
+<p>After programming the nonlinear solver using the algorithms described
+in the previous section, various tests were run to ensure that it
+would give the correct results. First, the ice shelf component was
+tested with a prescribed melt rate matching that of the analytic
+steady state solution found by
+<a href="../bibliog.html#Dallaston2015">Dallaston, Hewitt, and Wells (2015)</a>.
+It was confirmed that when the ice shelf was initialised to the matching
+steady state it remained there. Initialising the ice shelf to a
+wedge-shape, it was found to evolve to the correct steady state.</p>
+<p>As a test of the time-stepping for transient evolution, the 1-D shelf
+equations were analysed for the special case where there is no
+stretching (<script type="math/tex">\setcounter{32} \chi = 0</script>) and the melt rate <script type="math/tex">m</script> is constant in <script type="math/tex">t</script> and
+<script type="math/tex">x</script>. The velocity of the ice at the grounding line (and thus across
+the entire shelf, since there is no stretching) was prescribed to be
+<script type="math/tex">u(t) = \bar{u} + \tilde{u}_0\sin(\omega t)</script>. With these assumptions,
+<a href="./1-equations.html#mjx-eqn-eqice-height-nd">equation 1</a> becomes
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:ice-cont-nostretch}
+  \frac{\partial h}{\partial t} - u(t)\frac{\partial h}{\partial x} =
+  - \lambda m,
+\end{equation}</script>
+which can be solved using the method of characteristics. In this
+method, a Lagrangian coordinate <script type="math/tex">s</script> is introduced such that the
+thickness of a parcel of ice following the trajectory <script type="math/tex">x(s)</script>, <script type="math/tex">t(s)</script>
+evolves according to <script type="math/tex">h(s)</script>. It can then be shown that
+<script type="math/tex; mode=display"> \frac{d  x}{d  s} = u(t), \quad \frac{d 
+  t}{d  s} = 1, \quad \frac{d  h}{d  s} = -\lambda
+m. </script> With the initial conditions <script type="math/tex">x = \sigma</script>, <script type="math/tex">t = 0</script>, and
+<script type="math/tex">h = h_0(\sigma)</script> these equations can be integrated to yield the
+transient solution
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:h-transient-sol}
+  h = h_0(\sigma) - \lambda mt,
+\end{equation}</script>
+where <script type="math/tex">\sigma</script> can be computed from <script type="math/tex">x</script> and <script type="math/tex">t</script> according to
+<script type="math/tex">\sigma = x - \bar{u}t + \tilde{u}/\omega\left[\cos(\omega t) -
+  1\right]</script>. This solution applies to ice starting in the domain, but
+a different form is needed for ice parcels crossing the grounding
+line at time <script type="math/tex">t = t_g > 0</script>. Then <script type="math/tex">\sigma < 0</script> and the initial conditions are
+set to <script type="math/tex">x = 0</script> and <script type="math/tex">h = 1</script>. In this case the method of characteristics
+provides the implicit solution
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:h-implicit-sol}
+  h - \frac{\lambda m\tilde{u}_0}{\omega\bar{u}}\cos\left[\omega t +
+    \frac{\omega}{\lambda m}(h-1)\right] = 1 - \frac{\lambda
+    m}{\bar{u}}\left[x + \frac{\tilde{u}_0}{\omega}\cos(\omega t) \right].
+\end{equation}</script>
+This algebraic equation can easily be solved numerically for <script type="math/tex">h</script> using
+a bisection-secant method, such as that of
+<a href="../6-bibliog.html#Brent1973">Brent (1973, Chapter 4)</a>.
+Possible solutions can be bracketed using the physical insight that
+<script type="math/tex">h \in [0,1]</script>.</p>
+<p>These solutions provide a way to test accuracy of the ice shelf solver in
+time and space. However, the fact the melt rate is constant means
+that the semi-implicit approach to time-discretisation is not fully
+tested. Using the same technique, a solution can be found for melt
+rate <script type="math/tex">m = m_t t</script>, where <script type="math/tex">m_t</script> is a constant rate of change in the
+melt. For <script type="math/tex">\sigma > 0</script> (calculated as before) the transient
+solution applies:
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:h-transient-sol2}
+  h = h_0(\sigma) - \frac{\lambda m_t}{2}t^2.
+\end{equation}</script>
+Elsewhere, the solution is again given implicitly:
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:h-implicit-sol2}
+  h - 1 + \lambda m_t (t_g + s/2)s = 0
+\end{equation}</script>
+where the time since the ice parcel crossed the grounding line and the
+time at which it crossed the grounding line are given by
+<script type="math/tex; mode=display"> s = \frac{x}{\bar{u}} + \frac{\tilde{u}_0}{\omega
+  \bar{u}}\left(\cos(\omega t) - \cos(\omega t_g)\right), \quad t_g =
+\sqrt{\frac{2(h - 1)}{\lambda m_t} + t^2}, </script>
+respectively.
+Bracketing this solution is slightly more difficult than in the
+constant-melt case, as if the value of <script type="math/tex">h</script> is too small it will result
+in an imaginary value of <script type="math/tex">t_g</script>. As such, the lower bound was set to
+the value of <script type="math/tex">h = 1 - \lambda m_t t^2/2</script>, which corresponds
+to <script type="math/tex">t_g=0</script> at the time being solved
+for, plus some small value <script type="math/tex">\epsilon</script> to ensure that floating point
+error does not become an issue. The upper bound remains set to 1.</p>
+<p>A series of simulations were run under these conditions using
+different time steps. Parameter values <script type="math/tex">\bar{u}=1</script>, <script type="math/tex">\tilde{u}_0=0.5</script>,
+<script type="math/tex">\lambda = 100</script>, <script type="math/tex">m_t = 2\times 10^{-4}</script>, and <script type="math/tex">\omega=34.56</script> were chosen,
+corresponding to the scale choices described in the next section. A
+domain of <script type="math/tex">x \in [0,6]</script> was used, with a wedge-shaped initial ice
+profile <script type="math/tex">h_0(x) = 1 - 0.1x</script>. All simulations used 300 grid-points.</p>
+<p><img alt="Comparison of the analytic solution given in equations 36 and 37 with numerical solutions at time t=5." src="../../media/err_comp_50.svg"></p>
+<p><img alt="Comparison of the analytic solution given in equations 36 and 37 with numerical solutions at time t=10." src="../../media/err_comp_100.svg"></p>
+<p>The first of the figures above shows the results of two simulations at
+time <script type="math/tex">t=5</script>, with time-steps fixed at <script type="math/tex">10^{-2}</script> and <script type="math/tex">10^{-4}</script>,
+compared to the analytical solution given in
+<a href="#eqh-transient-sol2">equations 36 and 37</a>. Both simulations give
+reasonably good agreement with the large-scale features of the
+solution, although there is more significant error at the transition
+to the transient solution. The numerical solutions tend to smooth out
+those sorts of discontinuities, although reducing the time-step helps
+with this considerably. The main issue, however, is how the numerical
+solution handles the ripples which form due to the seasonal forcing of
+shelf velocity. These are very small in magnitude, meaning that very
+high levels of accuracy are demanded to resolve them. Even the
+simulation with the smaller time-step shows signs of diffusion,
+causing the ripples to loose amplitude as they move across the domain.</p>
+<p>This can be seen more clearly in the second of the figures above,
+which is produced at <script type="math/tex">t=10</script> when the transient feature has been
+advected out of the domain. All results in this plot are differences
+between the time-dependent solution <script type="math/tex">h</script> with <script type="math/tex">\tilde{u}_0 = 0.5</script>
+and the steady-state result <script type="math/tex">\bar{h}</script> of
+<a href="#eqh-implicit-sol2">equation 37</a> for <script type="math/tex">\tilde{u}_0 = 0</script>, which
+corresponds to the unforced background state. In order to make the
+plot easier to read, the domain only goes to <script type="math/tex">x=1.5</script>. As can be
+seen, the amplitude of the ripples decays, indicating the presence of
+some numerical diffusion. Smaller time-steps result in less of this
+diffusion. The root-mean-square (dashed lines) and the maximum error
+(solid lines) at times <script type="math/tex">t=5</script> and <script type="math/tex">t=10</script> were found for a range of
+time-steps (see figure below). The error declines fairly slowly with
+the time-step. Given that high accuracy is needed for these
+simulations, in any future developments of this algorithm it may be
+useful to update the time-integration to a second-order or third-order
+method, allowing larger time-steps to be used. The memory requirements
+of this would be fairly modest, as only the ice thickness would need
+to be saved between time-steps.</p>
+<p><img alt="The error of simulations at times t=5 and t=10 for different time-steps." src="../../media/err_dt.svg"></p>
+<p>Similarly, the error was found to fall with an increasing number of
+Chebyshev nodes used in the calculation. However, after a certain
+point, the error stagnated and adding more nodes did not cause further
+improvement. The point at which this stagnation occurs seems to depend
+on the time-step, with smaller time-steps permitting higher numbers of
+nodes before stagnation. Similarly, the beginnings of stagnation with
+any further reductions in the time step can be seen for small
+time-steps in the above figure. This is consistent with the total
+error being the sum of error arising due to temporal discretisation
+and spatial discretisation. Increased resolution was found to be a
+more computationally expensive means to improve accuracy than reducing
+the time-step.</p>
+<p><img alt="Error over the course of two simulations using different time-steps." src="../../media/err_evolution.svg"></p>
+<p><img alt="Error over the course of two simulations with constant melt rate, using different time-steps." src="../../media/err_evolution_const.svg"></p>
+<p>Plotting the root-mean-square and maximum error (dashed and solid lines, respectively) over the course of a
+simulation shows that both grow approximately linearly
+(see first figure above), although the latter is very
+noisy. Presumably this noise is due to aliasing of small-scale
+features of the oscillations onto a discrete grid. The rate of growth
+increases with the size of the time-step. There is a spike in error
+which occurs as the kink at the transient feature reaches the end of
+the domain around <script type="math/tex">t=6</script>. The reason for the continued error growth
+after the transient has been advected away is the growth in melt
+rate. This means that ripples will tend to be larger and thus display
+larger absolute error. Running a simulation with a constant melt rate
+of <script type="math/tex">m=10^{-3}</script> and comparing to the solution in
+<a href="#eqh-transient-sol">equations 34 and 35</a>
+indicates that the error becomes roughly constant after the transient
+feature leaves the domain (second figure above).</p>
+<p>Experiments with this benchmarking problem showed that using 320
+grid-points with a time step of <script type="math/tex">10^{-5}</script> resulted in absolute error
+no larger than <script type="math/tex">10^{-4}</script>. Error in the amplitude of the ripples at the
+end of the domain was no more than ~10%, which was felt to be
+acceptable when running simulations.</p>
+<h2>Plume</h2>
+<p>Testing the plume solver was more difficult, as the structure of the
+solver required a non-zero diffusivity, while the analytic solution of
+<a href="../bibliog.html#Dallaston2015">Dallaston, Hewitt, and Wells (2015)</a>
+assumed <script type="math/tex">\nu=0</script>. To avoid this problem, the equation of state was
+altered for the benchmark test so that it would always return the same
+density profile, regardless of plume salinity or temperature. The
+density was chosen so that the plume would have the same velocity as
+in the analytic solution. Now uncoupled from the continuity and
+momentum <a href="./1-equations.html#mjx-eqn-eqplume-cont">equations 8 and 9</a>,
+the salinity and temperature
+<a href="./1-equations.html#mjx-eqn-eqplume-salt">equations 11 and 12</a> could
+be analytically solved individually. A plume was initialised by giving
+this analytic solution a sinusoidal perturbation of amplitude 0.1 and
+a wavelength twice the size of the domain. Starting from this initial
+guess and a prescribed wedge-shaped ice thickness, the solver was able
+to converge to the expected result.</p>
+<p>The coupled behaviour of the ice shelf/ocean received less rigorous
+testing as there are no analytical benchmark solutions available for
+the full nonlinear problem. The two components were initialised much
+as they were in the plume test (except that the plume density was now
+made dependent on salinity) and then allowed to evolve together. As
+the resulting steady-state was not known, it was simply ensured that
+numerical convergence was achieved as the number of Chebyshev nodes
+increased and the time step reduced, and that the results looked
+plausible.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

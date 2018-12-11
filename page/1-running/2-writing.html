@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Writing Software Using the ISOFT Framework &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Writing Software Using the ISOFT Framework</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> November 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/1-running/index.html'>Using ISOFT</a></li>
+      
+         <li class="active">Writing Software Using the ISOFT Framework</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <h2>The Basics</h2>
+<p>Before proceeding with using ISOFT, you need to initialise the logging
+tool which it uses, provided by
+<a href="https://cmacmackin.github.io/flogging/">flogging</a>. This allows you to
+specify what level of information to output to the terminal and the
+log file. This is done as follows:</p>
+<div class="codehilite"><pre><span></span><span class="k">use </span><span class="n">logger_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">error</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">logger</span> <span class="o">=&gt;</span> <span class="n">master_logger</span><span class="p">,</span> <span class="n">logger_init</span>
+<span class="c">! ...</span>
+<span class="k">call </span><span class="n">logger_init</span><span class="p">(</span><span class="s1">&#39;isoft.log&#39;</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+<span class="n">logger</span><span class="p">%</span><span class="n">trivia</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Logger initialised successfully.&#39;</span><span class="p">)</span>
+<span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Welcome to ISOFT.&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>The first line in this code fragment imports the module providing the
+<a href="https://cmacmackin.github.io/flogging/type/logger.html">logger</a>
+object. The parameters <code>error</code> and <code>info</code> specify different priorities
+of messages which can be sent to the logger. The <code>master_logger</code> is a
+global logging object which is used within the ISOFT library. It is
+initialised using the
+<a href="https://cmacmackin.github.io/flogging/proc/logger_init.html">logger_init</a>
+routine, which specifies the name of the log file and what priorities
+of messages get printed to the terminal and the log file. Methods of the
+<code>logger</code> object can be used to write out messages of different priority
+levels: "debug", "trivia", "info", "warning", "error", and "fatal".</p>
+<p>It is also necessary to initialise the HDF5 library, in order to allow I/O
+to be performed. This is done by running</p>
+<div class="codehilite"><pre><span></span><span class="k">use </span><span class="n">hdf5</span>
+<span class="c">! ...</span>
+<span class="kt">integer</span> <span class="kd">::</span> <span class="n">hdf_err</span>
+<span class="c">! ...</span>
+<span class="k">call </span><span class="n">h5open_f</span><span class="p">(</span><span class="n">hdf_err</span><span class="p">)</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">hdf_err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">error</span> <span class="k">stop</span>
+</pre></div>
+
+
+<p>Similarly, at the end of your simulation you should deactivate HDF5 by
+running</p>
+<div class="codehilite"><pre><span></span><span class="k">call </span><span class="n">h5close_f</span><span class="p">(</span><span class="n">hdf_err</span><span class="p">)</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">hdf_err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">error</span> <span class="k">stop</span>
+</pre></div>
+
+
+<p>To run simulations with ISOFT, you must first build a
+<a href="../../type/cryosphere.html">cryosphere</a> object using the <a href="../../type/cryosphere.html#boundprocedure-initialise%7E3">initialise</a>
+method. This takes, as arguments, allocatable polymorphic objects of class
+<a href="../../type/glacier.html">glacier</a> and <a href="../../type/basal_surface.html">basal_surface</a>. These objects must be
+initialised with concrete types such as <a href="../../type/ice_shelf.html">ice_shelf</a> and
+<a href="../../type/plume.html">plume</a> (likely to be the most frequently used implementations).</p>
+<p><a href="../../type/glacier.html">glacier</a> and <a href="../../type/basal_surface.html">basal_surface</a> objects will typically
+feature <code>initialise</code> methods. However, such methods are unique to each
+sub-type. Thus, the concrete type of the <a href="../../type/glacier.html">glacier</a> or
+<a href="../../type/basal_surface.html">basal_surface</a> objects must be known when they are being
+initialised The simplest way to do this is to work with allocatable
+variables with those concrete types and then use the intrinsic
+<code>move_alloc</code> routine to transfer the object a polymorphic variable:</p>
+<div class="codehilite"><pre><span></span><span class="k">type</span><span class="p">(</span><span class="n">ice_shelf</span><span class="p">),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">shelf_obj</span>
+<span class="k">class</span><span class="p">(</span><span class="n">glacier</span><span class="p">),</span> <span class="k">allocatable</span>  <span class="kd">::</span> <span class="n">glacier_obj</span>
+
+<span class="k">allocate</span><span class="p">(</span><span class="n">shelf_obj</span><span class="p">)</span>
+<span class="k">call </span><span class="n">shelf_obj</span><span class="p">%</span><span class="n">initialise</span><span class="p">(...)</span>
+<span class="k">call </span><span class="nb">move_alloc</span><span class="p">(</span><span class="n">shelf_obj</span><span class="p">,</span> <span class="n">glacier_obj</span><span class="p">)</span>
+</pre></div>
+
+
+<p>The initialisation methods allow you to choose various parameter
+values, specify initial conditions, set boundary conditions, and
+select which parameterisations to use in the simulation. A number of
+additional objects must be created to accomplish the latter two. As
+before, the arguments must be allocatable objects of polymorphic
+type. However, classes representing boundary conditions and
+parameterisations have constructor functions, meaning that it is not
+necessary to use the <code>move_alloc</code> intrinsic. Instead, these objects
+can be initialised as below:</p>
+<div class="codehilite"><pre><span></span><span class="k">type</span><span class="p">(</span><span class="n">abstract_viscosity</span><span class="p">),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">viscosity</span>
+<span class="k">allocate</span><span class="p">(</span><span class="n">viscosity</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">newtonian_viscosity</span><span class="p">(</span><span class="mf">1.0d0</span><span class="p">))</span>
+</pre></div>
+
+
+<p>which creates an <a href="../../type/abstract_viscosity.html">abstract_viscosity</a> object using the
+<a href="../../interface/newtonian_viscosity.html">newtonian_viscosity</a> constructor.</p>
+<p>A full description of all the derived types which can be used to
+construct a <a href="../../type/cryosphere.html">cryosphere</a> object is beyond the scope of this
+section. An overview can be found in the
+<a href="../3-codeDesign/1-representing.html">discussion of the code design</a>
+and by consulting the <a href="../../lists/types.html">API documentation</a>.</p>
+<p>After creating a <a href="../../type/cryosphere.html">cryosphere</a> object, you can optionally
+initialise it using the output from a previous simulation. This is
+done with the <a href="../../type/cryosphere.html#boundprocedure-read_data%7E4">read_data</a> method. The simulation is
+run by integrating forward in time using the
+<a href="../../type/cryosphere.html#boundprocedure-integrate%7E2">integrate</a> method. At any point during the
+simulation, the state of the cryosphere can be written to the disk as
+an HDF5 file using the <a href="../../type/cryosphere.html#boundprocedure-write_data%7E4">write_data</a> method. This
+output can be used to initialise future simulations or be analysed
+using the provided set of
+<a href="../4-plotting/index.html">plotting scripts</a>.</p>
+<h2>An Example</h2>
+<p>Below is an example of a simple ISOFT simulation, designed to run to a
+steady state. It is provided as <code>main.f90</code> in the top directory of ISOFT.</p>
+<div class="codehilite"><pre><span></span><span class="c">!</span>
+<span class="c">!  main.f90</span>
+<span class="c">!  This file is part of ISOFT.</span>
+<span class="c">!  </span>
+<span class="c">!  Copyright 2018 Chris MacMackin &lt;cmacmackin@gmail.com&gt;</span>
+<span class="c">!  </span>
+<span class="c">!  This program is free software; you can redistribute it and/or modify</span>
+<span class="c">!  it under the terms of the GNU General Public License as published by</span>
+<span class="c">!  the Free Software Foundation; either version 3 of the License, or</span>
+<span class="c">!  (at your option) any later version.</span>
+<span class="c">!  </span>
+<span class="c">!  This program is distributed in the hope that it will be useful,</span>
+<span class="c">!  but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c">!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c">!  GNU General Public License for more details.</span>
+<span class="c">!  </span>
+<span class="c">!  You should have received a copy of the GNU General Public License</span>
+<span class="c">!  along with this program; if not, write to the Free Software</span>
+<span class="c">!  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,</span>
+<span class="c">!  MA 02110-1301, USA.</span>
+<span class="c">!  </span>
+
+<span class="k">program </span><span class="n">isoft</span>
+  <span class="c">!* Author: Chris MacMackin</span>
+  <span class="c">!  Date: April 2017</span>
+  <span class="c">!  License: GPLv3</span>
+  <span class="c">!</span>
+  <span class="c">! This is the driver program for ISOFT.</span>
+  <span class="c">!</span>
+  <span class="k">use </span><span class="n">iso_fortran_env</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">r8</span> <span class="o">=&gt;</span> <span class="n">real64</span>
+  <span class="k">use </span><span class="n">logger_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">trivia</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">logger</span> <span class="o">=&gt;</span> <span class="n">master_logger</span><span class="p">,</span> <span class="n">logger_init</span>
+  <span class="k">use </span><span class="n">hdf5</span>
+  <span class="k">use </span><span class="n">penf</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">str</span>
+  <span class="k">use </span><span class="n">meta_mod</span>
+  <span class="k">use </span><span class="n">cryosphere_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">cryosphere</span>
+
+  <span class="k">use </span><span class="n">glacier_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">glacier</span>
+  <span class="k">use </span><span class="n">ice_shelf_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">ice_shelf</span>
+  <span class="k">use </span><span class="n">viscosity_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">abstract_viscosity</span>
+  <span class="k">use </span><span class="n">newtonian_viscosity_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">newtonian_viscosity</span>
+  <span class="k">use </span><span class="n">glacier_boundary_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">glacier_boundary</span>
+  <span class="k">use </span><span class="n">dallaston2015_glacier_boundary_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">dallaston2015_glacier_boundary</span>
+
+  <span class="k">use </span><span class="n">basal_surface_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">basal_surface</span>
+  <span class="k">use </span><span class="n">plume_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">plume</span>
+  <span class="k">use </span><span class="n">entrainment_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">abstract_entrainment</span>
+  <span class="k">use </span><span class="n">jenkins1991_entrainment_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">jenkins1991_entrainment</span>
+  <span class="k">use </span><span class="n">melt_relationship_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">abstract_melt_relationship</span>
+  <span class="k">use </span><span class="n">one_equation_melt_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">one_equation_melt</span>
+  <span class="k">use </span><span class="n">ambient_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">ambient_conditions</span>
+  <span class="k">use </span><span class="n">uniform_ambient_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">uniform_ambient_conditions</span>
+  <span class="k">use </span><span class="n">equation_of_state_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">equation_of_state</span>
+  <span class="k">use </span><span class="n">linear_eos_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">linear_eos</span>
+  <span class="k">use </span><span class="n">plume_boundary_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">plume_boundary</span>
+  <span class="k">use </span><span class="n">upstream_plume_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">upstream_plume_boundary</span>
+  <span class="k">use </span><span class="n">specfun_mod</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">ei</span>
+
+  <span class="k">implicit none</span>
+
+  <span class="c">! Simulation parameters</span>
+  <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">grid_points</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="kd">::</span> <span class="n">domain</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">end_time</span>
+  <span class="kt">character</span><span class="p">(</span><span class="nb">len</span><span class="o">=</span><span class="p">:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">restart_file</span>
+  <span class="kt">logical</span>  <span class="kd">::</span> <span class="n">restart_from_file</span><span class="p">,</span> <span class="n">restart_at_0</span>
+
+  <span class="c">! Output parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">output_interval</span>
+  <span class="kt">character</span><span class="p">(</span><span class="nb">len</span><span class="o">=</span><span class="p">:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">hdf_base_name</span><span class="p">,</span> <span class="n">logfile</span>
+  <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">stdout_lim</span><span class="p">,</span> <span class="n">stderr_lim</span><span class="p">,</span> <span class="n">logfile_lim</span><span class="p">,</span> <span class="n">output_start</span>
+
+  <span class="c">! Ice shelf parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">chi</span><span class="p">,</span> <span class="n">lambda</span><span class="p">,</span> <span class="n">zeta</span><span class="p">,</span> <span class="n">ice_temperature</span><span class="p">,</span> <span class="n">courant</span><span class="p">,</span> <span class="n">max_dt</span>
+
+  <span class="c">! Viscosity parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">visc_coefficient</span>
+
+  <span class="c">! Ice shelf boundary parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">ice_thickness_lower</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="kd">::</span> <span class="n">ice_velocity_lower</span>
+
+  <span class="c">! Entrainment parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">ent_coefficient</span>
+
+  <span class="c">! Plume parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">delta</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r_val</span>
+
+  <span class="c">! Melt parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span>
+
+  <span class="c">! Ambient condition parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">ambient_salinity</span><span class="p">,</span> <span class="n">ambient_temperature</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">fresh_sal</span><span class="p">,</span> <span class="n">melt_temp</span>
+
+  <span class="c">! Equation of state parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">ref_density</span><span class="p">,</span> <span class="n">ref_temperature</span><span class="p">,</span> <span class="n">ref_salinity</span><span class="p">,</span> <span class="p">&amp;</span>
+              <span class="n">beta_s</span><span class="p">,</span> <span class="n">beta_t</span>
+
+  <span class="c">! Plume boundary parameters</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">discharge</span><span class="p">,</span> <span class="n">offset</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">plume_thickness_lower</span><span class="p">,</span> <span class="n">plume_temperature_lower</span><span class="p">,</span> <span class="p">&amp;</span>
+              <span class="n">plume_salinity_lower</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="kd">::</span> <span class="n">plume_velocity_lower</span>
+
+  <span class="c">! Variables for use in the program</span>
+  <span class="kt">integer</span>                      <span class="kd">::</span> <span class="n">i</span><span class="p">,</span> <span class="n">hdf_err</span>
+  <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span>                     <span class="kd">::</span> <span class="nb">time</span>
+<span class="nb">  </span><span class="kt">real</span>                         <span class="kd">::</span> <span class="n">cpu_start</span><span class="p">,</span> <span class="n">cpu_setup</span><span class="p">,</span> <span class="n">cpu_end</span>
+  <span class="kt">character</span><span class="p">(</span><span class="nb">len</span><span class="o">=</span><span class="mi">18</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">hdf_file_format</span> <span class="o">=</span> <span class="s1">&#39;(a,&quot;-&quot;,i0.4,&quot;.h5&quot;)&#39;</span>
+  <span class="kt">character</span><span class="p">(</span><span class="nb">len</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>            <span class="kd">::</span> <span class="n">hdf_filename</span>
+
+  <span class="k">type</span><span class="p">(</span><span class="n">cryosphere</span><span class="p">)</span> <span class="kd">::</span> <span class="nb">system</span>
+    <span class="c">!! The ice-ocean system which is being simulated</span>
+
+  <span class="k">class</span><span class="p">(</span><span class="n">glacier</span><span class="p">),</span> <span class="k">allocatable</span>            <span class="kd">::</span> <span class="n">ice</span>
+  <span class="k">type</span><span class="p">(</span><span class="n">ice_shelf</span><span class="p">),</span> <span class="k">allocatable</span>           <span class="kd">::</span> <span class="n">shelf</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">abstract_viscosity</span><span class="p">),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">viscosity</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">glacier_boundary</span><span class="p">),</span> <span class="k">allocatable</span>   <span class="kd">::</span> <span class="n">ice_bound</span>
+
+  <span class="k">class</span><span class="p">(</span><span class="n">basal_surface</span><span class="p">),</span> <span class="k">allocatable</span>              <span class="kd">::</span> <span class="n">sub_ice</span>
+  <span class="k">type</span><span class="p">(</span><span class="n">plume</span><span class="p">),</span> <span class="k">allocatable</span>                       <span class="kd">::</span> <span class="n">water</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">abstract_entrainment</span><span class="p">),</span> <span class="k">allocatable</span>       <span class="kd">::</span> <span class="n">entrainment</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">abstract_melt_relationship</span><span class="p">),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">melt_relationship</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">equation_of_state</span><span class="p">),</span> <span class="k">allocatable</span>          <span class="kd">::</span> <span class="n">eos</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">ambient_conditions</span><span class="p">),</span> <span class="k">allocatable</span>         <span class="kd">::</span> <span class="n">ambient</span>
+  <span class="k">class</span><span class="p">(</span><span class="n">plume_boundary</span><span class="p">),</span> <span class="k">allocatable</span>             <span class="kd">::</span> <span class="n">water_bound</span>
+  <span class="kt">logical</span>                                        <span class="kd">::</span> <span class="n">success</span>
+
+  <span class="k">call </span><span class="nb">cpu_time</span><span class="p">(</span><span class="n">cpu_start</span><span class="p">)</span>
+
+  <span class="c">! Initialise variables to defaults</span>
+  <span class="n">grid_points</span> <span class="o">=</span> <span class="mi">100</span>
+  <span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,:)</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0._r8</span><span class="p">,</span> <span class="mf">6._r8</span><span class="p">]</span>
+  <span class="n">domain</span><span class="p">(</span><span class="mi">2</span><span class="p">,:)</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">1._r8</span><span class="p">,</span> <span class="mf">1._r8</span><span class="p">]</span>
+  <span class="n">end_time</span> <span class="o">=</span> <span class="mi">1</span><span class="mf">0.0_r8</span>
+  <span class="n">restart_file</span> <span class="o">=</span> <span class="s2">&quot;steady-nodrag.h5&quot;</span>
+  <span class="n">restart_from_file</span> <span class="o">=</span> <span class="p">.</span><span class="n">false</span><span class="p">.</span>
+  <span class="n">restart_at_0</span> <span class="o">=</span> <span class="p">.</span><span class="n">true</span><span class="p">.</span>
+
+  <span class="n">output_interval</span> <span class="o">=</span> <span class="mf">0.05_r8</span>
+  <span class="n">hdf_base_name</span> <span class="o">=</span> <span class="s2">&quot;isoft&quot;</span>
+  <span class="n">logfile</span> <span class="o">=</span> <span class="s2">&quot;isoft.log&quot;</span>
+  <span class="n">stdout_lim</span> <span class="o">=</span> <span class="n">info</span>
+  <span class="n">stderr_lim</span> <span class="o">=</span> <span class="n">error</span>
+  <span class="n">logfile_lim</span> <span class="o">=</span> <span class="n">trivia</span>
+  <span class="n">output_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="n">chi</span> <span class="o">=</span> <span class="mf">4._r8</span>
+  <span class="n">lambda</span> <span class="o">=</span> <span class="mf">1.e2_r8</span>
+  <span class="n">ice_temperature</span> <span class="o">=</span> <span class="o">-</span><span class="mf">7._r8</span>
+  <span class="n">courant</span> <span class="o">=</span> <span class="mf">1._r8</span>
+  <span class="n">max_dt</span> <span class="o">=</span> <span class="mf">1.e-3_r8</span>
+
+  <span class="n">visc_coefficient</span> <span class="o">=</span> <span class="mf">1._r8</span>
+
+  <span class="n">ice_thickness_lower</span> <span class="o">=</span> <span class="mf">1._r8</span>
+  <span class="n">ice_velocity_lower</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1._r8</span><span class="p">,</span> <span class="mf">0._r8</span><span class="p">]</span>
+
+  <span class="n">ent_coefficient</span> <span class="o">=</span> <span class="mf">1._r8</span>
+
+  <span class="n">delta</span> <span class="o">=</span> <span class="mf">3.6e-2_r8</span>
+  <span class="n">nu</span> <span class="o">=</span> <span class="mf">3.69e-2_r8</span>
+  <span class="n">mu</span> <span class="o">=</span> <span class="mf">0.799_r8</span>
+  <span class="n">r_val</span> <span class="o">=</span> <span class="mf">1.12_r8</span>
+
+  <span class="n">alpha1</span> <span class="o">=</span> <span class="mf">0.0182_r8</span>
+  <span class="n">alpha2</span> <span class="o">=</span> <span class="mf">4.86e-4_r8</span>
+
+  <span class="n">ambient_salinity</span> <span class="o">=</span> <span class="mf">0._r8</span>
+  <span class="n">ambient_temperature</span> <span class="o">=</span> <span class="mf">0._r8</span>
+  <span class="n">fresh_sal</span> <span class="o">=</span> <span class="o">-</span><span class="mi">203</span><span class="mf">5.3_r8</span>
+  <span class="n">melt_temp</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5</span><span class="mf">4.92_r8</span>
+
+  <span class="n">ref_density</span> <span class="o">=</span> <span class="mf">3.05e5_r8</span>
+  <span class="n">ref_temperature</span> <span class="o">=</span> <span class="mf">0._r8</span>
+  <span class="n">ref_salinity</span> <span class="o">=</span> <span class="mf">0._r8</span>
+  <span class="n">beta_s</span> <span class="o">=</span> <span class="mf">1.336e-5_r8</span>
+  <span class="n">beta_t</span> <span class="o">=</span> <span class="mf">1.409e-6_r8</span>
+
+  <span class="n">discharge</span> <span class="o">=</span> <span class="mf">1.e-3_r8</span>
+  <span class="n">offset</span> <span class="o">=</span> <span class="mf">3.e-4_r8</span>
+  <span class="n">plume_thickness_lower</span> <span class="o">=</span> <span class="mf">0.048361028</span>
+  <span class="n">plume_temperature_lower</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.772_r8</span>
+  <span class="n">plume_salinity_lower</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="mf">8.1123_r8</span>
+  <span class="n">plume_velocity_lower</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.6266415_r8</span><span class="p">,</span> <span class="mf">0._r8</span><span class="p">]</span>
+
+  <span class="c">! Set up IO</span>
+  <span class="k">call </span><span class="n">logger_init</span><span class="p">(</span><span class="n">logfile</span><span class="p">,</span> <span class="n">stderr_lim</span><span class="p">,</span> <span class="n">stdout_lim</span><span class="p">,</span> <span class="n">logfile_lim</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">h5open_f</span><span class="p">(</span><span class="n">hdf_err</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">hdf_err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">error</span> <span class="k">stop</span>
+
+  <span class="c">! Print welcome message</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Welcome to ISOFT: Ice Shelf/Ocean &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="s1">&#39;Fluid- and Thermodynamics&#39;</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span><span class="s1">&#39;ISOFT v&#39;</span><span class="o">//</span><span class="n">version</span><span class="p">()</span><span class="o">//</span><span class="s1">&#39;, compiled on &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="n">compile_time</span><span class="p">())</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">trivia</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="nb">trim</span><span class="p">(</span><span class="n">compile_info</span><span class="p">()))</span>
+
+  <span class="c">! Initialise ice shelf</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">viscosity</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">newtonian_viscosity</span><span class="p">(</span><span class="n">visc_coefficient</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">ice_bound</span><span class="p">,</span>                                                 <span class="p">&amp;</span>
+           <span class="n">source</span><span class="o">=</span><span class="n">dallaston2015_glacier_boundary</span><span class="p">(</span><span class="n">ice_thickness_lower</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="n">ice_velocity_lower</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">chi</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">shelf</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">shelf</span><span class="p">%</span><span class="n">initialise</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="p">[</span><span class="n">grid_points</span><span class="p">],</span> <span class="n">h</span><span class="p">,</span> <span class="n">u_ice</span><span class="p">,</span> <span class="n">ice_temperature</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">viscosity</span><span class="p">,</span> <span class="n">ice_bound</span><span class="p">,</span> <span class="n">lambda</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">zeta</span><span class="p">,</span> <span class="n">courant</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">max_dt</span><span class="p">)</span>
+
+  <span class="c">! Initialise plume</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">entrainment</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">jenkins1991_entrainment</span><span class="p">(</span><span class="n">ent_coefficient</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">melt_relationship</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">one_equation_melt</span><span class="p">(</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="n">fresh_sal</span><span class="p">,</span> <span class="n">melt_temp</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">ambient</span><span class="p">,</span>                                               <span class="p">&amp;</span>
+           <span class="n">source</span><span class="o">=</span><span class="n">uniform_ambient_conditions</span><span class="p">(</span><span class="n">ambient_temperature</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="n">ambient_salinity</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span>                                                          <span class="p">&amp;</span>
+           <span class="n">source</span><span class="o">=</span><span class="n">linear_eos</span><span class="p">(</span><span class="n">ref_density</span><span class="p">,</span> <span class="n">ref_temperature</span><span class="p">,</span> <span class="n">ref_salinity</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="n">beta_t</span><span class="p">,</span> <span class="n">beta_s</span><span class="p">))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">water_bound</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="n">source</span><span class="o">=</span><span class="n">upstream_plume_boundary</span><span class="p">(</span><span class="n">bound_vals</span><span class="p">,</span> <span class="p">&amp;</span>
+           <span class="mf">0.05_r8</span><span class="p">,</span> <span class="p">[</span><span class="mf">1._r8</span><span class="p">,</span> <span class="mf">1._r8</span><span class="p">,</span> <span class="mf">1._r8</span><span class="p">,</span> <span class="mf">1._r8</span><span class="p">]))</span>
+  <span class="k">allocate</span><span class="p">(</span><span class="n">water</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">water</span><span class="p">%</span><span class="n">initialise</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="p">[</span><span class="n">grid_points</span><span class="p">],</span> <span class="n">D</span><span class="p">,</span> <span class="n">U_plume</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span>      <span class="p">&amp;</span>
+                        <span class="n">entrainment</span><span class="p">,</span> <span class="n">melt_relationship</span><span class="p">,</span> <span class="n">ambient</span><span class="p">,</span> <span class="n">eos</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">water_bound</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">r_val</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(.</span><span class="nb">not</span><span class="p">.</span> <span class="n">restart_from_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">    call </span><span class="n">water</span><span class="p">%</span><span class="n">solve</span><span class="p">(</span><span class="n">shelf</span><span class="p">%</span><span class="n">ice_thickness</span><span class="p">(),</span> <span class="n">shelf</span><span class="p">%</span><span class="n">ice_density</span><span class="p">(),</span> <span class="p">&amp;</span>
+                     <span class="n">shelf</span><span class="p">%</span><span class="n">ice_temperature</span><span class="p">(),</span> <span class="nb">time</span><span class="p">,</span> <span class="n">success</span><span class="p">)</span>
+  <span class="k">end if</span>
+
+  <span class="c">! Initialise cryosphere</span>
+  <span class="k">call </span><span class="nb">move_alloc</span><span class="p">(</span><span class="n">shelf</span><span class="p">,</span> <span class="n">ice</span><span class="p">)</span>
+  <span class="k">call </span><span class="nb">move_alloc</span><span class="p">(</span><span class="n">water</span><span class="p">,</span> <span class="n">sub_ice</span><span class="p">)</span>
+  <span class="k">call </span><span class="nb">system</span><span class="p">%</span><span class="n">initialise</span><span class="p">(</span><span class="n">ice</span><span class="p">,</span> <span class="n">sub_ice</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">restart_from_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">    call </span><span class="nb">system</span><span class="p">%</span><span class="n">read_data</span><span class="p">(</span><span class="n">restart_file</span><span class="p">,</span> <span class="p">.</span><span class="nb">not</span><span class="p">.</span> <span class="n">restart_at_0</span><span class="p">)</span>
+  <span class="k">end if</span>
+
+<span class="k">  call </span><span class="nb">cpu_time</span><span class="p">(</span><span class="n">cpu_setup</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Finished setting up simulation. Took &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="nb">trim</span><span class="p">(</span><span class="n">str</span><span class="p">(</span><span class="n">cpu_setup</span><span class="o">-</span><span class="n">cpu_start</span><span class="p">))</span><span class="o">//</span><span class="s1">&#39;s.&#39;</span><span class="p">)</span>
+
+  <span class="c">! Run simulation</span>
+  <span class="n">i</span> <span class="o">=</span> <span class="n">output_start</span>
+  <span class="nb">time</span> <span class="o">=</span> <span class="nb">system</span><span class="p">%</span><span class="n">get_time</span><span class="p">()</span>
+  <span class="k">do while</span> <span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="nb">time</span> <span class="o">&gt;</span> <span class="n">courant</span><span class="o">*</span><span class="mf">1.e-5_r8</span><span class="o">/</span><span class="n">grid_points</span><span class="p">)</span>
+    <span class="k">write</span><span class="p">(</span><span class="n">hdf_filename</span><span class="p">,</span> <span class="n">hdf_file_format</span><span class="p">)</span> <span class="n">hdf_base_name</span><span class="p">,</span> <span class="n">i</span>
+    <span class="nb">time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">time</span> <span class="o">+</span> <span class="n">output_interval</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+    <span class="k">call </span><span class="nb">system</span><span class="p">%</span><span class="n">write_data</span><span class="p">(</span><span class="nb">trim</span><span class="p">(</span><span class="n">hdf_filename</span><span class="p">))</span>
+    <span class="k">call </span><span class="nb">system</span><span class="p">%</span><span class="n">integrate</span><span class="p">(</span><span class="nb">time</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+  <span class="k">end do</span>
+
+  <span class="c">! Clean up</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Successfully simulated ice shelf &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="s1">&#39;evolution to time &#39;</span><span class="o">//</span><span class="nb">trim</span><span class="p">(</span><span class="n">str</span><span class="p">(</span><span class="nb">time</span><span class="p">)))</span>
+  <span class="k">write</span><span class="p">(</span><span class="n">hdf_filename</span><span class="p">,</span> <span class="n">hdf_file_format</span><span class="p">)</span> <span class="n">hdf_base_name</span><span class="p">,</span> <span class="n">i</span>
+  <span class="k">call </span><span class="nb">system</span><span class="p">%</span><span class="n">write_data</span><span class="p">(</span><span class="nb">trim</span><span class="p">(</span><span class="n">hdf_filename</span><span class="p">))</span>
+  <span class="k">call </span><span class="n">h5close_f</span><span class="p">(</span><span class="n">hdf_err</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">hdf_err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">error</span> <span class="k">stop</span>
+<span class="k">  call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span> <span class="s1">&#39;Wrote final ice shelf state to file &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="nb">trim</span><span class="p">(</span><span class="n">hdf_filename</span><span class="p">))</span>
+
+  <span class="c">! Print goodbye message</span>
+  <span class="k">call </span><span class="nb">cpu_time</span><span class="p">(</span><span class="n">cpu_end</span><span class="p">)</span>
+  <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;isoft&#39;</span><span class="p">,</span><span class="s1">&#39;Finished running isoft. This took &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="nb">trim</span><span class="p">(</span><span class="n">str</span><span class="p">(</span><span class="n">cpu_end</span><span class="o">-</span><span class="n">cpu_start</span><span class="p">))</span><span class="o">//</span><span class="s1">&#39;s, of which &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                   <span class="nb">trim</span><span class="p">(</span><span class="n">str</span><span class="p">(</span><span class="n">cpu_end</span><span class="o">-</span><span class="n">cpu_setup</span><span class="p">))</span><span class="o">//</span><span class="s1">&#39;s were &#39;</span><span class="o">//</span>      <span class="p">&amp;</span>
+                   <span class="s1">&#39;needed to run the simulation.&#39;</span><span class="p">)</span>
+
+<span class="k">contains</span>
+
+<span class="k">  pure function </span><span class="n">h</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial ice thickness.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span>                           <span class="kd">::</span> <span class="n">h</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">big_x</span> <span class="o">=</span> <span class="mf">7._r8</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">ice_thickness_lower</span><span class="o">*</span><span class="p">((</span><span class="mf">1._r8</span> <span class="o">-</span> <span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">big_x</span><span class="p">)</span><span class="o">/</span><span class="nb">sqrt</span><span class="p">(</span><span class="mf">1._r8</span> <span class="o">+</span> <span class="n">big_x</span> <span class="o">-</span> <span class="p">&amp;</span>
+                              <span class="n">big_x</span><span class="o">*</span><span class="p">(</span><span class="mf">1._r8</span> <span class="o">-</span> <span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">big_x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+  <span class="k">end function </span><span class="n">h</span>
+
+  <span class="k">pure function </span><span class="n">u_ice</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial ice velocity</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>  <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">u_ice</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">big_x</span>
+    <span class="n">big_x</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="n">lambda</span>
+    <span class="k">allocate</span><span class="p">(</span><span class="n">u_ice</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">u_ice</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">ice_velocity_lower</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.25_r8</span><span class="o">*</span><span class="n">ice_thickness_lower</span><span class="o">*</span><span class="n">chi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">&amp;</span>
+             <span class="o">-</span> <span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.2</span><span class="o">*</span><span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)))</span>
+  <span class="k">end function </span><span class="n">u_ice</span>
+
+  <span class="k">pure function </span><span class="n">D</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial guess for plume thickness</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span>                           <span class="kd">::</span> <span class="n">D</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">plume_thickness_lower</span> <span class="o">+</span> <span class="p">(</span><span class="n">h</span><span class="p">([</span><span class="mf">0._r8</span><span class="p">])</span> <span class="o">-</span> <span class="n">h</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">r_val</span>
+  <span class="k">end function </span><span class="n">D</span>
+
+  <span class="k">pure function </span><span class="n">U_plume</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial guess for plume velocity</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>  <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span> <span class="kd">::</span> <span class="n">U_plume</span>
+    <span class="k">allocate</span><span class="p">(</span><span class="n">U_plume</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">U_plume</span> <span class="o">=</span> <span class="n">plume_velocity_lower</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">end function </span><span class="n">U_plume</span>
+
+  <span class="k">pure function </span><span class="n">S</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial guess of the plume salinity</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span>                           <span class="kd">::</span> <span class="n">S</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">plume_salinity_lower</span><span class="o">*</span><span class="n">D</span><span class="p">([</span><span class="mf">0._r8</span><span class="p">])</span><span class="o">/</span><span class="n">D</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">end function </span><span class="n">S</span>
+
+  <span class="k">pure function </span><span class="n">T</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c">!! Initial guess of the plume temperature</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">x</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span>                           <span class="kd">::</span> <span class="n">T</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">plume_temperature_lower</span><span class="o">*</span><span class="n">D</span><span class="p">([</span><span class="mf">0._r8</span><span class="p">])</span><span class="o">/</span><span class="n">D</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">x</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">end function </span><span class="n">T</span>
+
+  <span class="k">pure subroutine </span><span class="n">bound_vals</span><span class="p">(</span><span class="nb">time</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">)</span>
+    <span class="c">!! Calculates the inflow properties for the plume. In this routine</span>
+    <span class="c">!! they are non-oscillating.</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>                <span class="kd">::</span> <span class="nb">time</span>
+      <span class="c">!! The time at which the boundary values are being calculated</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>               <span class="kd">::</span> <span class="n">D</span>
+      <span class="c">!! Plume thickness boundary condition</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">U</span>
+      <span class="c">!! Plume velocity boundary condition</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>               <span class="kd">::</span> <span class="n">T</span>
+      <span class="c">!! Plume temperature boundary condition</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>               <span class="kd">::</span> <span class="n">S</span>
+      <span class="c">!! Plume salinity boundary condition</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">offset</span>
+    <span class="k">allocate</span><span class="p">(</span><span class="n">U</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">discharge</span><span class="o">/</span><span class="n">offset</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">fresh_sal</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">melt_temp</span>
+  <span class="k">end subroutine </span><span class="n">bound_vals</span>
+
+<span class="k">end program </span><span class="n">isoft</span>
+</pre></div>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>preconditioner &ndash; ISOFT </title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>preconditioner
+    <small>Derived Type</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> December 2016</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="<p> 1.3% of total for derived types.</p>Including implementation: 64 statements,  1.0% of total for derived types.">7 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/preconditioner.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/preconditioner.f90.html'>preconditioner.F90</a></li>
+    
+     <li><a href='../module/preconditioner_mod.html'>preconditioner_mod</a></li>
+    
+  
+     <li class="active">preconditioner</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/preconditioner.html#variable-tolerance">tolerance</a>
+      
+      <a class="list-group-item" href="../type/preconditioner.html#variable-max_iterations">max_iterations</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-0">Constructor</a></h3></div>
+  <div id="cons-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/preconditioner.html#interface-preconditioner">preconditioner</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-0">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/preconditioner.html#boundprocedure-apply">apply</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/preconditioner.html#src">preconditioner</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+      <h2>type, public :: preconditioner</h2>
+    <p>Uses Picard iterations to apply the inverse Jacobian of a system
+ to a vector, to low accuracy. Rather than directly computing the
+ inverse Jacobian, it is more efficient to approximate it. If
+ <script type="math/tex">d</script> is the vector being preconditioned, and <script type="math/tex">z</script> is the
+ result of applying the preconditioner, then <script type="math/tex; mode=display"> z = J^{-1}d
+ \Rightarrow Jz = d.</script> Thus, the preconditioner can be applied by
+ approximately solving this system for <script type="math/tex">z</script>. Linearising <script type="math/tex">J</script>,
+ this system can be solved efficiently using Picard iteration.</p>
+<p>Say that the Jacobian is an <script type="math/tex">n\times n</script> system of blocks of
+ the sort implemented in the <a href="../type/jacobian_block.html">jacobian_block</a> type (each
+ labeled as <script type="math/tex">J_{j,k}</script>) and that the vector being preconditioned
+ constists of <script type="math/tex">n</script> scalar fields (<script type="math/tex">d_j</script>). Then <script type="math/tex">m^{th}</script>
+ estimate of the solution for the <script type="math/tex">j^{th}</script> field in the
+ preconditioned vector (<script type="math/tex">z^m_j</script>) is the solution to <script type="math/tex; mode=display">
+ J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n
+ J_{j,k}z^{m-1}_k. </script> Depending on the type of fields being used
+ and the direction in which derivatives are being taken,
+ <script type="math/tex">J_{j,j}</script> may be tridiaganol, meaning it can be solved
+ efficiently. <!--Otherwise, it can be approximated that <script type="math/tex; mode=display">
+ J_{j,j}z^m_j = \left(\frac{\partial F}{\partial x_i} +
+ F\Delta_i\right)z^{m} \simeq \frac{\partial F}{\partial
+ x_i}z^m_j + F\frac{\partial z^{m-1}_j}{\partial x_i}. </script> The
+ first term in this approximation corresponds to a diagonal
+ matrix (which can be solved trivially), while the second term is
+ known and can be subtracted from the right-hand-side of the
+ linear system.--></p>
+    
+    
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/preconditioner.html#variable-tolerance">tolerance</a>
+      
+      <a class="list-group-item" href="../type/preconditioner.html#variable-max_iterations">max_iterations</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#cons-1">Constructor</a></h3></div>
+  <div id="cons-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../type/preconditioner.html#interface-preconditioner">preconditioner</a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-1">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/preconditioner.html#boundprocedure-apply">apply</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/preconditioner.html#src">preconditioner</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+    <section>
+    <h2>Components</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-tolerance"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>tolerance</strong></td><td> =</td><td>1.e-3_r8</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-max_iterations"></span>integer,</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>max_iterations</strong></td><td> =</td><td>20</td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+   <section>
+   <h2>Constructor</h2>
+     
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-preconditioner"></span><h3>public interface <a href='../interface/preconditioner.html'>preconditioner</a>
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+  
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+private function <a href='../proc/constructor%7E4.html'>constructor</a>(tolerance, max_iterations) result(this)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Create a preconditioner object with the desired tolerance and
+ maximum number of iterations.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>tolerance</strong></td><td><p>The tolerance within which to apply the inverse Jacobian.
+ Defaults to 0.001.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td></td><td>::</td>
+  <td><strong>max_iterations</strong></td><td><p>The maximum number of iterations to use when applying the
+ preconditioner. Defaults to 20.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/preconditioner.html'>preconditioner</a>)
+  </small></h4>
+  
+    
+
+    </li>
+  
+  
+  </ul>
+</div>
+
+     
+   </section>
+   <br>
+    
+    
+    
+    
+     
+    <section>
+    <h2>Type-Bound Procedures</h2>
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-apply"></span><h3>procedure, public :: <strong>apply</strong>  => <a href='../proc/preconditioner_apply.html'>preconditioner_apply</a> 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/preconditioner_apply.html'>preconditioner_apply</a>(this, jacobian, vector, estimate)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>December 2016</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Use Picard iteration to approximately multiply the state vector
+ by the inverse Jacobian. The details for this procedure are in
+ the documentation of the <a href="../type/preconditioner.html">preconditioner</a> type.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/preconditioner.html'>preconditioner</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/jacobian_block.html'>jacobian_block</a>),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>jacobian</strong></td><td><p>An <script type="math/tex">n\times n</script> matrix approximating the Jacobian for which
+ the preconditioner is used.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>vector</strong></td><td><p>A vector of size <script type="math/tex">n</script> which is to be preconditioned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>estimate</strong></td><td><p>On entry, an initial guess for the preconditioned vector. On
+ exit, the iteratively determined value of the preconditioned
+ vector.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+    </section>
+    
+    
+    
+    <section>
+    <h3><span class="anchor" id="src"></span>Source Code</h3>
+    <div class="highlight"><pre><span></span>  <span class="k">type</span><span class="p">,</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">preconditioner</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: December 2016</span>
+    <span class="c">!</span>
+    <span class="c">! Uses Picard iterations to apply the inverse Jacobian of a system</span>
+    <span class="c">! to a vector, to low accuracy. Rather than directly computing the</span>
+    <span class="c">! inverse Jacobian, it is more efficient to approximate it. If</span>
+    <span class="c">! \(d\) is the vector being preconditioned, and \(z\) is the</span>
+    <span class="c">! result of applying the preconditioner, then $$ z = J^{-1}d</span>
+    <span class="c">! \Rightarrow Jz = d.$$ Thus, the preconditioner can be applied by</span>
+    <span class="c">! approximately solving this system for \(z\). Linearising \(J\),</span>
+    <span class="c">! this system can be solved efficiently using Picard iteration.</span>
+    <span class="c">!</span>
+    <span class="c">! Say that the Jacobian is an \(n\times n\) system of blocks of</span>
+    <span class="c">! the sort implemented in the [[jacobian_block]] type (each</span>
+    <span class="c">! labeled as \(J_{j,k}\)) and that the vector being preconditioned</span>
+    <span class="c">! constists of \(n\) scalar fields (\(d_j\)). Then \(m^{th}\)</span>
+    <span class="c">! estimate of the solution for the \(j^{th}\) field in the</span>
+    <span class="c">! preconditioned vector (\(z^m_j\)) is the solution to $$</span>
+    <span class="c">! J_{j,j}z^m_j = d_j - \sum_{\substack{k=1\ k\ne j}}^n</span>
+    <span class="c">! J_{j,k}z^{m-1}_k. $$ Depending on the type of fields being used</span>
+    <span class="c">! and the direction in which derivatives are being taken,</span>
+    <span class="c">! \(J_{j,j}\) may be tridiaganol, meaning it can be solved</span>
+    <span class="c">! efficiently. &lt;!--Otherwise, it can be approximated that $$</span>
+    <span class="c">! J_{j,j}z^m_j = \left(\frac{\partial F}{\partial x_i} +</span>
+    <span class="c">! F\Delta_i\right)z^{m} \simeq \frac{\partial F}{\partial</span>
+    <span class="c">! x_i}z^m_j + F\frac{\partial z^{m-1}_j}{\partial x_i}. $$ The</span>
+    <span class="c">! first term in this approximation corresponds to a diagonal</span>
+    <span class="c">! matrix (which can be solved trivially), while the second term is</span>
+    <span class="c">! known and can be subtracted from the right-hand-side of the</span>
+    <span class="c">! linear system.--&gt;</span>
+    <span class="c">!</span>
+    <span class="k">private</span>
+<span class="k">    </span><span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">)</span> <span class="kd">::</span> <span class="n">tolerance</span>      <span class="o">=</span> <span class="mf">1.e-3_r8</span>
+    <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">max_iterations</span> <span class="o">=</span> <span class="mi">20</span>
+  <span class="k">contains</span>
+<span class="k">    procedure</span> <span class="kd">::</span> <span class="n">apply</span> <span class="o">=&gt;</span> <span class="n">preconditioner_apply</span>
+  <span class="k">end type </span><span class="n">preconditioner</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

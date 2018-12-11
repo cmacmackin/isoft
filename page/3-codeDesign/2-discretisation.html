@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Discretisation &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Discretisation</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> November 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/3-codeDesign/index.html'>Code Design</a></li>
+      
+         <li class="active">Discretisation</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>Spatial derivatives of the variables describing the state of the ice
+shelf and plume are frequently needed. Multiple approaches exist to
+discretise these variables and compute their gradients (e.g. finite
+difference, finite element, pseudospectral, etc.) and the desire was
+to avoid restricting ISOFT to a particular one. To this end, the <span
+style="font-variant:small-caps;">Abstract Calculus</span> design
+pattern, described by
+<a href="../6-bibliog.html#Rouson2014">Rouson, Xia, and Xu (2014, Chapter 6)</a>,
+was adopted. This design pattern attempts to resolve the disconnect
+between high-level mathematical notation and the low-level
+representation of data and operators in code. A hierarchy of derived
+types was written representing mathematical fields of both scalar and
+vector quantities, as illustrated in the UML class diagram
+below. These fields overloaded all of the standard arithmetic and
+intrinsic mathematical functions, as well as offering methods for
+various differential operators. Calculations involving these field
+types could then be written to be agnostic with regards to field
+geometry or discretisation technique. In order to send field data to
+external libraries of numerical methods, such as NITSOL, methods were
+also provided to return them as an array of double precision values.</p>
+<p><img alt="A UML class diagram for the field types, showing a few notable
+methods. The uniform field types implement all inherited abstract
+methods, but these are not shown for reasons of space." src="../../media/factual_classes.png"></p>
+<p>Properties such as geometry and discretisation are specified within
+the concrete implementations of the field types. As shown in the class
+diagram above, two groups of these concrete field types exist. The
+first is the <code>cheb1d_scalar_field</code>/<code>cheb1d_vector_field</code>, which offers
+a 1-D field on a Chebyshev grid. The
+<a href="../2-numerics/2-spatial.html">Chebyshev pseudo-spectral method</a> is
+used to calculate derivatives, with Fast Fourier Transforms performed
+using the FFTW3 library
+<a href="../6-bibliog.html#Frigo2005">(Frigo and Johnson, 2005)</a>. These were
+subtypes of the abstract classes
+<code>array_scalar_field</code>/<code>array_vector_field</code>. The <code>array</code> field types
+provide standard implementations of arithmetic and mathematical
+functions, leaving only those methods involving grid-layout or
+calculus to be implemented by concrete type-descendents. This allows
+easier creation of new field types with reduced code duplication. The
+other pair of concrete field types are
+<code>uniform_scalar_field</code>/<code>uniform_vector_field</code> which, as the names
+suggest, are uniform throughout all space. These were written to allow
+some optimisation for cases where a variable proves to be uniform.</p>
+<p>The hope was that ISOFT could remain agnostic about which concrete
+type of field is being used. However, bugs in the version of the
+<code>gfortran</code> compiler used (v6.2.0) made this impossible and in many
+situations the <code>cheb1d</code> implementations are explicitly specified. As a
+result of this (and some lazy code design) ISOFT has come to depend on
+using those particular implementations in a number of areas,
+particularly around preconditioning (discussed in the
+<a href="./3-solvers.html">Nonlinear Solvers</a> section). However, relatively
+minor refactoring should allow this issue to be resolved in future.</p>
+<p>Despite the conceptual elegance of the <span
+style="font-variant:small-caps;">Abstract Calculus</span> design, a
+number of practical issues mean it was likely a mistake to use it so
+extensively within ISOFT. First is the problem of compiler bugs,
+mentioned earlier. One of these resulted in memory leaks when a
+dynamically-allocated field object was returned from a function
+call. A workaround using an <span
+style="font-variant:small-caps;">Object Pool</span> was ultimately
+found. The <span style="font-variant:small-caps;">Object Pool</span>
+pattern passes pointers to preallocated objects, rather than creating
+new ones, and releases them back to the pool once they are no longer
+being used
+<a href="../6-bibliog.html#Grand2002">Grand (2002, Chapter 5)</a>. This avoided
+memory leaks but required frequent calls to book-keeping functions
+which ensured objects were released to the pool at the appropriate
+time. These calls eliminated much of the elegance of <span
+style="font-variant:small-caps;">Abstract
+Calculus</span>. Furthermore, overloading the arithmetic operators
+introduced overhead and likely prevented the compiler from making many
+optimisations. With hindsight, a better approach would have been to
+store the data in standard Fortran arrays and have calculus functions
+provided by a set of derived types according to the <span
+style="font-variant:small-caps;">Strategy</span> pattern (discussed in
+the
+<a href="./parameterisations.html">Parameterisations and Boundary Conditions</a>
+section).</p>
+<p>However, one situation in which using the field types proved useful
+was when implementing automatic differentiation
+<a href="../6-bibliog.html#Neidinger2010">(Neidinger, 2010)</a>. This works by
+applying the chain rule to the arithmetic operations and elementary
+mathematical functions applied to data in order to calculate the
+derivative of the result with respect to one or more pieces of the
+data used to produce it. The simpler of the two approaches to doing
+this is to overload the arithmetic operators and elementary functions
+to propagate the derivative using the chain rule. (The other
+technique, known as <em>source transformation</em>, automatically rewrites
+the entire code prior to compilation so that propagation of the
+derivative is performed inline.) Consider ordered pairs of the form
+<script type="math/tex">\langle u, u'\rangle</script>, where <script type="math/tex">u</script> is some value <script type="math/tex">u'</script> is a
+differential associated with that value. Then:
+<script type="math/tex; mode=display">\begin{aligned}
+  \langle u, u' \rangle + \langle v, v' \rangle &=  \langle u + v, u'
+                                                  + v' \rangle, \\
+  \langle u, u' \rangle \times \langle v, v' \rangle &=  \langle uv,
+                                                       u'v + uv' \rangle, \\
+  \sin\langle u, u'\rangle &= \langle \sin u, u'\cos u \rangle, \\
+                                                & \vdots\end{aligned}</script>
+with all other arithmetic and mathematical functions similarly
+overloaded. As the field types already provide overloading of these
+operators and routines, adding automatic differentiation required less
+effort to implement than would otherwise have been necessary.</p>
+<p>Automatic differentiation was provided as an optional feature, which the
+abstract field types support but which subtypes are not required to
+implement; if the feature is not implemented in a subtype then trying to
+use the default implementation in the abstract class will result in a
+run-time error. Methods are provided with which one field can be used to
+set the derivative values for another. If the derivative for a field has
+been set then it will be propagated through all subsequent mathematical
+operations involving that field. Otherwise, no automatic differentiation
+occurs. The derivative value of the result can be retrieved with a
+getter method. Automatic differentiation is turned off with a method
+which clears the derivative information. The <code>array</code> fields and their
+subtypes provide automatic differentiation, but the <code>uniform</code> fields do
+not.</p>
+<p>These field types were sufficiently general that they could be used in a
+number of settings other than ISOFT. As such, they were written as a
+separate library called FACTUAL (Fortran Abstract Calculus Types, Usable
+and Aesthetic Library). This is distributed with ISOFT but can also be
+downloaded on its own.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

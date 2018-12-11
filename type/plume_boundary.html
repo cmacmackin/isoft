@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>plume_boundary &ndash; ISOFT </title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>plume_boundary
+    <small>Derived Type</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> September 2016</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="<p> 1.6% of total for derived types.</p>Including implementation: 80 statements,  1.3% of total for derived types.">12 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/plume_boundary.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/plume_boundary.f90.html'>plume_boundary.F90</a></li>
+    
+     <li><a href='../module/plume_boundary_mod.html'>plume_boundary_mod</a></li>
+    
+  
+     <li class="active">plume_boundary</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-0">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-thickness_bound_info">thickness_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-velocity_bound_info">velocity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-temperature_bound_info">temperature_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-salinity_bound_info">salinity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-thickness_bound">thickness_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-velocity_bound">velocity_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-temperature_bound">temperature_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-salinity_bound">salinity_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-set_time%7E3">set_time</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/plume_boundary.html#src">plume_boundary</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+      <h2>type, public :: plume_boundary</h2>
+    <p>A type in which procedures for getting the boundary conditions
+ of plumes are to be specified. The descendent types can contain
+ whatever data is needed to compute the result.</p>
+<p>This class effectively provides free boundary conditions. It's 
+ type-bound procedures should be overridden to provide case-specific
+ conditions.</p>
+    <br>
+    
+    
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Inherited by</h3>
+      </div>
+      <div class="panel-body">
+     <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: type~~plume_boundary~~InheritedByGraph Pages: 1 -->
+<svg id="typeplume_boundaryInheritedByGraph" width="366pt" height="242pt"
+ viewBox="0.00 0.00 366.00 242.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="type~~plume_boundary~~InheritedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 238)">
+<title>type~~plume_boundary~~InheritedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-238 362,-238 362,4 -4,4"/>
+<!-- type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_node1" class="node"><title>type~plume_boundary</title>
+<polygon fill="none" stroke="black" points="93.5,-150 0.5,-150 0.5,-126 93.5,-126 93.5,-150"/>
+<text text-anchor="middle" x="47" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50">plume_boundary</text>
+</g>
+<!-- type~dallaston2015_seasonal_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_node2" class="node"><title>type~dallaston2015_seasonal_boundary</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node2"><a xlink:href=".././type/dallaston2015_seasonal_boundary.html" xlink:title="dallaston2015_seasonal_boundary">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="357.5,-234 178.5,-234 178.5,-210 357.5,-210 357.5,-234"/>
+<text text-anchor="middle" x="268" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">dallaston2015_seasonal_boundary</text>
+</a>
+</g>
+</g>
+<!-- type~dallaston2015_seasonal_boundary&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge6" class="edge"><title>type~dallaston2015_seasonal_boundary&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" d="M210.136,-209.986C199.38,-207.319 188.281,-204.293 178,-201 147.818,-191.331 140.533,-187.795 112,-174 100.164,-168.277 87.4785,-161.324 76.5483,-155.059"/>
+<polygon fill="#000000" stroke="#000000" points="78.2425,-151.995 67.8371,-150.001 74.7276,-158.049 78.2425,-151.995"/>
+</g>
+<!-- type~asym_plume -->
+<g id="type~~plume_boundary~~InheritedByGraph_node3" class="node"><title>type~asym_plume</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node3"><a xlink:href=".././type/asym_plume.html" xlink:title="asym_plume">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="304.5,-192 231.5,-192 231.5,-168 304.5,-168 304.5,-192"/>
+<text text-anchor="middle" x="268" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">asym_plume</text>
+</a>
+</g>
+</g>
+<!-- type~asym_plume&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge3" class="edge"><title>type~asym_plume&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M231.223,-173.92C199.762,-168.482 152.761,-160.137 112,-152 109.321,-151.465 106.582,-150.908 103.817,-150.336"/>
+<polygon fill="#000000" stroke="#000000" points="104.261,-146.853 93.7549,-148.222 102.822,-153.704 104.261,-146.853"/>
+<text text-anchor="middle" x="136" y="-162.4" font-family="Helvetica,sans-Serif" font-size="9.50">boundaries</text>
+</g>
+<!-- type~upstream_plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_node4" class="node"><title>type~upstream_plume_boundary</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node4"><a xlink:href=".././type/upstream_plume_boundary.html" xlink:title="upstream_plume_boundary">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="340,-150 196,-150 196,-126 340,-126 340,-150"/>
+<text text-anchor="middle" x="268" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">upstream_plume_boundary</text>
+</a>
+</g>
+</g>
+<!-- type~upstream_plume_boundary&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge4" class="edge"><title>type~upstream_plume_boundary&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" d="M195.738,-135.977C176.637,-135.986 156.012,-136.497 137,-138"/>
+</g>
+<!-- type~simple_plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_node5" class="node"><title>type~simple_plume_boundary</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node5"><a xlink:href=".././type/simple_plume_boundary.html" xlink:title="simple_plume_boundary">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="333,-108 203,-108 203,-84 333,-84 333,-108"/>
+<text text-anchor="middle" x="268" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">simple_plume_boundary</text>
+</a>
+</g>
+</g>
+<!-- type~simple_plume_boundary&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge5" class="edge"><title>type~simple_plume_boundary&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" d="M207.047,-108.046C197.221,-110.617 187.238,-113.601 178,-117 158.786,-124.069 157.41,-136.387 137,-138"/>
+<path fill="none" stroke="#000000" d="M135,-138C124.949,-138.794 114.225,-139.175 103.862,-139.303"/>
+<polygon fill="#000000" stroke="#000000" points="103.64,-135.804 93.6573,-139.352 103.674,-142.803 103.64,-135.804"/>
+</g>
+<!-- type~static_plume -->
+<g id="type~~plume_boundary~~InheritedByGraph_node6" class="node"><title>type~static_plume</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node6"><a xlink:href=".././type/static_plume.html" xlink:title="static_plume">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="304.5,-66 231.5,-66 231.5,-42 304.5,-42 304.5,-66"/>
+<text text-anchor="middle" x="268" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">static_plume</text>
+</a>
+</g>
+</g>
+<!-- type~static_plume&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge2" class="edge"><title>type~static_plume&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M231.4,-60.5298C214.91,-64.0271 195.203,-68.8859 178,-75 142.641,-87.5672 104.206,-106.965 78.3689,-120.916"/>
+<polygon fill="#000000" stroke="#000000" points="76.5485,-117.923 69.4492,-125.787 79.9034,-124.066 76.5485,-117.923"/>
+<text text-anchor="middle" x="136" y="-105.4" font-family="Helvetica,sans-Serif" font-size="9.50">boundaries</text>
+</g>
+<!-- type~plume -->
+<g id="type~~plume_boundary~~InheritedByGraph_node7" class="node"><title>type~plume</title>
+<g id="a_type~~plume_boundary~~InheritedByGraph_node7"><a xlink:href=".././type/plume.html" xlink:title="plume">
+<polygon fill="#5cb85c" stroke="#5cb85c" points="295,-24 241,-24 241,-0 295,-0 295,-24"/>
+<text text-anchor="middle" x="268" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">plume</text>
+</a>
+</g>
+</g>
+<!-- type~plume&#45;&gt;type~plume_boundary -->
+<g id="type~~plume_boundary~~InheritedByGraph_edge1" class="edge"><title>type~plume&#45;&gt;type~plume_boundary</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M240.74,-16.1426C207.83,-22.4176 151.018,-36.9393 112,-67 92.9886,-81.647 75.0327,-102.403 63.0068,-117.692"/>
+<polygon fill="#000000" stroke="#000000" points="59.9615,-115.911 56.6483,-125.975 65.514,-120.174 59.9615,-115.911"/>
+<text text-anchor="middle" x="136" y="-69.4" font-family="Helvetica,sans-Serif" font-size="9.50">boundaries</text>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="177pt" height="32pt"
+ viewBox="0.00 0.00 177.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 173,-28 173,4 -4,4"/>
+<!-- Type -->
+<g id="node1" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="169.25,-24 72.75,-24 72.75,-0 169.25,-0 169.25,-24"/>
+<text text-anchor="middle" x="121" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a derived type to the parent type which it
+    extends. Dashed arrows point from a derived type to the other
+    types it contains as a components, with a label listing the name(s) of
+    said component(s).
+    </p>
+    </div></div></div></div>
+      </div>
+    </div>
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-1">Type-Bound Procedures</a></h3></div>
+  <div id="boundprocs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-thickness_bound_info">thickness_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-velocity_bound_info">velocity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-temperature_bound_info">temperature_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-salinity_bound_info">salinity_bound_info</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-thickness_bound">thickness_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-velocity_bound">velocity_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-temperature_bound">temperature_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-salinity_bound">salinity_bound</a>
+      
+      <a class="list-group-item" href="../type/plume_boundary.html#boundprocedure-set_time%7E3">set_time</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../type/plume_boundary.html#src">plume_boundary</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+    
+    
+    
+    
+    
+     
+    <section>
+    <h2>Type-Bound Procedures</h2>
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-thickness_bound_info"></span><h3>procedure, public :: <strong>thickness_bound_info</strong>  => <a href='../proc/bound_info.html'>bound_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/bound_info.html'>bound_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Provides information about the type of boundary, and the number
+ of layers of data-points needed to describe it.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-velocity_bound_info"></span><h3>procedure, public :: <strong>velocity_bound_info</strong>  => <a href='../proc/bound_info.html'>bound_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/bound_info.html'>bound_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Provides information about the type of boundary, and the number
+ of layers of data-points needed to describe it.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-temperature_bound_info"></span><h3>procedure, public :: <strong>temperature_bound_info</strong>  => <a href='../proc/bound_info.html'>bound_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/bound_info.html'>bound_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Provides information about the type of boundary, and the number
+ of layers of data-points needed to describe it.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-salinity_bound_info"></span><h3>procedure, public :: <strong>salinity_bound_info</strong>  => <a href='../proc/bound_info.html'>bound_info</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Indicates the type and depth of the thickness boundary at
+ different locations.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/bound_info.html'>bound_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Provides information about the type of boundary, and the number
+ of layers of data-points needed to describe it.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-thickness_bound"></span><h3>procedure, public :: <strong>thickness_bound</strong>  => <a href='../proc/scalar_bound.html'>scalar_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ thickness at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/scalar_bound.html'>scalar_bound</a>(this, location)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the boundary values for the specified
+ boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-velocity_bound"></span><h3>procedure, public :: <strong>velocity_bound</strong>  => <a href='../proc/vector_bound.html'>vector_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ velocity at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/vector_bound.html'>vector_bound</a>(this, location)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the boundary values for the specified
+ boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(vector_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-temperature_bound"></span><h3>procedure, public :: <strong>temperature_bound</strong>  => <a href='../proc/scalar_bound.html'>scalar_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ temperature at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/scalar_bound.html'>scalar_bound</a>(this, location)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the boundary values for the specified
+ boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-salinity_bound"></span><h3>procedure, public :: <strong>salinity_bound</strong>  => <a href='../proc/scalar_bound.html'>scalar_bound</a> 
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Produces a field containing the boundary conditions for plume
+ salinity at the specified location.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private function <a href='../proc/scalar_bound.html'>scalar_bound</a>(this, location)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>March 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the boundary values for the specified
+ boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-set_time%7E3"></span><h3>procedure, public :: <strong>set_time</strong>  
+    
+  </h3></div>
+  
+  <div class="panel-body">
+    
+
+
+    <p>Specifies the time at which to calculate the boundary
+ conditions.</p>
+  </div>
+  
+  <ul class="list-group">
+    
+      <li class="list-group-item">
+      
+        
+          
+    
+    <h3>
+private subroutine <a href='../proc/set_time.html'>set_time</a>(this, time)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>May 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Sets the time at which boundary conditions are to be calculated.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/plume_boundary.html'>plume_boundary</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>time</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+        
+      
+      </li>
+    
+  </ul>
+</div>
+
+    
+    </section>
+    
+    
+    
+    <section>
+    <h3><span class="anchor" id="src"></span>Source Code</h3>
+    <div class="highlight"><pre><span></span>  <span class="k">type</span><span class="p">,</span> <span class="k">public</span> <span class="kd">::</span> <span class="n">plume_boundary</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: September 2016</span>
+    <span class="c">!</span>
+    <span class="c">! A type in which procedures for getting the boundary conditions</span>
+    <span class="c">! of plumes are to be specified. The descendent types can contain</span>
+    <span class="c">! whatever data is needed to compute the result.</span>
+    <span class="c">!</span>
+    <span class="c">! This class effectively provides free boundary conditions. It&#39;s </span>
+    <span class="c">! type-bound procedures should be overridden to provide case-specific</span>
+    <span class="c">! conditions.</span>
+    <span class="c">!</span>
+  <span class="k">contains</span>
+<span class="k">    procedure</span> <span class="kd">::</span> <span class="n">thickness_bound_info</span> <span class="o">=&gt;</span> <span class="n">bound_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">velocity_bound_info</span> <span class="o">=&gt;</span> <span class="n">bound_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">temperature_bound_info</span> <span class="o">=&gt;</span> <span class="n">bound_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">salinity_bound_info</span> <span class="o">=&gt;</span> <span class="n">bound_info</span>
+      <span class="c">!! Indicates the type and depth of the thickness boundary at</span>
+      <span class="c">!! different locations.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">thickness_bound</span> <span class="o">=&gt;</span> <span class="n">scalar_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! thickness at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">velocity_bound</span> <span class="o">=&gt;</span> <span class="n">vector_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! velocity at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">temperature_bound</span> <span class="o">=&gt;</span> <span class="n">scalar_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! temperature at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">salinity_bound</span> <span class="o">=&gt;</span> <span class="n">scalar_bound</span>
+      <span class="c">!! Produces a field containing the boundary conditions for plume</span>
+      <span class="c">!! salinity at the specified location.</span>
+    <span class="k">procedure</span> <span class="kd">::</span> <span class="n">set_time</span>
+      <span class="c">!! Specifies the time at which to calculate the boundary</span>
+      <span class="c">!! conditions.</span>
+  <span class="k">end type </span><span class="n">plume_boundary</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

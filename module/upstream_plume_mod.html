@@ -1,0 +1,2461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>upstream_plume_mod &ndash; ISOFT</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>upstream_plume_mod 
+    <small>Module</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Christopher MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> July 2017</li>
+     
+     
+    <li><i class="fa fa-legal"></i> GPLv3</li>
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 2.3% of total for modules and submodules.">222 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/upstream_plume.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/upstream_plume.f90.html'>upstream_plume.F90</a></li>
+    
+  
+     <li class="active">upstream_plume_mod</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#variable-dummy%7E3">dummy</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-0">Interfaces</a></h3></div>
+  <div id="inters-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-upstream_plume_boundary">upstream_plume_boundary</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#absints-0">Abstract Interfaces</a></h3></div>
+  <div id="absints-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-bound_vals">bound_vals</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-non_diff">non_diff</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#types-0">Derived Types</a></h3></div>
+  <div id="types-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#type-upstream_plume_boundary">upstream_plume_boundary</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs-0">Functions</a></h3></div>
+  <div id="funcs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-constructor%7E16">constructor</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_thickness_bound">upstream_thickness_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_velocity_bound">upstream_velocity_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_temperature_bound">upstream_temperature_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_salinity_bound">upstream_salinity_bound</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-0">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-0" class="panel-collapse collapse">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_thickness_info">upstream_thickness_info</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_info">upstream_info</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_calculate">upstream_calculate</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <p>Provides a derived type which specifies the boundary conditions
+ for a 1-D plume model. In order to avoid boundary layer effects,
+ an ODE solver is used to integrate the plume a little way
+ upstream, past the boundary layer.</p>
+      <br>
+    
+  
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Uses</h3>
+      </div>
+      <ul class="list-group">
+      
+      <li class="list-group-item">
+  <ul class="list-inline">
+    
+    <li><a href="http://fortranwiki.org/fortran/show/ISO_FORTRAN_ENV">iso_fortran_env</a></li>
+    
+    <li><a href="https://cmacmackin.github.io/flogging/">logger_mod</a></li>
+    
+    <li><a href="http://szaghi.github.io/PENF/index.html">penf</a></li>
+    
+    <li><a href="https://cmacmackin.github.io/factual">factual_mod</a></li>
+    
+    <li><a href='../module/uniform_gradient_field_mod.html'>uniform_gradient_field_mod</a></li>
+    
+    <li><a href='../module/plume_boundary_mod.html'>plume_boundary_mod</a></li>
+    
+    <li><a href='../module/boundary_types_mod.html'>boundary_types_mod</a></li>
+    
+    <li><a href='../module/rksuite_90.html'>rksuite_90</a></li>
+    
+  </ul>
+      </li>
+      
+      
+      
+      <li class="list-group-item">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: module~~upstream_plume_mod~~UsesGraph Pages: 1 -->
+<svg id="moduleupstream_plume_modUsesGraph" width="586pt" height="306pt"
+ viewBox="0.00 0.00 586.00 306.03" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~upstream_plume_mod~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 302.034)">
+<title>module~~upstream_plume_mod~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-302.034 582,-302.034 582,4 -4,4"/>
+<!-- module~upstream_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node1" class="node"><title>module~upstream_plume_mod</title>
+<polygon fill="none" stroke="black" points="578,-158.034 458,-158.034 458,-134.034 578,-134.034 578,-158.034"/>
+<text text-anchor="middle" x="518" y="-143.634" font-family="Helvetica,sans-Serif" font-size="10.50">upstream_plume_mod</text>
+</g>
+<!-- logger_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node2" class="node"><title>logger_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node2"><a xlink:href="https://cmacmackin.github.io/flogging/" xlink:title="logger_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="384,-298.034 314,-298.034 314,-274.034 384,-274.034 384,-298.034"/>
+<text text-anchor="middle" x="349" y="-283.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">logger_mod</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;logger_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge1" class="edge"><title>module~upstream_plume_mod&#45;&gt;logger_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M509.969,-158.164C496.036,-181.194 462.718,-231.497 422,-260.034 413.511,-265.984 403.511,-270.722 393.709,-274.434"/>
+<polygon fill="#000000" stroke="#000000" points="392.323,-271.21 384.036,-277.811 394.63,-277.819 392.323,-271.21"/>
+</g>
+<!-- factual_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node3" class="node"><title>factual_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node3"><a xlink:href="https://cmacmackin.github.io/factual" xlink:title="factual_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="217.5,-176.034 146.5,-176.034 146.5,-152.034 217.5,-152.034 217.5,-176.034"/>
+<text text-anchor="middle" x="182" y="-161.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">factual_mod</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;factual_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge2" class="edge"><title>module~upstream_plume_mod&#45;&gt;factual_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M457.672,-149.232C391.888,-152.777 287.245,-158.416 227.916,-161.614"/>
+<polygon fill="#000000" stroke="#000000" points="227.535,-158.129 217.737,-162.162 227.911,-165.119 227.535,-158.129"/>
+</g>
+<!-- module~plume_boundary_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node4" class="node"><title>module~plume_boundary_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node4"><a xlink:href=".././module/plume_boundary_mod.html" xlink:title="plume_boundary_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="409,-138.034 289,-138.034 289,-114.034 409,-114.034 409,-138.034"/>
+<text text-anchor="middle" x="349" y="-123.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">plume_boundary_mod</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;module~plume_boundary_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge3" class="edge"><title>module~upstream_plume_mod&#45;&gt;module~plume_boundary_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M457.652,-138.927C445.224,-137.438 432.015,-135.857 419.263,-134.329"/>
+<polygon fill="#000000" stroke="#000000" points="419.502,-130.833 409.157,-133.119 418.67,-137.783 419.502,-130.833"/>
+</g>
+<!-- module~rksuite_90 -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node5" class="node"><title>module~rksuite_90</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node5"><a xlink:href=".././module/rksuite_90.html" xlink:title="rksuite_90">
+<polygon fill="#337ab7" stroke="#337ab7" points="380,-96.0344 318,-96.0344 318,-72.0344 380,-72.0344 380,-96.0344"/>
+<text text-anchor="middle" x="349" y="-81.6344" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">rksuite_90</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;module~rksuite_90 -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge4" class="edge"><title>module~upstream_plume_mod&#45;&gt;module~rksuite_90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M491.54,-134.025C472.604,-125.345 446,-113.676 422,-105.034 411.695,-101.324 400.388,-97.7845 389.851,-94.7044"/>
+<polygon fill="#000000" stroke="#000000" points="390.619,-91.2837 380.042,-91.9014 388.695,-98.0143 390.619,-91.2837"/>
+</g>
+<!-- module~uniform_gradient_field_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node6" class="node"><title>module~uniform_gradient_field_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node6"><a xlink:href=".././module/uniform_gradient_field_mod.html" xlink:title="uniform_gradient_field_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="422,-218.034 276,-218.034 276,-194.034 422,-194.034 422,-218.034"/>
+<text text-anchor="middle" x="349" y="-203.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">uniform_gradient_field_mod</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;module~uniform_gradient_field_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge5" class="edge"><title>module~upstream_plume_mod&#45;&gt;module~uniform_gradient_field_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M483.205,-158.176C457.202,-167.519 421.087,-180.494 393.021,-190.578"/>
+<polygon fill="#000000" stroke="#000000" points="391.687,-187.338 383.459,-194.013 394.054,-193.926 391.687,-187.338"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node7" class="node"><title>iso_fortran_env</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node7"><a xlink:href="http://fortranwiki.org/fortran/show/ISO_FORTRAN_ENV" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="87.5,-136.034 0.5,-136.034 0.5,-112.034 87.5,-112.034 87.5,-136.034"/>
+<text text-anchor="middle" x="44" y="-121.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;iso_fortran_env -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge6" class="edge"><title>module~upstream_plume_mod&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M507.17,-158.335C491.444,-176.987 458.645,-211.857 422,-227.034 323.553,-267.81 284.723,-277.766 183,-246.034"/>
+</g>
+<!-- penf -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node8" class="node"><title>penf</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node8"><a xlink:href="http://szaghi.github.io/PENF/index.html" xlink:title="penf">
+<polygon fill="#337ab7" stroke="#337ab7" points="376,-54.0344 322,-54.0344 322,-30.0344 376,-30.0344 376,-54.0344"/>
+<text text-anchor="middle" x="349" y="-39.6344" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">penf</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;penf -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge7" class="edge"><title>module~upstream_plume_mod&#45;&gt;penf</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506.269,-133.739C489.863,-115.68 456.77,-82.072 422,-63.0344 410.847,-56.9277 397.725,-52.4241 385.76,-49.1893"/>
+<polygon fill="#000000" stroke="#000000" points="386.601,-45.7917 376.05,-46.763 384.904,-52.5829 386.601,-45.7917"/>
+</g>
+<!-- module~boundary_types_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node9" class="node"><title>module~boundary_types_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node9"><a xlink:href=".././module/boundary_types_mod.html" xlink:title="boundary_types_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="240,-34.0344 124,-34.0344 124,-10.0344 240,-10.0344 240,-34.0344"/>
+<text text-anchor="middle" x="182" y="-19.6344" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">boundary_types_mod</text>
+</a>
+</g>
+</g>
+<!-- module~upstream_plume_mod&#45;&gt;module~boundary_types_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge8" class="edge"><title>module~upstream_plume_mod&#45;&gt;module~boundary_types_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M512.195,-133.788C501.044,-107.301 470.593,-45.1377 422,-21.0344 364.968,7.2552 290.449,1.27572 239.89,-8.05722"/>
+<polygon fill="#000000" stroke="#000000" points="238.942,-4.67612 229.796,-10.0238 240.28,-11.547 238.942,-4.67612"/>
+</g>
+<!-- module~plume_boundary_mod&#45;&gt;factual_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge9" class="edge"><title>module~plume_boundary_mod&#45;&gt;factual_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M295.793,-138.058C273.886,-143.103 248.67,-148.91 227.643,-153.753"/>
+<polygon fill="#000000" stroke="#000000" points="226.649,-150.39 217.69,-156.045 228.22,-157.212 226.649,-150.39"/>
+</g>
+<!-- module~plume_boundary_mod&#45;&gt;iso_fortran_env -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge10" class="edge"><title>module~plume_boundary_mod&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M288.859,-125.644C233.479,-125.278 151.472,-124.737 98.1288,-124.385"/>
+<polygon fill="#000000" stroke="#000000" points="97.8817,-120.883 87.8588,-124.317 97.8354,-127.883 97.8817,-120.883"/>
+</g>
+<!-- module~plume_boundary_mod&#45;&gt;module~boundary_types_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge11" class="edge"><title>module~plume_boundary_mod&#45;&gt;module~boundary_types_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M293.794,-113.981C287.551,-111.516 281.471,-108.564 276,-105.034 255.341,-91.7056 258.108,-79.664 240,-63.0344 230.995,-54.7646 220.297,-46.6815 210.614,-39.9081"/>
+<polygon fill="#000000" stroke="#000000" points="212.319,-36.8338 202.086,-34.0881 208.373,-42.6158 212.319,-36.8338"/>
+</g>
+<!-- module~rksuite_90_prec -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node10" class="node"><title>module~rksuite_90_prec</title>
+<g id="a_module~~upstream_plume_mod~~UsesGraph_node10"><a xlink:href=".././module/rksuite_90_prec.html" xlink:title="rksuite_90_prec">
+<polygon fill="#337ab7" stroke="#337ab7" points="226.5,-96.0344 137.5,-96.0344 137.5,-72.0344 226.5,-72.0344 226.5,-96.0344"/>
+<text text-anchor="middle" x="182" y="-81.6344" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">rksuite_90_prec</text>
+</a>
+</g>
+</g>
+<!-- module~rksuite_90&#45;&gt;module~rksuite_90_prec -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge12" class="edge"><title>module~rksuite_90&#45;&gt;module~rksuite_90_prec</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M317.736,-84.0344C295.133,-84.0344 263.641,-84.0344 236.787,-84.0344"/>
+<polygon fill="#000000" stroke="#000000" points="236.75,-80.5345 226.75,-84.0344 236.75,-87.5345 236.75,-80.5345"/>
+</g>
+<!-- module~uniform_gradient_field_mod&#45;&gt;factual_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge14" class="edge"><title>module~uniform_gradient_field_mod&#45;&gt;factual_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M300.718,-193.999C277.657,-188.129 250.076,-181.108 227.41,-175.339"/>
+<polygon fill="#000000" stroke="#000000" points="228.255,-171.942 217.701,-172.867 226.529,-178.726 228.255,-171.942"/>
+</g>
+<!-- module~uniform_gradient_field_mod&#45;&gt;iso_fortran_env -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge15" class="edge"><title>module~uniform_gradient_field_mod&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M315.593,-218.068C274.909,-232.447 207.48,-253.671 183,-246.034"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M181,-246.034C155.508,-238.082 145.747,-242.531 124,-227.034 93.4882,-205.292 69.2886,-168.35 56.0708,-145.12"/>
+<polygon fill="#000000" stroke="#000000" points="58.9847,-143.156 51.092,-136.088 52.8544,-146.535 58.9847,-143.156"/>
+</g>
+<!-- utils_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_node11" class="node"><title>utils_mod</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="211,-218.034 153,-218.034 153,-194.034 211,-194.034 211,-218.034"/>
+<text text-anchor="middle" x="182" y="-203.634" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">utils_mod</text>
+</g>
+<!-- module~uniform_gradient_field_mod&#45;&gt;utils_mod -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge13" class="edge"><title>module~uniform_gradient_field_mod&#45;&gt;utils_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M275.629,-206.034C256.877,-206.034 237.416,-206.034 221.201,-206.034"/>
+<polygon fill="#000000" stroke="#000000" points="221.054,-202.534 211.054,-206.034 221.054,-209.534 221.054,-202.534"/>
+</g>
+<!-- module~rksuite_90_prec&#45;&gt;iso_fortran_env -->
+<g id="module~~upstream_plume_mod~~UsesGraph_edge16" class="edge"><title>module~rksuite_90_prec&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M140.196,-96.0357C126.337,-100.112 110.674,-104.718 96.114,-109.001"/>
+<polygon fill="#000000" stroke="#000000" points="94.8518,-105.724 86.2457,-111.903 96.827,-112.439 94.8518,-105.724"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="489pt" height="32pt"
+ viewBox="0.00 0.00 489.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 485,-28 485,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="139.25,-24 72.75,-24 72.75,-0 139.25,-0 139.25,-24"/>
+<text text-anchor="middle" x="106" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="222,-24 158,-24 158,-0 222,-0 222,-24"/>
+<text text-anchor="middle" x="190" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="294,-24 240,-24 240,-0 294,-0 294,-24"/>
+<text text-anchor="middle" x="267" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="366,-24 312,-24 312,-0 366,-0 366,-24"/>
+<text text-anchor="middle" x="339" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="481.25,-24 384.75,-24 384.75,-0 481.25,-0 481.25,-24"/>
+<text text-anchor="middle" x="433" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+      </li>
+      
+      </ul>
+    </div>
+    
+
+    
+    
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Used by</h3>
+      </div>
+      <ul class="list-group">
+  
+  
+  <li class="list-group-item">
+    <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: module~~upstream_plume_mod~~UsedByGraph Pages: 1 -->
+<svg id="moduleupstream_plume_modUsedByGraph" width="294pt" height="116pt"
+ viewBox="0.00 0.00 294.00 116.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~upstream_plume_mod~~UsedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 112)">
+<title>module~~upstream_plume_mod~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-112 290,-112 290,4 -4,4"/>
+<!-- module~upstream_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_node1" class="node"><title>module~upstream_plume_mod</title>
+<polygon fill="none" stroke="black" points="120,-66 7.10543e-15,-66 7.10543e-15,-42 120,-42 120,-66"/>
+<text text-anchor="middle" x="60" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50">upstream_plume_mod</text>
+</g>
+<!-- module~asymmetric_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_node2" class="node"><title>module~asymmetric_plume_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsedByGraph_node2"><a xlink:href=".././module/asymmetric_plume_mod.html" xlink:title="asymmetric_plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="286,-108 156,-108 156,-84 286,-84 286,-108"/>
+<text text-anchor="middle" x="221" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">asymmetric_plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~asymmetric_plume_mod&#45;&gt;module~upstream_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_edge1" class="edge"><title>module~asymmetric_plume_mod&#45;&gt;module~upstream_plume_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M174.437,-83.9645C156.307,-79.1756 135.279,-73.6209 116.289,-68.6045"/>
+<polygon fill="#000000" stroke="#000000" points="117.132,-65.2073 106.57,-66.0373 115.344,-71.9752 117.132,-65.2073"/>
+</g>
+<!-- module~static_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_node3" class="node"><title>module~static_plume_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsedByGraph_node3"><a xlink:href=".././module/static_plume_mod.html" xlink:title="static_plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="271,-66 171,-66 171,-42 271,-42 271,-66"/>
+<text text-anchor="middle" x="221" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">static_plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~static_plume_mod&#45;&gt;module~upstream_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_edge2" class="edge"><title>module~static_plume_mod&#45;&gt;module~upstream_plume_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M170.997,-54C158.2,-54 144.16,-54 130.519,-54"/>
+<polygon fill="#000000" stroke="#000000" points="130.192,-50.5001 120.192,-54 130.192,-57.5001 130.192,-50.5001"/>
+</g>
+<!-- module~plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_node4" class="node"><title>module~plume_mod</title>
+<g id="a_module~~upstream_plume_mod~~UsedByGraph_node4"><a xlink:href=".././module/plume_mod.html" xlink:title="plume_mod">
+<polygon fill="#337ab7" stroke="#337ab7" points="255.5,-24 186.5,-24 186.5,-0 255.5,-0 255.5,-24"/>
+<text text-anchor="middle" x="221" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">plume_mod</text>
+</a>
+</g>
+</g>
+<!-- module~plume_mod&#45;&gt;module~upstream_plume_mod -->
+<g id="module~~upstream_plume_mod~~UsedByGraph_edge3" class="edge"><title>module~plume_mod&#45;&gt;module~upstream_plume_mod</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M186.28,-20.9071C165.941,-26.2799 139.536,-33.2546 116.216,-39.4147"/>
+<polygon fill="#000000" stroke="#000000" points="115.211,-36.0599 106.437,-41.9979 116.999,-42.8278 115.211,-36.0599"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.36.0 (20140111.2315)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="489pt" height="32pt"
+ viewBox="0.00 0.00 489.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 485,-28 485,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="139.25,-24 72.75,-24 72.75,-0 139.25,-0 139.25,-24"/>
+<text text-anchor="middle" x="106" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="222,-24 158,-24 158,-0 222,-0 222,-24"/>
+<text text-anchor="middle" x="190" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="294,-24 240,-24 240,-0 294,-0 294,-24"/>
+<text text-anchor="middle" x="267" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="366,-24 312,-24 312,-0 366,-0 366,-24"/>
+<text text-anchor="middle" x="339" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="481.25,-24 384.75,-24 384.75,-0 481.25,-0 481.25,-24"/>
+<text text-anchor="middle" x="433" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+  </li>
+  
+      </ul>
+    </div>
+    
+
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#variable-dummy%7E3">dummy</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-1">Interfaces</a></h3></div>
+  <div id="inters-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-upstream_plume_boundary">upstream_plume_boundary</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#absints-1">Abstract Interfaces</a></h3></div>
+  <div id="absints-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-bound_vals">bound_vals</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#interface-non_diff">non_diff</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#types-1">Derived Types</a></h3></div>
+  <div id="types-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#type-upstream_plume_boundary">upstream_plume_boundary</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs-1">Functions</a></h3></div>
+  <div id="funcs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-constructor%7E16">constructor</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_thickness_bound">upstream_thickness_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_velocity_bound">upstream_velocity_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_temperature_bound">upstream_temperature_bound</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_salinity_bound">upstream_salinity_bound</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-1">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-1" class="panel-collapse collapse">
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_thickness_info">upstream_thickness_info</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_info">upstream_info</a>
+      
+      <a class="list-group-item" href="../module/upstream_plume_mod.html#proc-upstream_calculate">upstream_calculate</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    <section>
+    <h2>Variables</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-dummy%7E3"></span>type(uniform_scalar_field),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>dummy</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+    <section>
+   <h2>Interfaces</h2>
+   
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-upstream_plume_boundary"></span><h3>public interface <a href='../interface/upstream_plume_boundary.html'>upstream_plume_boundary</a>
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+  
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+private pure function <a href='../proc/constructor%7E16.html'>constructor</a>(bound_calculator, distance, thresholds) result(this)
+    
+    
+   
+</h3>
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Constructs a boundary condition object which integrates an IVP
+ from actual boundary values to calculate the staet of the plume
+ a little upstream. This can be used to avoid boundary layers.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/bound_vals.html'>bound_vals</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_calculator</strong></td><td><p>Calculates the "actual" inflow boundary conditions, used to
+ initiate the integration to find the values to use in the
+ simulation.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>distance</strong></td><td><p>The distance upstream which the plume should be integrated.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>thresholds</strong></td><td><p>The thresholds to use when evaluating the error of the
+ integration. This is done according to the formula
+ <code>abs(e) / max(magnitude_y, THRESHOLDS) &lt;= TOLERANCE</code>.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>)
+  </small></h4>
+  
+    
+
+    </li>
+  
+  
+  </ul>
+</div>
+
+    
+    </section>
+  <br>
+    
+
+    
+    <section>
+     <h2>Abstract Interfaces</h2>
+   
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-bound_vals"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+private pure subroutine bound_vals(time, D, U, T, S)
+    
+    
+   
+</h3>
+    
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>time</strong></td><td><p>The time at which the boundary values are being calculated</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>D</strong></td><td><p>Plume thickness boundary condition</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>U</strong></td><td><p>Plume velocity boundary condition</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>T</strong></td><td><p>Plume temperature boundary condition</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>S</strong></td><td><p>Plume salinity boundary condition</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-non_diff"></span><h3>abstract interface
+    
+  </h3></div>
+  
+  <ul class="list-group">
+    <li class="list-group-item">
+    
+    
+    <h3>
+private subroutine non_diff(D, U, T, S, b, DU_x, DUU_x, DUT_x, DUS_x)
+    
+    
+   
+</h3>
+    
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>D</strong></td><td><p>The plume thickness</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(vector_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>U</strong></td><td><p>The plume velocity</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>T</strong></td><td><p>The plume temperature</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>S</strong></td><td><p>The plume salinity</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>b</strong></td><td><p>The debth of the base of the ice shelf</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>DU_x</strong></td><td><p>The derivative of the product DU</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(vector_field),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>DUU_x</strong></td><td><p>The derivative of the product DUU</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>DUT_x</strong></td><td><p>The derivative of the product DUT</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>DUS_x</strong></td><td><p>The derivative of the product DUS</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+    </li>
+  </ul>
+</div>
+
+    
+    </section>
+  <br>
+    
+    
+    
+    <section>
+     <h2>Derived Types</h2>
+   
+     
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="type-upstream_plume_boundary"></span><h3>type, public, extends(<a href='../type/plume_boundary.html'>plume_boundary</a>) :: <a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>
+    
+  </h3></div>
+  <div class="panel-body">
+    
+    
+    <p>A type with procedures for getting the boundary conditions of
+ the plume model. For given boundary conditions, it integrates
+ the plume upstream slightly and then returns these when asked
+ for boundary values. This allows boundary layers, which can
+ cause numerical difficulties, to be avoided. Inflow boundaries
+ must be Dirichlet, while outflow boundaries for velocity,
+ salinity, and temperature are set to have a gradient of zero.</p><a href="../type/upstream_plume_boundary.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
+     
+     <h4>Components</h4>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-get_boundaries%7E2"></span>procedure(<a href='../interface/bound_vals.html'>bound_vals</a>),</td>
+  
+  <td>private,</td>
+  <td>nopass, pointer</td><td>::</td>
+  <td><strong>get_boundaries</strong></td><td>=> </td><td>null()</td><td><p>Calculate the "actual" boundary values, used to initiate the
+ integration, for the specified time.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-distance"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>distance</strong></td><td> =</td><td>0.05_r8</td><td><p>The distance upstream which the plume should be integrated</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-thickness%7E9"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>thickness</strong></td><td> =</td><td>0.1_r8</td><td><p>The thickness of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-velocity%7E7"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>velocity</strong></td><td></td><td></td><td><p>The velocity of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-temperature%7E7"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>temperature</strong></td><td> =</td><td>0.0_r8</td><td><p>The tempreature of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-salinity%7E6"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>salinity</strong></td><td> =</td><td>1.0_r8</td><td><p>The salinity of the plume at the inflowing boundary</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-boundary_time"></span>real(kind=r8),</td>
+  
+  <td>private</td>
+  <td></td><td>::</td>
+  <td><strong>boundary_time</strong></td><td></td><td></td><td><p>The time at which the boundaries were most recently
+ calculated</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-thresholds"></span>real(kind=r8),</td>
+  
+  <td>private,</td>
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>thresholds</strong></td><td></td><td></td><td><p>Thresholds to use when calculating error in the integration.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+     
+     
+     <h4>Constructor</h4>
+       
+         
+       
+       <table class="table table-striped varlist">
+      <tbody>
+        
+             
+             
+             
+             <tr><td>private pure function <strong><a href='../proc/constructor%7E16.html'>constructor</a></strong>(bound_calculator, distance, thresholds)</td><td><p>Constructs a boundary condition object which integrates an IVP
+ from actual boundary values to calculate the staet of the plume
+ a little upstream. This can be used to avoid boundary layers.</p></td></tr>
+             
+        
+       </tbody>
+       </table>
+     
+          
+     
+     <h4>Type-Bound Procedures</h4>
+      <table class="table table-striped varlist">
+      <tbody>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/plume_boundary.html#boundprocedure-set_time%7E3'>set_time</a></strong>  </td>
+       <td><p>Specifies the time at which to calculate the boundary
+ conditions.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-thickness_bound_info%7E4'>thickness_bound_info</a></strong>  => upstream_thickness_info </td>
+       <td><p>Indicates the type and depth of the thickness boundary at
+ different locations.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-velocity_bound_info%7E4'>velocity_bound_info</a></strong>  => upstream_info </td>
+       <td><p>Indicates the type and depth of the thickness boundary at
+ different locations.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-temperature_bound_info%7E4'>temperature_bound_info</a></strong>  => upstream_info </td>
+       <td><p>Indicates the type and depth of the thickness boundary at
+ different locations.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-salinity_bound_info%7E4'>salinity_bound_info</a></strong>  => upstream_info </td>
+       <td><p>Indicates the type and depth of the thickness boundary at
+ different locations.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-thickness_bound%7E4'>thickness_bound</a></strong>  => upstream_thickness_bound </td>
+       <td><p>Produces a field containing the boundary conditions for plume
+ thickness at the specified location.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-velocity_bound%7E4'>velocity_bound</a></strong>  => upstream_velocity_bound </td>
+       <td><p>Produces a field containing the boundary conditions for plume
+ velocity at the specified location.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-temperature_bound%7E4'>temperature_bound</a></strong>  => upstream_temperature_bound </td>
+       <td><p>Produces a field containing the boundary conditions for plume
+ temperature at the specified location.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-salinity_bound%7E4'>salinity_bound</a></strong>  => upstream_salinity_bound </td>
+       <td><p>Produces a field containing the boundary conditions for plume
+ salinity at the specified location.</p></td></tr>
+      
+       <tr><td>procedure, public :: <strong><a href='../type/upstream_plume_boundary.html#boundprocedure-calculate'>calculate</a></strong>  => upstream_calculate </td>
+       <td><p>Calculates the upstreamed boundary conditions for the given
+ time and ice thickness.</p></td></tr>
+      
+       </tbody>
+       </table>
+     
+  </div>
+</div>
+
+     
+    </section>
+  <br>
+    
+    
+     
+    <section>
+    <h2>Functions</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-constructor%7E16"></span><h3>
+private pure function <a href='../proc/constructor%7E16.html'>constructor</a>(bound_calculator, distance, thresholds) result(this)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Constructs a boundary condition object which integrates an IVP
+ from actual boundary values to calculate the staet of the plume
+ a little upstream. This can be used to avoid boundary layers.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/bound_vals.html'>bound_vals</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_calculator</strong></td><td><p>Calculates the "actual" inflow boundary conditions, used to
+ initiate the integration to find the values to use in the
+ simulation.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>distance</strong></td><td><p>The distance upstream which the plume should be integrated.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in),</td>
+  <td>optional</td>
+  
+  <td>dimension(:)</td><td>::</td>
+  <td><strong>thresholds</strong></td><td><p>The thresholds to use when evaluating the error of the
+ integration. This is done according to the formula
+ <code>abs(e) / max(magnitude_y, THRESHOLDS) &lt;= TOLERANCE</code>.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>)
+  </small></h4>
+  
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_thickness_bound"></span><h3>
+private function <a href='../proc/upstream_thickness_bound.html'>upstream_thickness_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the thickness boundary values for the
+ specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_velocity_bound"></span><h3>
+private function <a href='../proc/upstream_velocity_bound.html'>upstream_velocity_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the velocity boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(vector_field),
+  pointer</small></h4>
+  
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_temperature_bound"></span><h3>
+private function <a href='../proc/upstream_temperature_bound.html'>upstream_temperature_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the temperature boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_salinity_bound"></span><h3>
+private function <a href='../proc/upstream_salinity_bound.html'>upstream_salinity_bound</a>(this, location) result(bound)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Returns a field containing the salinity boundary values for
+ the specified boundary location.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>class(scalar_field),
+  pointer</small></h4>
+  
+    
+
+  </div>
+  </div>
+
+    
+    </section>
+    <br>
+    
+
+    
+    <section>
+    <h2>Subroutines</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_thickness_info"></span><h3>
+private subroutine <a href='../proc/upstream_thickness_info.html'>upstream_thickness_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is free.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_info"></span><h3>
+private subroutine <a href='../proc/upstream_info.html'>upstream_info</a>(this, location, bound_type, bound_depth)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Indicates that the lower boundary is Dirichlet and the upper
+ boundary is Neumann.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>location</strong></td><td><p>Which boundary information is to be provided for.  The
+ boundary will be the one normal to dimension of number
+ <code>abs(boundary)</code>. If the argument is negative, then the lower
+ boundary is returned. If positive, then the upper boundary is
+ returned.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_type</strong></td><td><p>An integer representing what sort of boundary condition is
+ used. The integer value corresponding to each boundary type is
+ specified in the <a href="../module/boundary_types_mod.html">boundary_types_mod</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>bound_depth</strong></td><td><p>The number of layers of data-points needed to specify the
+ boundary condition.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-upstream_calculate"></span><h3>
+private subroutine <a href='../proc/upstream_calculate.html'>upstream_calculate</a>(this, t, func, b)
+    
+    
+   
+</h3></div>
+  <div class="panel-body">
+       
+    
+
+
+
+
+
+  <dl class="dl-horizontal">
+    
+    <dt>Author</dt><dd>Chris MacMackin</dd>
+    
+    
+    <dt>Date</dt><dd>July 2017</dd>
+    
+    
+    
+    
+  </dl>
+
+
+
+<p>Calculates the boundary values to use at the current time with
+ the current ice thickness.</p>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/upstream_plume_boundary.html'>upstream_plume_boundary</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=r8),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>t</strong></td><td><p>The time at which to calculate the boundary values.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>procedure(<a href='../interface/non_diff.html'>non_diff</a>)</td>
+  <td></td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>func</strong></td><td><p>A function which returns the non-diffusive, non-inertial
+ components of the ODEs describing the plume.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(scalar_field),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>b</strong></td><td><p>The depth of the ice shelf base.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  </div>
+  </div>
+
+    
+    </section>    
+    <br>
+    
+    
+    
+    </div>
+  </div>
+
+  
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

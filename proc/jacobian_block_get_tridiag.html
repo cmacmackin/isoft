@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>jacobian_block_get_tridiag &ndash; ISOFT</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>jacobian_block_get_tridiag
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+     
+     
+    <li><i class="fa fa-calendar-o"></i> May 2017</li>
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 1.1% of total for procedures.">128 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/jacobian_block.F90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/jacobian_block.f90.html'>jacobian_block.F90</a></li>
+    
+     <li><a href='../module/jacobian_block_mod.html'>jacobian_block_mod</a></li>
+    
+  
+     <li class="active">jacobian_block_get_tridiag</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/jacobian_block_get_tridiag.html#src">jacobian_block_get_tridiag</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+private recursive subroutine jacobian_block_get_tridiag(this, diagonal, subdiagonal, superdiagonal)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+    <p>Computes the tridiagonal matrix used to solve for this Jacobian block.</p>
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-this%7E116"></span>class(<a href='../type/jacobian_block.html'>jacobian_block</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-diagonal%7E3"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>diagonal</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-subdiagonal"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>subdiagonal</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-superdiagonal"></span>real(kind=r8),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>superdiagonal</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/jacobian_block_get_tridiag.html#src">jacobian_block_get_tridiag</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">recursive subroutine </span><span class="n">jacobian_block_get_tridiag</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="n">diagonal</span><span class="p">,</span> <span class="n">subdiagonal</span><span class="p">,</span> <span class="p">&amp;</span>
+                                                  <span class="n">superdiagonal</span><span class="p">)</span>
+    <span class="c">!* Author: Chris MacMackin</span>
+    <span class="c">!  Date: May 2017</span>
+    <span class="c">!</span>
+    <span class="c">! Computes the tridiagonal matrix used to solve for this Jacobian block.</span>
+    <span class="c">!</span>
+    <span class="k">class</span><span class="p">(</span><span class="n">jacobian_block</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span>                <span class="kd">::</span> <span class="n">this</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">diagonal</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">subdiagonal</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">superdiagonal</span>
+
+    <span class="kt">integer</span>                                   <span class="kd">::</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span>
+    <span class="k">class</span><span class="p">(</span><span class="n">vector_field</span><span class="p">),</span> <span class="k">pointer</span>              <span class="kd">::</span> <span class="n">grid</span>
+    <span class="kt">logical</span>                                   <span class="kd">::</span> <span class="n">use_cached</span>
+    <span class="k">class</span><span class="p">(</span><span class="n">scalar_field</span><span class="p">),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">save</span>    <span class="kd">::</span> <span class="n">cached_field_type</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span><span class="p">,</span> <span class="k">save</span> <span class="kd">::</span> <span class="n">cached_dx_c</span><span class="p">,</span>   <span class="p">&amp;</span>
+                                                 <span class="n">cached_dx2_uc</span><span class="p">,</span> <span class="p">&amp;</span>
+                                                 <span class="n">cached_dx2_ud</span><span class="p">,</span> <span class="p">&amp;</span>
+                                                 <span class="n">cached_dx2_dc</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">save</span>                            <span class="kd">::</span> <span class="n">cached_upper_bound</span><span class="p">,</span> <span class="p">&amp;</span>
+                                                 <span class="n">cached_lower_bound</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:),</span> <span class="k">allocatable</span>       <span class="kd">::</span> <span class="n">cont</span><span class="p">,</span> <span class="n">deriv</span><span class="p">,</span> <span class="n">diag</span><span class="p">,</span> <span class="p">&amp;</span>
+                                                 <span class="n">subdiag</span><span class="p">,</span> <span class="n">supdiag</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">r8</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(:,:),</span> <span class="k">allocatable</span>     <span class="kd">::</span> <span class="n">domain</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">%</span><span class="n">raw_size</span><span class="p">()</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">%</span><span class="n">domain</span><span class="p">()</span>
+    <span class="c">! Try to use cached copy of inverse grid spacing, if available and suitable </span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">allocated</span><span class="p">(</span><span class="n">cached_field_type</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      </span><span class="n">use_cached</span> <span class="o">=</span> <span class="nb">same_type_as</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">,</span> <span class="n">cached_field_type</span><span class="p">)</span> <span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+                   <span class="nb">abs</span><span class="p">(</span><span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">cached_lower_bound</span><span class="p">)</span> <span class="o">&lt;</span> <span class="err">1</span><span class="n">e</span><span class="o">-</span><span class="mi">10</span> <span class="p">.</span><span class="nb">and</span><span class="p">.</span>  <span class="p">&amp;</span>
+                   <span class="nb">abs</span><span class="p">(</span><span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">cached_upper_bound</span><span class="p">)</span> <span class="o">&lt;</span> <span class="err">1</span><span class="n">e</span><span class="o">-</span><span class="mi">10</span> <span class="p">.</span><span class="nb">and</span><span class="p">.</span>  <span class="p">&amp;</span>
+                   <span class="n">n</span><span class="o">==</span><span class="n">size</span><span class="p">(</span><span class="n">cached_dx_c</span><span class="p">)</span>
+    <span class="k">else</span>
+<span class="k">      </span><span class="n">use_cached</span> <span class="o">=</span> <span class="p">.</span><span class="n">false</span><span class="p">.</span>
+    <span class="k">end if</span>
+    <span class="c">! Construct an array containing the distance between grid</span>
+    <span class="c">! points, if necessary</span>
+    <span class="k">if</span> <span class="p">(.</span><span class="nb">not</span><span class="p">.</span> <span class="n">use_cached</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">      if</span> <span class="p">(</span><span class="nb">allocated</span><span class="p">(</span><span class="n">cached_field_type</span><span class="p">))</span> <span class="k">then   </span>
+<span class="k">        deallocate</span><span class="p">(</span><span class="n">cached_field_type</span><span class="p">)</span>
+        <span class="k">deallocate</span><span class="p">(</span><span class="n">cached_dx_c</span><span class="p">)</span>
+        <span class="k">deallocate</span><span class="p">(</span><span class="n">cached_dx2_uc</span><span class="p">)</span>
+        <span class="k">deallocate</span><span class="p">(</span><span class="n">cached_dx2_dc</span><span class="p">)</span>
+        <span class="k">deallocate</span><span class="p">(</span><span class="n">cached_dx2_ud</span><span class="p">)</span>
+      <span class="k">end if</span>
+<span class="cp">#ifdef DEBUG</span>
+      <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;jacobian_block%get_tridiag&#39;</span><span class="p">,</span><span class="s1">&#39;Calculating and caching &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                       <span class="s1">&#39;grid spacings.&#39;</span><span class="p">)</span>
+<span class="cp">#endif</span>
+      <span class="n">cached_lower_bound</span> <span class="o">=</span> <span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">cached_upper_bound</span> <span class="o">=</span> <span class="n">domain</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">cached_field_type</span><span class="p">,</span> <span class="n">mold</span><span class="o">=</span><span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">)</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">cached_dx2_uc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">cached_dx2_ud</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+      <span class="k">call </span><span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">%</span><span class="n">allocate_vector_field</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+      <span class="n">grid</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">%</span><span class="n">grid_spacing</span><span class="p">()</span>
+      <span class="c">! Use this array to temporarily hold the grid spacings</span>
+      <span class="n">cached_dx_c</span> <span class="o">=</span> <span class="n">grid</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+      <span class="c">! Work out the upwinded grid spacings</span>
+      <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">do </span><span class="n">i</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">-</span> <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">end do</span>
+      <span class="c">! Work out the inverse of the downwinded grid spacings</span>
+      <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+      <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+      <span class="c">! Work out the -2 times product of the inverse up- and</span>
+      <span class="c">! down-winded grid spacings</span>
+      <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+      <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+      <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+      <span class="c">! Work out the inverse of product of the up-winded and</span>
+      <span class="c">! centred grid spacings</span>
+      <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+      <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="p">(</span><span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+      <span class="c">! Work out the inverse of the product of the down-winded and</span>
+      <span class="c">! centred grid spacings</span>
+      <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+      <span class="c">! Work out half the inverse of the grid spacing</span>
+      <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.5_r8</span><span class="o">/</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span><span class="o">/</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">end if</span>
+<span class="k">    </span><span class="n">cont</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">contents</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">extra_derivative</span> <span class="o">==</span> <span class="n">no_extra_derivative</span><span class="p">)</span> <span class="k">then</span>
+      <span class="c">! Create the tridiagonal matrix when there is no additional</span>
+      <span class="c">! differentiation operator on the RHS</span>
+      <span class="n">diagonal</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">coef</span><span class="o">*</span><span class="n">this</span><span class="p">%</span><span class="n">derivative</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+      <span class="k">select case</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">has_increment</span><span class="p">)</span>
+      <span class="k">case</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">continue</span>
+<span class="k">      case</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal</span> <span class="o">+</span> <span class="n">this</span><span class="p">%</span><span class="n">real_increment</span>
+      <span class="k">case</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal</span> <span class="o">+</span> <span class="n">this</span><span class="p">%</span><span class="n">field_increment</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+      <span class="k">case </span><span class="n">default</span>
+        <span class="n">error</span> <span class="k">stop</span> <span class="p">(</span><span class="s1">&#39;Invalid increment has been added.&#39;</span><span class="p">)</span>
+      <span class="k">end select</span>
+<span class="k">      </span><span class="n">diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">cont</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="n">cont</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">*</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+      <span class="n">superdiagonal</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">subdiagonal</span> <span class="o">=</span> <span class="o">-</span><span class="n">cont</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">else if</span> <span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">extra_derivative</span> <span class="o">==</span> <span class="n">this</span><span class="p">%</span><span class="n">direction</span><span class="p">)</span> <span class="k">then</span>
+      <span class="c">! Create the tridiagonal matrix when the additional</span>
+      <span class="c">! differentiation operator on the RHS operates in the same</span>
+      <span class="c">! direction as the derivative of the contents.</span>
+      <span class="n">deriv</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">coef</span><span class="o">*</span><span class="n">this</span><span class="p">%</span><span class="n">derivative</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+      <span class="n">diagonal</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">&amp;</span>
+                       <span class="o">-</span> <span class="n">deriv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_ud</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="p">&amp;</span>
+                       <span class="o">+</span> <span class="n">deriv</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+      <span class="c">!print*,diagonal(10)</span>
+      <span class="k">select case</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">has_increment</span><span class="p">)</span>
+      <span class="k">case</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">continue</span>
+<span class="k">      case</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal</span> <span class="o">+</span> <span class="n">this</span><span class="p">%</span><span class="n">real_increment</span>
+      <span class="k">case</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal</span> <span class="o">+</span> <span class="n">this</span><span class="p">%</span><span class="n">field_increment</span><span class="p">%</span><span class="n">raw</span><span class="p">()</span>
+      <span class="k">case </span><span class="n">default</span>
+        <span class="n">error</span> <span class="k">stop</span> <span class="p">(</span><span class="s1">&#39;Invalid increment has been added.&#39;</span><span class="p">)</span>
+      <span class="k">end select</span>
+<span class="k">      allocate</span><span class="p">(</span><span class="n">superdiagonal</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+      <span class="n">superdiagonal</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">&amp;</span>
+                           <span class="o">+</span> <span class="n">deriv</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">superdiagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cont</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_uc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">&amp;</span>
+                       <span class="o">+</span> <span class="n">deriv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">allocate</span><span class="p">(</span><span class="n">subdiagonal</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+      <span class="n">subdiagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="n">cont</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="p">&amp;</span>
+                         <span class="o">-</span> <span class="n">deriv</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">subdiagonal</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cont</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx2_dc</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">&amp;</span>
+                       <span class="o">-</span> <span class="n">deriv</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">else</span>
+<span class="k">      call </span><span class="n">logger</span><span class="p">%</span><span class="n">fatal</span><span class="p">(</span><span class="s1">&#39;jacobian_block%solve_for&#39;</span><span class="p">,</span> <span class="s1">&#39;Currently no support &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                        <span class="s1">&#39;for extra derivatives other than in the 1-direction&#39;</span><span class="p">)</span>
+      <span class="n">error</span> <span class="k">stop</span>
+<span class="k">    end if</span>
+<span class="k">    if</span> <span class="p">(</span><span class="nb">associated</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">block_increment</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">      call </span><span class="n">this</span><span class="p">%</span><span class="n">block_increment</span><span class="p">%</span><span class="n">get_tridiag</span><span class="p">(</span><span class="n">diag</span><span class="p">,</span> <span class="n">subdiag</span><span class="p">,</span> <span class="n">supdiag</span><span class="p">)</span>
+      <span class="n">diagonal</span> <span class="o">=</span> <span class="n">diagonal</span> <span class="o">+</span> <span class="n">diag</span>
+      <span class="n">subdiagonal</span> <span class="o">=</span> <span class="n">subdiagonal</span> <span class="o">+</span> <span class="n">subdiag</span>
+      <span class="n">superdiagonal</span> <span class="o">=</span> <span class="n">superdiagonal</span> <span class="o">+</span> <span class="n">supdiag</span>
+    <span class="k">end if</span>
+    <span class="c">! Set the boundary conditions for this problem</span>
+    <span class="k">do </span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">boundary_locs</span><span class="p">)</span>
+      <span class="n">pos</span> <span class="o">=</span> <span class="n">this</span><span class="p">%</span><span class="n">boundary_locs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">boundary_types</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">dirichlet</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        </span><span class="n">diagonal</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1._r8</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="n">superdiagonal</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0._r8</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="n">subdiagonal</span><span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0._r8</span>
+      <span class="k">else if</span> <span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">boundary_types</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">neumann</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">==</span> <span class="n">n</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">diagonal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+          <span class="n">subdiagonal</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">else if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">diagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+          <span class="n">superdiagonal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span>
+<span class="k">          </span><span class="n">superdiagonal</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+          <span class="n">subdiagonal</span><span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">cached_dx_c</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+          <span class="n">diagonal</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0._r8</span>
+        <span class="k">end if</span>
+<span class="k">      else</span>
+<span class="k">        call </span><span class="n">logger</span><span class="p">%</span><span class="n">fatal</span><span class="p">(</span><span class="s1">&#39;jacobian_block%solve_for&#39;</span><span class="p">,</span><span class="s1">&#39;Boundary condition of &#39;</span><span class="o">//</span> <span class="p">&amp;</span>
+                          <span class="s1">&#39;type other than Dirichlet or Neumann encountered.&#39;</span><span class="p">)</span>
+        <span class="n">error</span> <span class="k">stop</span>
+<span class="k">      end if</span>
+<span class="k">    end do</span>
+<span class="cp">#ifdef DEBUG</span>
+    <span class="k">call </span><span class="n">logger</span><span class="p">%</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;jacobian_block%get_tridiag&#39;</span><span class="p">,</span><span class="s1">&#39;Constructed tridiagonal matrix.&#39;</span><span class="p">)</span>
+<span class="cp">#endif</span>
+  <span class="k">end subroutine </span><span class="n">jacobian_block_get_tridiag</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

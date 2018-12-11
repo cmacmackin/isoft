@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Ice Shelf/Ocean Fluid- and Thermodynamics: a suite of tools and programs to use for simulating the evolution of ice shelves interacting with the ocean.">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../../favicon.png">
+
+    <title>Spatial Discretisation &ndash; ISOFT</title>
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/pygments.css" rel="stylesheet">
+    <link href="../../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../../css/local.css" rel="stylesheet">
+    
+    <link  href="../../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../../js/jquery-2.1.3.min.js"></script>
+    <script src="../../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../index.html">ISOFT </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../../page/index.html'>Documentation</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../../lists/procedures.html">Procedures</a></li>
+        
+        
+            <li><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+               
+            <li><a href="../../lists/types.html">Derived Types</a></li>
+        
+        
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/procedures.html">Procedures</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/absint.html">Abstract Interfaces</a></li>
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../../lists/types.html">Derived Types</a></li>
+
+
+          </ul>
+        
+        <form action="../../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  <div class="row">
+    <h1>Spatial Discretisation</h1>
+    <div class="row">
+    <div class="col-lg-12">
+    <div class="well well-sm" style="min-height: 40px;">
+      <ul class="list-inline" style="margin-bottom:0px; display:inline">
+         
+        <li><i class="fa fa-pencil"></i> Chris MacMackin</li>
+         
+         
+        <li><i class="fa fa-calendar-o"></i> December 2018</li>
+         
+<!--
+        
+-->
+      </ul>
+        <ol class="breadcrumb in-well">
+      
+         <li><a href='../../page/index.html'>Documentation</a></li>
+      
+         <li><a href='../../page/2-numerics/index.html'>Numerical Methods</a></li>
+      
+         <li class="active">Spatial Discretisation</li>
+      </ol>
+    </div>
+    </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-9 col-md-push-3" id='text'>
+      <p>The shelf/plume simulation requires computing various derivatives, for
+which a pseudospectral method is used. An introduction to this
+technique is provided below; for a more thorough explanation, see
+<a href="../6-bibliog.html#Trefethen2000">Trefethen (2000)</a>. Spectral methods
+provide a fast and accurate way to numerically differentiate discrete
+data. While more computationally expensive than finite difference
+methods for the same number of grid points, spectral methods give
+exponential convergence and thus often require significantly fewer
+grid points to achieve the same level of accuracy. Numerical accuracy
+is of particular importance here, as the purpose of running
+simulations is to test the stability of an ice-shelf to potentially
+small perturbations. Spectral methdos are often used for problems with
+periodic boundary conditions, where a Fourier series, <script type="math/tex">\setcounter{20} f(\theta) =
+\sum_k a_k e^{ik\theta}</script>, can be used to interpolate between grid
+points. If the grid points are evenly spaced then the coefficients
+<script type="math/tex">a_k</script> can easily be calculated with a discrete Fourier
+transform. Typically this would be done using the highly efficient
+fast Fourier transform (FFT) algorithm
+<a href="../6-bibliog.html#Cooley1965">(Cooley and Tukey, 1965)</a>, which
+requires <script type="math/tex">O(N\log N)</script> operations for N grid-points. The derivative
+is then <script type="math/tex">f'(\theta) = \sum_k ika_k e^{ik\theta}</script> and an inverse FFT
+can be used to convert the new coefficients <script type="math/tex">ika_k</script> to the values of
+<script type="math/tex">f'</script> at each grid point.</p>
+<p>However, the boundary conditions for the ice shelf and plume
+are not periodic. Instead, say there is an
+interpolant <script type="math/tex">F(x)</script> for data mapped onto <script type="math/tex">-1 \le x \le 1</script> using a
+linear coordinate rescaling. To apply a spectral
+method, it is necessary to map the interpolant to a function
+<script type="math/tex">f(\theta)</script>, <script type="math/tex">0 \le \theta < 2\pi</script>, where <script type="math/tex">x = \cos\theta</script>. Regardless
+of the boundary conditions on <script type="math/tex">F</script>, <script type="math/tex">f</script> will be periodic and even in
+<script type="math/tex">\theta</script> and can thus be differentiated as before. The results can
+then be mapped back onto the grid points in the <script type="math/tex">x</script>-domain. By
+choosing <script type="math/tex">x</script> grid points to be <em>Chebyshev collocation points</em>,
+defined below, the corresponding grid points in <script type="math/tex">\theta</script> will be
+equally spaced and an FFT can be used to find the Fourier
+coefficients. This is known as the <em>Chebyshev pseudospectral
+  method</em> <a href="../6-bibliog.html#Trefethen2000">(Trefethen, 2000)</a>. If <script type="math/tex">N + 1</script> Chebyshev collocation
+points are needed, their positions are given by
+<script type="math/tex; mode=display">\begin{equation}
+  \label{eq:cheb-colloc}
+  x_j = \cos(j\pi/N), \quad j = 0, \ldots,N.
+\end{equation}</script>
+This approach provides uneven spacing of points in <script type="math/tex">x</script>, with a
+clustering of resolution near the domain boundaries, and hence is also
+well suited to capture rapid variation near the grounding line.</p>
+<p>Following <a href="../6-bibliog.html#Trefethen2000">Trefethen (2000)</a>, the practical algorithm used to
+differentiate discrete data <script type="math/tex">v_j = v(x_j)</script>, for
+<script type="math/tex">0 \le j \le N</script>, corresponding to values at Chebyshev collocation
+nodes <script type="math/tex">x_0=1,\ldots,x_N=-1</script>, is as follows:</p>
+<ol>
+<li>Take a type-I discrete cosine transform of the data, to
+  determine the Fourier coefficients
+  <script type="math/tex; mode=display">\hat{v}_j = \frac{\pi}{N}\left[v_0 + v_{N}\cos(\pi j) +
+    2\sum^{N-1}_{k=1} v_{k}\cos\left(\frac{\pi
+        jk}{N-1}\right)\right].</script>
+</li>
+<li>Let <script type="math/tex">\hat{w}_{j} = -j\hat{v}_{j}</script> for <script type="math/tex">1\le j\le N-1</script> and
+  <script type="math/tex">\hat{w}_N = 0</script>.</li>
+<li>Take a type-I discrete sine transform of <script type="math/tex">\hat{w}_j</script> from <script type="math/tex">j=1</script>
+  to <script type="math/tex">j=N-1</script>, yielding
+  <script type="math/tex; mode=display">w_j = \frac{1}{\pi}\sum^{N-1}_{k=1}\hat{w}_k\sin\left(\frac{\pi
+      kj}{N}\right).</script>
+</li>
+<li>Compute
+  <script type="math/tex; mode=display"> v_j' =  \begin{cases}
+    \frac{1}{2\pi}\left[\frac{N^2}{2}\hat{v}_N + \sum_{k=1}^{N-1}
+      k^2\hat{v}_k \right], & j = 0 \\
+    \frac{-w_j}{\sqrt{1-x_j^2}}, & 1 \le j \le N - 1 \\
+    \frac{1}{2\pi}\left[\frac{{(-1)}^{N+1}N^2}{2}\hat{v}_N +
+      \sum_{k=1}^{N-1} {(-1)}^{k+1}k^2\hat{v}_k \right], & j = N
+  \end{cases}.
+  </script>
+</li>
+</ol>
+<p>Discrete sine and cosine transforms are variations of the discrete
+Fourier transform which take advantage of data being real and either
+even or odd. The FFTW3 package
+<a href="../6-bibliog.html#Frigo2005">(Frigo and Johnson, 2005)</a> was used to
+compute these. A more rigorous and detailed explanation of the above
+methods for periodic and non-periodic functions is provided by
+<a href="../6-bibliog.html#Trefethen2000">Trefethen (2000)</a> in chapters 3 and
+8, respectively.</p>
+<p>If a domain other than <script type="math/tex">-1 \le x \le 1</script> is desired then the
+Collocation points can be scaled and offset as necessary, giving a
+coordinate system <script type="math/tex">x^*_j</script>. The above differentiation algorithm is
+applied unchanged, except that the result is scaled by twice the
+inverse of the domain-width.</p>
+    </div>
+    
+    <div class="col-md-3 col-md-pull-9">
+      <hr class="visible-xs visible-sm">
+        <div class="well toc">
+          <ul class="nav nav-stacked nav-pills">
+            <li role="presentation" class="title"><a href='../../page/index.html'>Documentation</a></li>
+          </ul>
+          <hr>
+          <ul class="nav nav-stacked nav-pills">
+            
+            <li role="presentation">
+            <a href='../../page/1-running/index.html'>Using ISOFT</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/1-running/1-build.html'>Compiling the Code</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/2-writing.html'>Writing Software Using the ISOFT Framework</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/1-running/3-compile.html'>Linking to the Library</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/index.html'>Numerical Methods</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/2-numerics/1-equations.html'>Shelf/Plume Equations</a>
+            
+            </li>
+            
+            <li role="presentation" class="disabled">
+            <a href='../../page/2-numerics/2-spatial.html'>Spatial Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/3-shelf-solver.html'>Shelf Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/4-plume-solver.html'>Plume Solver</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/5-benchmarking.html'>Testing and Benchmarking</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/2-numerics/6-horzint.html'>Horizontally-Integrated Plume Equations</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/index.html'>Code Design</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/1-representing.html'>Representing the Coupled Ice Shelf/Plume</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/2-discretisation.html'>Discretisation</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/3-solvers.html'>Nonlinear Solvers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/3-codeDesign/4-parameterisations.html'>Parameterisations and Boundary Conditions</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/index.html'>Plotting ISOFT Output</a>
+            
+            <ul class="nav nav-stacked nav-pills">
+              
+            <li role="presentation">
+            <a href='../../page/4-plotting/1-readers.html'>Reader Objects</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/3-tools.html'>General Plotting Tools</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/5-layers.html'>Plotting Internal Layers</a>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/4-plotting/6-scripts.html'>Provided Plotting Scripts</a>
+            
+            </li>
+            
+            </ul>
+            
+            </li>
+            
+            <li role="presentation">
+            <a href='../../page/./6-bibliog.html'>Bibliography</a>
+            
+            </li>
+            
+          </ul>
+        </div>
+    </div>
+    
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2018 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> ISOFT was developed by Chris MacMackin</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="../../js/MathJax-config/mj-config.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>
