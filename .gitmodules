@@ -15,7 +15,7 @@
 	url = https://github.com/cmacmackin/lapack95
 [submodule "libs/pFUnit"]
 	path = libs/pFUnit
-	url = git://git.code.sf.net/p/pfunit/code
+	url = https://github.com/cmacmackin/pFUnit-legacy
 [submodule "libs/PENF"]
 	path = libs/PENF
 	url = https://github.com/szaghi/PENF
