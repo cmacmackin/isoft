@@ -115,12 +115,12 @@ module static_plume_mod
     real(r8), public                  :: nu
       !! The dimensionless ratio \(\nu \equiv \frac{\kappa_0}{x_0U_o}\)
     real(r8)                  :: mu
-      !! The dimensionless ratio \(\mu \equiv \frac{\C_dx_0}{D_0}\)
+      !! The dimensionless ratio \(\mu \equiv \frac{C_dx_0}{D_0}\)
     real(r8)                  :: r_val
       !! The dimensionless ratio of the ocean water density to the
       !! density of the overlying ice shelf.
     real(r8), public                  :: phi
-      !! The inverse Rossby number, \(\Phi \equif \frac{fx_0}{U_0}\)
+      !! The inverse Rossby number, \(\Phi \equiv \frac{fx_0}{U_0}\)
     real(r8)                  :: time
       !! The time at which the ice shelf is in this state
     integer                   :: thickness_size

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 #  dimensionless_num.py
 #  This file is part of ISOFT.

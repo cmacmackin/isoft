@@ -17,24 +17,22 @@ else:
 
 x = cryo.grid
 diff = Differentiator(x.size, x[-1], x[0])
-#m = OneEquationMelt(0.0182, 0.0238)
-#e = Jenkins1991Entrainment(1.0, x.size, x[-1], x[0])
-eos = LinearEos(3.05e5, 7.74e-5, 0.0271, 1., 1.)
+eos = LinearEos(3.05e5, 1.409e-6, 1.336e-5, 0., 0.)
 D = cryo.D
-Uvec = cryo.Uvec*1000
-U = cryo.U*1000
+Uvec = cryo.Uvec
+U = cryo.U
 T = cryo.T
 S = cryo.S
 b = cryo.b
-#ent = e(Uvec, D, b)
 mu = cryo.mu
-nu = cryo.nu*1000
+nu = cryo.nu
 delta = cryo.delta
-T_a = 1.0
-S_a = 1.0
+T_a = 0.0
+S_a = 0.0
 rho = eos(T, S)
 rho_a = eos(T_a, S_a)
 
+plt.figure(figsize=(5,5))
 plt.plot(x, diff(D*U**2), label=r'$(DU^2)_x$')
 plt.plot(x, D*(rho_a - rho)*diff(b), 
          label=r'$D(\rho_a - \rho)b_x$')
@@ -46,7 +44,7 @@ plt.plot(x, delta/2*D**2*diff(rho), label=r'$\frac{\delta D^2}{2}\rho_x$')
 #plt.plot(x, diff(D*U**2) - D*(rho_a - rho)*diff(b - delta*D) - 
 #         nu*diff(D*diff(U)) + mu*abs(U)*U - delta/2*D**2*diff(rho),
 #         label='Sum')
-plt.legend()
+plt.legend(prop={'size': 'medium'})
 plt.xlabel('$x$')
 plt.tight_layout()
 

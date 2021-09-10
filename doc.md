@@ -13,11 +13,12 @@ project_github: https://github.com/cmacmackin/isoft
 display: public
          protected
          private
-graph: false
-source: false
-search: false
+graph: true
+source: true
+search: true
 mathjax_config: mj-config.js
 extra_filetypes: py #
+exclude: __init__.py
 extra_mods: factual_mod:https://cmacmackin.github.io/factual
             f95_lapack:http://www.netlib.org/lapack95/lug95/
 			logger_mod:https://cmacmackin.github.io/flogging/
@@ -33,7 +34,6 @@ github: https://github.com/cmacmackin
 linkedin: https://www.linkedin.com/in/christopher-macmackin-a11283173/
 email: cmacmackin@gmail.com
 
-DOI LICENSE
 
 ISOFT is a piece of software/suite of tools which I developed while
 working on my PhD thesis to simulate the evolution of ice shelves
@@ -44,33 +44,3 @@ modified to simulated grounded ice dynamics as well. I've published
 the code and documentation to GitHub in the hopes that it might be
 useful to others.
 
-As much as practical, ISOFT was kept agnostic as to whether it was
-handling a 1-D or a 2-D representation of an ice shelf/plume. However,
-the current implementation does explicitly assume a 1-D system in a
-number of instances and would thus need to be modified to handle 2-D
-problems.  1-D simulations were sufficiently fast that they could be
-run in serial. Multithreading could easily be implemented in many
-parts of the code where arithmetic is performed on arrays. Indeed,
-most of these cases are simple enough that a compiler may be able to
-parallelise them automatically. More sophisticated approaches
-involving message passing would likely be necessary to make 2-D
-simulations practical, but this would be far more difficult to
-implement and would likely require substantial refactoring of the
-code. In particular, the
-[nonlinear solvers](|pages|3-codeDesign/3-solvers.html) would likely
-need to be replaced.
-
-## Quick Start
-
-
-
-## Documentation
-
-
-
-## License
-
-ISOFT is licensed under the GNU General Public License (GPL) v3.0 or
-later. The terms are provided in the file `LICENSE`. The Lesser General
-Public License (LGPL) would have been used, but the Chebyshev pseudo-spectral
-implementation uses the FFTW3 library, which is licensed under the GPL.

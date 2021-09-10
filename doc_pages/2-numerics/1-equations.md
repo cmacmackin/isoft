@@ -205,7 +205,8 @@ to the conditions of the PIG ice shelf and come from the indicated
 source. Where a scaling is unconstrained it was chosen to provide
 convenient parameter values (e.g. \(x_0\) fixed by \(\chi\)). The value of
 \(c_L\) was chosen so that its entrainment parameterisation resulted
-in a similar melt rate as that of [@Jenkins1991]. Due to an error,
+in a similar melt rate as that of
+[Jenkins (1991)](../6-bibliog.html#Jenkins1991). Due to an error,
 \(\zeta_2\) is a factor of \(r\) too large.
 \(\newcommand{\unit}[1]{{\rm\thinspace #1}}
 \newcommand{\m}{\unit{m}}
