@@ -15,7 +15,7 @@
 	url = https://github.com/cmacmackin/lapack95
 [submodule "libs/pFUnit"]
 	path = libs/pFUnit
-	url = https://github.com/cmacmackin/pFUnit-legacy
+	url = https://github.com/Goddard-Fortran-Ecosystem/pFUnit
 [submodule "libs/PENF"]
 	path = libs/PENF
 	url = https://github.com/szaghi/PENF
